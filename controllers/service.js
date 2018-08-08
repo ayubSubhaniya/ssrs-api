@@ -274,14 +274,23 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             const result = await Service.findByIdAndRemove(serviceId);
-            console.log(result);
-            res.status(HttpStatus.ACCEPTED).json({ success: true });
+            
+            if (result){
+                res.sendStatus(HttpStatus.ACCEPTED);
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+            }
+            
 
         } else if (deleteOwnPermission.granted) {
 
             const result = await Service.findByOneAndRemove({ _id: serviceId, createdBy: daiictId });
-            console.log(result);
-            res.status(HttpStatus.ACCEPTED).json({ success: true });
+            
+            if (result){
+                res.sendStatus(HttpStatus.ACCEPTED);
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+            }
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
