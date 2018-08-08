@@ -6,9 +6,7 @@ const randomstring = require("randomstring");
 const { user, pass } = require('../configuration/mailAccount');
 const User = require('../models/user');
 const tempUser = require('../models/tempUser');
-const News = require('../models/news');
-const Notification = require('../models/notification');
-const { httpProtocol,JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, fieldName, errors, adminTypes, cookiesName } = require('../configuration');
+const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers')
 
@@ -22,7 +20,7 @@ const smtpTransport = nodemailer.createTransport({
         user,
         pass
     },
-    tls: { rejectUnauthorized: false } 
+    tls: { rejectUnauthorized: false }
 });
 /*------------------SMTP Over-----------------------------*/
 
@@ -52,16 +50,16 @@ module.exports = {
 
         const randomHash = randomstring.generate();
         const host = req.get('host');
-        const link = httpProtocol+"://"+host+"/account/verify/"+daiictId+"?id="+randomHash;
+        const link = httpProtocol + "://" + host + "/account/verify/" + daiictId + "?id=" + randomHash;
         const mailOptions = {
             from: user,
             to: primaryEmail,
             subject: "Please confirm your Email account",
             html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>",
-            
+
         }
 
-        
+
         //create new temp user
         const newUser = new tempUser({
             daiictId,
@@ -71,7 +69,7 @@ module.exports = {
             randomHash
         });
         const savedUser = await newUser.save();
-        
+
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
@@ -80,6 +78,28 @@ module.exports = {
                 res.end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1>");
             }
         });
+    },
+
+
+    verifyAccount: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const user = await tempUser.findOne({ daiictId })
+
+        if (req.query.id == user.randomHash) {
+            //create new user
+            const newUser = new User({
+                daiictId: user.daiictId,
+                primaryEmail: user.primaryEmail,
+                password: user.password,
+                createdOn: user.createdOn
+            });
+            var savedUser = await newUser.save();
+            tempUser.findByIdAndRemove(user._id);
+            res.end("<h1>Email " + user.primaryEmail + " is been Successfully verified</h1>");
+        }
+        else {
+            res.end("<h1>Bad Request</h1>");
+        }
     },
 
     signIn: async (req, res, next) => {
@@ -97,27 +117,6 @@ module.exports = {
             httpOnly: true,
             expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         }).status(HttpStatus.ACCEPTED).json({ user: filteredUser });
-    },
-
-    verifyAccount: async (req, res, next) => {
-        const {daiictId} = req.params;
-        const user = await tempUser.findOne({daiictId})
-        
-        if (req.query.id == user.randomHash) {
-            //create new user
-            const newUser = new User({
-                daiictId:user.daiictId,
-                primaryEmail:user.primaryEmail,
-                password:user.password,
-                createdOn:user.createdOn
-            });
-            var savedUser = await newUser.save();
-            tempUser.findByIdAndRemove(user._id);
-            res.end("<h1>Email " + user.primaryEmail + " is been Successfully verified</h1>");
-        }
-        else {
-            res.end("<h1>Bad Request</h1>");
-        }
     },
 
     signOut: async (req, res, next) => {

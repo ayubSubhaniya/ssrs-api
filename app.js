@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const HttpStatus = require('http-status-codes');
 const cors = require('cors');
+
 const dbURI = 'mongodb://localhost/ssrs-daiict'
 mongoose.connect(dbURI);
 
@@ -15,10 +16,11 @@ const order = require('./routes/order');
 const user = require('./routes/user');
 const account = require('./routes/account');
 const service = require('./routes/service');
-const news = require('./routes/news')
-const parameter = require('./routes/parameter')
-const access = require('./routes/access')
-const notification = require('./routes/notification')
+const news = require('./routes/news');
+const parameter = require('./routes/parameter');
+const access = require('./routes/access');
+const notification = require('./routes/notification');
+const collectionType = require('./routes/collectionType');
 
 // Middlewares
 app.use(logger('dev'));
@@ -39,6 +41,7 @@ app.use('/access/',access)
 app.use('/service/',service)
 app.use('/parameter/',parameter)
 app.use('/notification/',notification)
+app.use('/collectionType/',collectionType)
 
 
 // Catch 404 Errors and forward them to error handler function

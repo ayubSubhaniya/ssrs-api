@@ -1,7 +1,5 @@
-const express = require('express');
 const router = require('express-promise-router')();
 const passport = require('passport');
-const passportConf = require('../passport');
 const AccountController = require('../controllers/account');
 const {validateBody, schemas} = require('../helpers/routeHelpers');
 
@@ -29,7 +27,7 @@ router.route('/signout')
         AccountController.signOut
     );
 
-router.route('/update/')
+router.route('/update')
     .post(
         validateBody(schemas.userUpdateSchema),
         passport.authenticate('jwt',{session: false}),

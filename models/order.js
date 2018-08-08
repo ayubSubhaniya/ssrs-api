@@ -4,8 +4,8 @@ const { Schema } = moongose;
 
 const orderSchema = new Schema({
     requestedBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'user',
+        type: Number,
+        required:true,
     },
     serviceId: {
         type: Schema.Types.ObjectId,

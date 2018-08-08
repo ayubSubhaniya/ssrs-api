@@ -55,8 +55,8 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveService);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveService);
+        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
         const readPermission = accessControl.can(user.userType).readAny(resources.service);
 
         if (readPermission.granted) {
@@ -64,7 +64,7 @@ module.exports = {
             if (readAnyInActiveService.granted) {
                 services = await Service.find({ isSpecialService: false });
             } else if (readOwnInActiveService.granted) {
-                services = await Service.find({ isSpecialService: false, $or: [{ createdBy: daiictId, isActive: true }] });
+                services = await Service.find({ isSpecialService: false, $or: [{ createdBy: daiictId}, {isActive: true }] });
             } else {
                 services = await Service.find({ isSpecialService: false, isActive: true });
             }
@@ -85,8 +85,8 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveService);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveService);
+        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
         const readAnySpecialService = accessControl.can(user.userType).readAny(resources.specialService);
         const readOwnSpecialService = accessControl.can(user.userType).readOwn(resources.specialService);
         const readPermission = accessControl.can(user.userType).readAny(resources.service);
@@ -99,7 +99,7 @@ module.exports = {
                 if (readAnyInActiveService.granted) {
                     services = await Service.find({ isSpecialService: true });
                 } else if (readOwnInActiveService.granted) {
-                    services = await Service.find({ isSpecialService: true, $or: [{ createdBy: daiictId, isActive: true }] });
+                    services = await Service.find({ isSpecialService: true, $or: [{ createdBy: daiictId}, {isActive: true }] });
                 } else {
                     services = await Service.find({ isSpecialService: true, isActive: true });
                 }
@@ -129,8 +129,8 @@ module.exports = {
         const { serviceId } = req.params;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.service);
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveService);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveService);
+        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
 
         if (readPermission.granted) {
             let service;
@@ -143,11 +143,11 @@ module.exports = {
                 service = await Service.findOne({ _id: serviceId, isActive: true });
             }
 
-            if (service==undefined){
-                res.sendStatus(HttpStatus.NO_CONTENT);
-            } else {
+            if (service){
                 const filteredService = filterResourceData(service, readPermission.attributes);
                 res.status(HttpStatus.OK).json(filteredService);
+            } else {
+                res.sendStatus(HttpStatus.NO_CONTENT);
             }
 
         } else {
@@ -160,8 +160,8 @@ module.exports = {
         const { daiictId } = user;
         const { serviceId } = req.params;
 
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveService);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveService);
+        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
         const readAnySpecialService = accessControl.can(user.userType).readAny(resources.specialService);
         const readOwnSpecialService = accessControl.can(user.userType).readOwn(resources.specialService);
         const readPermission = accessControl.can(user.userType).readAny(resources.service);
@@ -173,7 +173,7 @@ module.exports = {
                 if (readAnyInActiveService.granted) {
                     service = await Service.find({ _id: serviceId, isSpecialService: true });
                 } else if (readOwnInActiveService.granted) {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true, $or: [{ createdBy: daiictId, isActive: true }] });
+                    service = await Service.find({ _id: serviceId, isSpecialService: true, $or: [{ createdBy: daiictId}, {isActive: true }] });
                 } else {
                     service = await Service.find({ _id: serviceId, isSpecialService: true, isActive: true });
                 }
@@ -187,11 +187,11 @@ module.exports = {
                 service = await Service.find({ _id: serviceId, specialServiceUsers: daiictId })
             }
 
-            if (service==undefined){
-                res.sendStatus(HttpStatus.NO_CONTENT);
-            } else {
+            if (service){
                 const filteredServices = filterResourceData(service, readPermission.attributes);
                 res.status(HttpStatus.OK).json(filteredServices);
+            } else {
+                res.sendStatus(HttpStatus.NO_CONTENT);
             }
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -224,7 +224,7 @@ module.exports = {
         }
     },
 
-    //should add special service access control for update?
+    //should add special service and inActive access control for update?
     updateService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;

@@ -103,11 +103,25 @@ module.exports = {
             name: Joi.string().required(),
             description: Joi.string(),
             baseCharge: Joi.number(),
+            isActive: Joi.boolean(),
         }),
         parameterUpdateSchema: Joi.object().keys({
             name: Joi.string(),
             description: Joi.string(),
             baseCharge: Joi.number(),
+            isActive: Joi.boolean(),
+        }),
+        collectionTypeSchema: Joi.object().keys({
+            name: Joi.string().required(),
+            description: Joi.string(),
+            baseCharge: Joi.number(),
+            isActive: Joi.boolean(),
+        }),
+        collectionTypeUpdateSchema: Joi.object().keys({
+            name: Joi.string(),
+            description: Joi.string(),
+            baseCharge: Joi.number(),
+            isActive: Joi.boolean(),
         }),
         notificationSchema: Joi.object().keys({
             message: Joi.string().required(),

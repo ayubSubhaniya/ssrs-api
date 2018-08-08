@@ -2,7 +2,7 @@ const moongose = require('mongoose');
 
 const { Schema } = moongose;
 
-const parameterSchema = new Schema({
+const collectionTypeSchema = new Schema({
     name: {
         type:String,
         required:true,
@@ -22,11 +22,11 @@ const parameterSchema = new Schema({
         type:Number,
         required:true,
     },
-    isActive: {
+    isActive:{
         type:Boolean,
-        default:true,
+        default:true
     }
 });
 
-const Parameter = moongose.model('parameter', parameterSchema);
-module.exports = Parameter;
+const CollectionType = moongose.model('collectionType', collectionTypeSchema);
+module.exports = CollectionType;

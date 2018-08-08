@@ -14,11 +14,9 @@ const userSchema = new Schema({
     name: {
         firstName:{
             type:String,
-            //default:'NA'
         } ,
         lastName:{
             type:String,
-            //default:'NA'
         },
     },
     primaryEmail:{
@@ -28,11 +26,9 @@ const userSchema = new Schema({
     } ,
     secondaryEmail:{
         type:String,
-        //default:'NA'
     } ,
     contactNo:{
         type:Number,
-        //default:0
     } ,
     password:{
         type:String,
@@ -40,11 +36,9 @@ const userSchema = new Schema({
     } ,
     gender:{
         type:String,
-        //default:'NA'
     } ,
     programme:{
         type:String,
-        //default:'NA'
     } ,
 
     /*Server added field*/

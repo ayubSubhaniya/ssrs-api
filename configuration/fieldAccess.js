@@ -232,7 +232,7 @@ module.exports = {
             ]
         },
     },
-    InActiveService:{
+    InActiveResource:{
         superAdmin:{
             canRead:[
                 "*"
@@ -283,7 +283,8 @@ module.exports = {
                 "description",
                 "baseCharge",
                 "createdOn",
-                "createdBy"
+                "createdBy",
+                "isActive"
             ],
             canCreate:[
                 "_id",
@@ -295,6 +296,46 @@ module.exports = {
                 "name",
                 "description",
                 "baseCharge",
+                "isActive"
+            ],
+        },
+        student:{
+            canRead:[
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+            ],
+            canCreate:[
+    
+            ],
+            canUpdate:[
+                
+            ]
+        },
+    },
+    CollectionType:{
+        superAdmin:{
+            canRead:[
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "createdOn",
+                "createdBy",
+                "isActive"
+            ],
+            canCreate:[
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+            ],
+            canUpdate:[
+                "name",
+                "description",
+                "baseCharge",
+                "isActive"
             ],
         },
         student:{
