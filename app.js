@@ -18,6 +18,7 @@ const service = require('./routes/service');
 const news = require('./routes/news')
 const parameter = require('./routes/parameter')
 const access = require('./routes/access')
+const notification = require('./routes/notification')
 
 // Middlewares
 app.use(logger('dev'));
@@ -37,10 +38,8 @@ app.use('/user/',user)
 app.use('/access/',access)
 app.use('/service/',service)
 app.use('/parameter/',parameter)
+app.use('/notification/',notification)
 
-// app.use('/:userId/home', user)
-// app.use('/:userId/order', order)
-// app.use('/:userId/service', service)
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {

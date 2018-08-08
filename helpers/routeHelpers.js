@@ -109,6 +109,14 @@ module.exports = {
             description: Joi.string(),
             baseCharge: Joi.number(),
         }),
+        notificationSchema: Joi.object().keys({
+            message: Joi.string().required(),
+            userId : Joi.number().required()
+        }),
+        notificationUpdateSchema: Joi.object().keys({
+            message: Joi.string(),
+            userId : Joi.number()
+        }),
         serviceEditSchema: Joi.object().keys({
             name: Joi.string(),
             description: Joi.string(),

@@ -3,7 +3,6 @@ const HttpStatus = require('http-status-codes');
 const Service = require('../models/service');
 const News = require('../models/news');
 const Notification = require('../models/notification');
-const User = require('../models/user');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources } = require('../configuration');
@@ -39,17 +38,15 @@ const generateNews = async (message, daiictId) => {
 };
 
 const generateNotification = async (message, daiictId, userIds) => {
-    const notification = new Notification({
-        message,
-        createdOn: new Date(),
-        createdBy: daiictId
-    });
-    await notification.save();
 
     userIds.forEach(async (userId)=>{
-        let user = await User.findOne({ daiictId: userId });
-        user.notifications.push(notification._id);
-        await user.save();
+        const notification = new Notification({
+            message,
+            createdOn: new Date(),
+            createdBy: daiictId,
+            userId
+        });
+        await notification.save();
     });
 };
 
@@ -263,7 +260,7 @@ module.exports = {
         }
     },
 
-    //use result to know whether service is delete or not
+
     deleteService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;

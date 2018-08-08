@@ -1,11 +1,8 @@
-const express = require('express');
 const router = require('express-promise-router')();
 const passport = require('passport');
-const HttpStatus = require('http-status-codes');
 
-const passportConf = require('../passport');
 const newsController = require('../controllers/news');
-const {validateBody, schemas} = require('../helpers/routeHelpers');
+const {validateBody, validateParam, schemas} = require('../helpers/routeHelpers');
 
 router.route('/my')
     .get(
@@ -20,18 +17,17 @@ router.route('/my')
 router.route('/:newsId')
     .get(
         passport.authenticate('jwt',{session: false}),
+        validateParam(schemas.idSchema,'newsId'),
         newsController.getNews
-    )
-    .put(
-        passport.authenticate('jwt',{session: false}),
-        newsController.replaceNews
     )
     .patch(
         passport.authenticate('jwt',{session: false}),
+        validateParam(schemas.idSchema,'newsId'),
         newsController.updateNews
     )
     .delete(
         passport.authenticate('jwt',{session: false}),
+        validateParam(schemas.idSchema,'newsId'),
         newsController.deleteNews
     );
 

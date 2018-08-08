@@ -4,13 +4,20 @@ const { Schema } = moongose;
 
 const notificationSchema = new Schema({
     createdBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'user',
+        type: Number,
+        required:true
     },
-    message: "String",
+    message: {
+        type:String,
+        required:true,
+    },
     createdOn : {
         type:Date,
-        default:new Date()
+        required:true,
+    },
+    userId:{
+        type:Number,
+        required:true,
     }
 });
 
