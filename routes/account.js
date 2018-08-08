@@ -11,6 +11,11 @@ router.route('/signup')
         AccountController.signUp
     );
 
+router.route('/verify/:daiictId')
+    .get(
+        AccountController.verifyAccount
+    )
+
 router.route('/signin')
     .post(
         validateBody(schemas.authSchema),

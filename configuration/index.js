@@ -1,4 +1,5 @@
 module.exports = {
+    httpProtocol:'http',
     daiictMailDomainName:'daiict.ac.in',
     JWT_SECRET : 'ssrs-daiict-authentication',
     JWT_ISSUER : 'ssrs-daiict',
