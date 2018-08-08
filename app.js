@@ -1,6 +1,5 @@
 const express = require('express');
 const logger = require('morgan');
-//const mongoose = require('mongoose').set('debug',true); 
 const mongoose = require('mongoose'); 
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');

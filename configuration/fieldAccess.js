@@ -164,6 +164,7 @@ module.exports = {
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
+                'specialServiceUsers',
             ],
             canCreate:[
                 'name',
@@ -176,6 +177,7 @@ module.exports = {
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
+                'specialServiceUsers',
             ],
             canUpdate:[
                 'name',
@@ -188,6 +190,7 @@ module.exports = {
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
+                'specialServiceUsers',
             ],
         },
         student:{
@@ -198,6 +201,50 @@ module.exports = {
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
+            ],
+            canCreate:[
+    
+            ],
+            canUpdate:[
+                
+            ]
+        },
+    },
+    SpecialService:{
+        superAdmin:{
+            canRead:[
+                "*"
+            ],
+            canCreate:[
+            ],
+            canUpdate:[
+            ],
+        },
+        student:{
+            canRead:[
+    
+            ],
+            canCreate:[
+    
+            ],
+            canUpdate:[
+                
+            ]
+        },
+    },
+    InActiveService:{
+        superAdmin:{
+            canRead:[
+                "*"
+            ],
+            canCreate:[
+            ],
+            canUpdate:[
+            ],
+        },
+        student:{
+            canRead:[
+    
             ],
             canCreate:[
     

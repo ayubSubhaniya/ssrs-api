@@ -15,17 +15,24 @@ router.route('/')
         serviceController.addService
     );
 
+router.route('/special')
+    .get(
+        passport.authenticate('jwt',{session: false}),
+        serviceController.getAllSpecialServices
+    );
+
+router.route('/special/:serviceId')
+    .get(
+        passport.authenticate('jwt',{session: false}),
+        validateParam(schemas.idSchema, 'serviceId'),
+        serviceController.getSpecialService
+    );
+
 router.route('/:serviceId')
     .get(
         passport.authenticate('jwt',{session: false}),
         validateParam(schemas.idSchema, 'serviceId'),
         serviceController.getService
-    )
-    .put(
-        passport.authenticate('jwt',{session: false}),
-        validateParam(schemas.idSchema, 'serviceId'),
-        validateBody(schemas.serviceEditSchema),
-        serviceController.updateService
     )
     .patch(
         passport.authenticate('jwt',{session: false}),

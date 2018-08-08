@@ -94,6 +94,7 @@ module.exports = {
             isSpecialService: Joi.boolean(),
             isAvailableForAlumni: Joi.boolean(),
             isCourierAvailable: Joi.boolean(),
+            isActive:Joi.boolean(),
             maxUnits: Joi.number(),
             baseCharge: Joi.number(),
             availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),

@@ -26,6 +26,7 @@ module.exports = {
         order:'Order',
         service:'Service',
         specialService:'SpecialService',
+        inActiveService:'InActiveService',
         news:'News',
         notification:'Notification',
         collector:'Collector',

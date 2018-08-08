@@ -1,5 +1,5 @@
 const moongose = require('mongoose');
-
+const beautifyUnique = require('mongoose-beautiful-unique-validation');
 const { Schema } = moongose;
 
 const serviceSchema = new Schema({
@@ -56,6 +56,7 @@ const serviceSchema = new Schema({
     }],
 });
 
+serviceSchema.plugin(beautifyUnique);
 
 const Service = moongose.model('service', serviceSchema);
 module.exports = Service;
