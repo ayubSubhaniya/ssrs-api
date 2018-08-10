@@ -165,6 +165,7 @@ module.exports = {
                 'baseCharge',
                 'availableParameters',
                 'specialServiceUsers',
+                'paymentModes',
             ],
             canCreate:[
                 'name',
@@ -178,6 +179,7 @@ module.exports = {
                 'baseCharge',
                 'availableParameters',
                 'specialServiceUsers',
+                'paymentModes',
             ],
             canUpdate:[
                 'name',
@@ -191,6 +193,7 @@ module.exports = {
                 'baseCharge',
                 'availableParameters',
                 'specialServiceUsers',
+                'paymentModes',
             ],
         },
         student:{
@@ -201,6 +204,7 @@ module.exports = {
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
+                'paymentModes',
             ],
             canCreate:[
     

@@ -90,6 +90,12 @@ module.exports = {
             maxUnits: Joi.number(),
             baseCharge: Joi.number(),
             availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            paymentModes: {
+                debitCard:Joi.boolean(),
+                netBanking:Joi.boolean(),
+                paytm:Joi.boolean(),
+                cashOnDelivery:Joi.boolean(),
+            },
             specialServiceUsers : Joi.array().items(Joi.number()),
         }),
         serviceUpdateSchema: Joi.object().keys({
@@ -104,6 +110,12 @@ module.exports = {
             maxUnits: Joi.number(),
             baseCharge: Joi.number(),
             availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            paymentModes: {
+                debitCard:Joi.boolean(),
+                netBanking:Joi.boolean(),
+                paytm:Joi.boolean(),
+                cashOnDelivery:Joi.boolean(),
+            },
             specialServiceUsers : Joi.array().items(Joi.number()),
         }),
         parameterSchema: Joi.object().keys({

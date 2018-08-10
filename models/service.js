@@ -46,6 +46,24 @@ const serviceSchema = new Schema({
         type: Number,
         default: 0,
     },
+    paymentModes: {
+        debitCard:{
+            type:Boolean,
+            default:false,
+        },
+        netBanking:{
+            type:Boolean,
+            default:false,
+        },
+        paytm:{
+            type:Boolean,
+            default:false,
+        },
+        cashOnDelivery:{
+            type:Boolean,
+            default:false,
+        },
+    },
     availableParameters: [{
         type: Schema.Types.ObjectId,
         ref: 'parameter',
