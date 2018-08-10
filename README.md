@@ -2,7 +2,7 @@
 Student Service Request System
 <br>
 Add .env file to your route folder
-<h1> Example of .env file<h1>
+<h1> Example of .env file</h1>
 
 HOST=localhost<br>
 PORT=3001<br>
