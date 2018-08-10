@@ -37,7 +37,7 @@ router.route('/:serviceId')
     .patch(
         passport.authenticate('jwt',{session: false}),
         validateParam(schemas.idSchema, 'serviceId'),
-        validateBody(schemas.serviceEditSchema),
+        validateBody(schemas.serviceUpdateSchema),
         serviceController.updateService
     )
     .delete(

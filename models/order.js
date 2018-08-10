@@ -1,8 +1,13 @@
 const moongose = require('mongoose');
 
 const { Schema } = moongose;
-
+/**Payment remaining */
 const orderSchema = new Schema({
+    collectionCode:{
+        type:String,
+        required:true,
+        unique:true,
+    },
     requestedBy: {
         type: Number,
         required:true,
@@ -10,34 +15,34 @@ const orderSchema = new Schema({
     serviceId: {
         type: Schema.Types.ObjectId,
         ref: 'service',
+        required:true,
     },
-    orderNo: 'Number',
-    createdOn: 'Date',
-    amount: 'Number',
-    paymentMode: {
-        online: 'Boolean',
-        offline: {
-            isPaymentDone: 'Boolean',
+    collectionType:{
+        courier:{
+            type:Schema.Types.ObjectId,
+            ref: 'courier'
+        },
+        pickup:{
+            type:Schema.Types.ObjectId,
+            ref: 'collector'
         },
     },
-    collectionDetails: {
-        onCampus: 'Boolean',
-        collector: {
-            name: 'String',
-            daiictId: 'Number',
-            contactNo: 'Number',
-            email: 'String',
-            address: 'String',
-            city: 'String',
-            state: 'String',
-            pincode: 'Number',
-        },
+    createdOn:{
+        type:Date,
+        required:true,
     },
-    parameters: {
+    amount:{
+        type:Number,
+        require:true,
+    },
+    status:{
+        type:Number,
+        default:0,
+    },
+    parameters:[{
         type: Schema.Types.ObjectId,
         ref: 'parameter',
-    },
-    receiverCode: 'String',
+    }],
 });
 
 

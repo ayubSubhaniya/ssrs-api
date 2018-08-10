@@ -61,11 +61,6 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'order',
     }],
-    
-    notifications: [{
-        type: Schema.Types.ObjectId,
-        ref: 'notification',
-    }],
 });
 
 userSchema.pre('save', async function(next) {

@@ -2,14 +2,14 @@ const JWT = require(`jsonwebtoken`);
 const HttpStatus = require('http-status-codes');
 const nodemailer = require("nodemailer");
 const randomstring = require("randomstring");
-
-const { user, pass } = require('../configuration/mailAccount');
 const User = require('../models/user');
 const tempUser = require('../models/tempUser');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers')
 
+const mailAccountUserName = process.env.MAIL_USER;
+const mailAccountPassword = process.env.MAIL_PASS;
 /*
     Here we are configuring our SMTP Server details.
     STMP is mail server which is responsible for sending and recieving email.
@@ -17,8 +17,8 @@ const { filterResourceData } = require('../helpers/controllerHelpers')
 const smtpTransport = nodemailer.createTransport({
     service: "Gmail",
     auth: {
-        user,
-        pass
+        user:mailAccountUserName,
+        pass:mailAccountPassword
     },
     tls: { rejectUnauthorized: false }
 });
@@ -52,7 +52,7 @@ module.exports = {
         const host = req.get('host');
         const link = httpProtocol + "://" + host + "/account/verify/" + daiictId + "?id=" + randomHash;
         const mailOptions = {
-            from: user,
+            from: mailAccountUserName,
             to: primaryEmail,
             subject: "Please confirm your Email account",
             html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>",
@@ -95,7 +95,7 @@ module.exports = {
             });
             var savedUser = await newUser.save();
             tempUser.findByIdAndRemove(user._id);
-            res.end("<h1>Email " + user.primaryEmail + " is been Successfully verified</h1>");
+            res.end("<h1>Email " + user.daiictId + " is been Successfully verified</h1>");
         }
         else {
             res.end("<h1>Bad Request</h1>");
@@ -150,7 +150,7 @@ module.exports = {
 
             res.status(HttpStatus.ACCEPTED).json({ user: filteredUser });
         } else {
-            res.status(HttpStatus.UNAUTHORIZED).json({ error: errors.permissionDenied });
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 

@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const User = require('../models/user');
 const {filterResourceData} = require('../helpers/controllerHelpers');
-let { resources, userTypes, adminTypes, errors } = require('../configuration');
+let { resources, userTypes, adminTypes} = require('../configuration');
 let fieldAccess = require('../configuration/fieldAccess');
 
 const accessControlFileName = 'accessControl.json'
@@ -104,7 +104,7 @@ module.exports = {
             const result = accessControl.getGrants()
             res.status(HttpStatus.ACCEPTED).json(result)
         } else {
-            res.status(HttpStatus.UNAUTHORIZED).json({ error: errors.permissionDenied })
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
@@ -181,9 +181,9 @@ module.exports = {
                 }
             }
             saveAccessRoleInFile();
-            res.status(HttpStatus.ACCEPTED).json({ sucess: true })
+            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.status(HttpStatus.UNAUTHORIZED).json({ error: errors.permissionDenied })
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
@@ -193,7 +193,7 @@ module.exports = {
         if (accessControl.can(user.userType).readAny(resources.role)) {
             res.status(HttpStatus.ACCEPTED).json({ userTypes, adminTypes })
         } else {
-            res.status(HttpStatus.UNAUTHORIZED).json({ error: errors.permissionDenied })
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
@@ -207,9 +207,9 @@ module.exports = {
                 accessControl.grant(newRoles[role])
             });
             saveAccessRoleInFile();
-            res.status(HttpStatus.ACCEPTED).json({ sucess: true })
+            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.status(HttpStatus.UNAUTHORIZED).json({ error: errors.permissionDenied })
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
@@ -223,9 +223,9 @@ module.exports = {
                 accessControl.removeRoles([rolesToRemove[role]])
             });
             saveAccessRoleInFile();
-            res.status(HttpStatus.ACCEPTED).json({ sucess: true })
+            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.status(HttpStatus.UNAUTHORIZED).json({ error: errors.permissionDenied })
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 

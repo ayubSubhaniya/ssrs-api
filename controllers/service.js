@@ -71,7 +71,7 @@ module.exports = {
 
             if (services){
                 const filteredServices = filterResourceData(services, readPermission.attributes);
-                res.status(HttpStatus.OK).json(filteredServices);
+                res.status(HttpStatus.OK).json({service:filteredServices});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -113,7 +113,7 @@ module.exports = {
 
             if (services){
                 const filteredServices = filterResourceData(services, readPermission.attributes);
-                res.status(HttpStatus.OK).json(filteredServices);
+                res.status(HttpStatus.OK).json({service:filteredServices});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -145,7 +145,7 @@ module.exports = {
 
             if (service){
                 const filteredService = filterResourceData(service, readPermission.attributes);
-                res.status(HttpStatus.OK).json(filteredService);
+                res.status(HttpStatus.OK).json({service:filteredService});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -189,7 +189,7 @@ module.exports = {
 
             if (service){
                 const filteredServices = filterResourceData(service, readPermission.attributes);
-                res.status(HttpStatus.OK).json(filteredServices);
+                res.status(HttpStatus.OK).json({service:filteredServices});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -217,7 +217,7 @@ module.exports = {
 
 
             const filteredService = filterResourceData(service, readPermission.attributes);
-            res.status(HttpStatus.CREATED).json(filteredService);
+            res.status(HttpStatus.CREATED).json({service:filteredService});
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -238,22 +238,22 @@ module.exports = {
 
             let newService = req.value.body;
 
-            const result = await Service.findByIdAndUpdate(serviceId, newService, { new: true });
-            const filteredService = filterResourceData(result, readPermission.attributes);
-            generateServiceUpdatedMessage(result, daiictId);
+            const service = await Service.findByIdAndUpdate(serviceId, newService, { new: true });
+            const filteredService = filterResourceData(service, readPermission.attributes);
+            generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED).json(filteredService);
+            res.status(HttpStatus.ACCEPTED).json({service:filteredService});
 
         } else if (updateOwnPermission.granted) {
 
             let newService = req.value.body;
             newService.createdOn = new Date();
 
-            const result = await Service.updateOne({ _id: serviceId, createdBy: daiictId }, newService, { new: true });
-            const filteredService = filterResourceData(result, readPermission.attributes);
-            generateServiceUpdatedMessage(result, daiictId);
+            const service = await Service.updateOne({ _id: serviceId, createdBy: daiictId }, newService, { new: true });
+            const filteredService = filterResourceData(service, readPermission.attributes);
+            generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED).json(filteredService);
+            res.status(HttpStatus.ACCEPTED).json({service:filteredService});
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -270,9 +270,9 @@ module.exports = {
 
         if (deleteAnyPermission.granted) {
 
-            const result = await Service.findByIdAndRemove(serviceId);
+            const service = await Service.findByIdAndRemove(serviceId);
             
-            if (result){
+            if (service){
                 res.sendStatus(HttpStatus.ACCEPTED);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
@@ -281,9 +281,9 @@ module.exports = {
 
         } else if (deleteOwnPermission.granted) {
 
-            const result = await Service.findByOneAndRemove({ _id: serviceId, createdBy: daiictId });
+            const service = await Service.findByOneAndRemove({ _id: serviceId, createdBy: daiictId });
             
-            if (result){
+            if (service){
                 res.sendStatus(HttpStatus.ACCEPTED);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);

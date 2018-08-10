@@ -22,7 +22,7 @@ module.exports = {
 
             if (news){
                 const filteredNews = filterResourceData(news, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredNews);
+                res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -45,7 +45,7 @@ module.exports = {
             const news = await News.findById(newsId);
             if (news){
                 const filteredNews = filterResourceData(news, readAnyPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredNews);
+                res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -54,7 +54,7 @@ module.exports = {
             const news = await News.findOne({_id:newsId,createdBy:daiictId});
             if (news){
                 const filteredNews = filterResourceData(news, readOwnPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredNews);
+                res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -82,7 +82,7 @@ module.exports = {
 
             if (news){
                 const filteredNews = filterResourceData(news, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredNews);
+                res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -110,7 +110,7 @@ module.exports = {
             const news = await newNews.save()
 
             const filteredNews = filterResourceData(news, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED).json(filteredNews);
+            res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -188,7 +188,7 @@ module.exports = {
             
             if (news){
                 const filteredNews = filterResourceData(news, readAnyPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredNews);
+                res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -197,7 +197,7 @@ module.exports = {
             
             if (news){
                 const filteredNews = filterResourceData(news, readOwnPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredNews);
+                res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
             }

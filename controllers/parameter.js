@@ -23,7 +23,7 @@ module.exports = {
             const parameter = await newParameter.save();
 
             const filteredParameter = filterResourceData(parameter,readPermission.attributes);
-            res.status(HttpStatus.CREATED).json(filteredParameter);
+            res.status(HttpStatus.CREATED).json({parameter:filteredParameter});
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -77,7 +77,7 @@ module.exports = {
             
             if (requestedParameter){
                 const filteredParameter = filterResourceData(requestedParameter,readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredParameter);
+                res.status(HttpStatus.ACCEPTED).json({parameter:filteredParameter});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -107,7 +107,7 @@ module.exports = {
             
             if (requestedParameters){
                 const filteredParameters = filterResourceData(requestedParameters,readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredParameters);
+                res.status(HttpStatus.ACCEPTED).json({parameter:filteredParameters});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -129,7 +129,7 @@ module.exports = {
             const updatedParameter = req.value.body;
             const result = await Parameter.findByIdAndUpdate(requestedParameterId, updatedParameter, {new:true});
             const filteredParameter = filterResourceData(result,readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED).json(filteredParameter);
+            res.status(HttpStatus.ACCEPTED).json({parameter:filteredParameter});
             
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);

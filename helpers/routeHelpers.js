@@ -46,7 +46,7 @@ module.exports = {
             daiictId: Joi.number().required(),
             password: Joi.string().required(),
         }),
-        addUserByAdminSchema: Joi.object().keys({
+        addUserSchema: Joi.object().keys({
             daiictId: Joi.number().required(),
             password: Joi.string().required(),
             name: {
@@ -63,20 +63,15 @@ module.exports = {
             userType:Joi.string().required(),
             isActive:Joi.boolean(),
         }),
-        userUpdateSchema : Joi.object().keys({
-            daiictId: Joi.number(),
-            password: Joi.string(),
+        updateUserSchema : Joi.object().keys({
             name: {
                 firstName : Joi.string(),
                 lastName : Joi.string(),
             },
-            primaryEmail:Joi.string().email(),
             secondaryEmail:Joi.string().email(),
             contactNo: Joi.number(),
-            password: Joi.string(),
             gender: Joi.string(),
             programme: Joi.string(),
-            createdOn: Joi.date(),
             userType:Joi.string(),
             isActive:Joi.boolean(),
         }),
@@ -131,7 +126,7 @@ module.exports = {
             message: Joi.string(),
             userId : Joi.number()
         }),
-        serviceEditSchema: Joi.object().keys({
+        serviceUpdateSchema: Joi.object().keys({
             name: Joi.string(),
             description: Joi.string(),
             department: Joi.string(),

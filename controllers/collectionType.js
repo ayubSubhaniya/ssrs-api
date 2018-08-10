@@ -23,7 +23,7 @@ module.exports = {
             const collectionType = await newCollectionType.save();
 
             const filteredCollectionType = filterResourceData(collectionType,readPermission.attributes);
-            res.status(HttpStatus.CREATED).json(filteredCollectionType);
+            res.status(HttpStatus.CREATED).json({collectionType:filteredCollectionType});
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -77,7 +77,7 @@ module.exports = {
             
             if (requestedCollectionType){
                 const filteredCollectionType = filterResourceData(requestedCollectionType,readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredCollectionType);
+                res.status(HttpStatus.ACCEPTED).json({collectionType:filteredCollectionType});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -107,7 +107,7 @@ module.exports = {
             
             if (requestedCollectionTypes){
                 const filteredCollectionTypes = filterResourceData(requestedCollectionTypes,readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED).json(filteredCollectionTypes);
+                res.status(HttpStatus.ACCEPTED).json({collectionType:filteredCollectionTypes});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -126,10 +126,10 @@ module.exports = {
         const readPermission = accessControl.can(user.userType).readAny(resources.collectionType);
 
         if (updatePermission.granted) {
-            const updatedParameter = req.value.body;
-            const modifiedParameter = await CollectionType.findByIdAndUpdate(requestedCollectionTypeId, updatedParameter, {new:true});
-            const filteredParameter = filterResourceData(modifiedParameter,readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED).json(filteredParameter);
+            const updatedCollectionType = req.value.body;
+            const modifiedCollectionType = await CollectionType.findByIdAndUpdate(requestedCollectionTypeId, updatedCollectionType, {new:true});
+            const filteredCollectionType = filterResourceData(modifiedCollectionType,readPermission.attributes);
+            res.status(HttpStatus.ACCEPTED).json({collectionType:filteredCollectionType});
             
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);

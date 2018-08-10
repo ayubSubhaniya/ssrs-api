@@ -26,7 +26,7 @@ router.route('/:requestedCollectionTypeId')
         validateParam(schemas.idSchema,'requestedCollectionTypeId'),
         collectionTypeController.deleteCollectionType
     )
-    .put(
+    .patch(
         passport.authenticate('jwt',{session:false}),
         validateParam(schemas.idSchema,'requestedCollectionTypeId'),
         validateBody(schemas.collectionTypeUpdateSchema),

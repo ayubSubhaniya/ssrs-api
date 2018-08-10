@@ -18,14 +18,17 @@ router.route('/')
 router.route('/:requestedParameterId')
     .get(
         passport.authenticate('jwt',{session:false}),
+        validateParam(schemas.idSchema,'requestedParameterId'),
         parameterController.getParameter
     )
     .delete(
         passport.authenticate('jwt',{session:false}),
+        validateParam(schemas.idSchema,'requestedParameterId'),
         parameterController.deleteParameter
     )
-    .put(
+    .patch(
         passport.authenticate('jwt',{session:false}),
+        validateParam(schemas.idSchema,'requestedParameterId'),
         validateBody(schemas.parameterUpdateSchema),
         parameterController.updateParameter
     );

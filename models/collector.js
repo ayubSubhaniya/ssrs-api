@@ -2,14 +2,21 @@ const moongose = require('mongoose');
 const Schema = moongose.Schema;
 
 const collectorSchema = new Schema({
-    name: String,
-    daiictId: Number,
-    contactNo: Number,
-    email: String,
-    address: String,
-    city: String,
-    state: String,
-    pincode: Number
+    name : {
+        type:String,
+        required:true,
+    },
+    daiictId:{
+        type:Number,
+    },
+    contactNo:{
+        type:Number,
+        required:true,
+    },
+    email:{
+        type:String,
+        required:true,
+    },
 });
 
 const Collector = moongose.model('collector', collectorSchema);
