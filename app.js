@@ -63,11 +63,11 @@ app.use((req, res, next) => {
 
 // Error handler function
 app.use((err, req, res, next) => {
-    const error = process.env.NODE === 'development' ? err : {};
+    const error = app.get('env') === 'development' ? err : {};
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
     // response to client
-    res.send(status).json({error});
+    res.status(status).json({error});
 
     // response to server
     console.error(err);

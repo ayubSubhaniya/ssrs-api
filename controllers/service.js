@@ -18,7 +18,7 @@ const generateNews = async (message, daiictId) => {
 
 const generateNotification = async (message, daiictId, userIds) => {
 
-    userIds.forEach(async (userId)=>{
+    userIds.forEach(async (userId) => {
         const notification = new Notification({
             message,
             createdOn: new Date(),
@@ -64,14 +64,14 @@ module.exports = {
             if (readAnyInActiveService.granted) {
                 services = await Service.find({ isSpecialService: false });
             } else if (readOwnInActiveService.granted) {
-                services = await Service.find({ isSpecialService: false, $or: [{ createdBy: daiictId}, {isActive: true }] });
+                services = await Service.find({ isSpecialService: false, $or: [{ createdBy: daiictId }, { isActive: true }] });
             } else {
                 services = await Service.find({ isSpecialService: false, isActive: true });
             }
 
-            if (services){
+            if (services) {
                 const filteredServices = filterResourceData(services, readPermission.attributes);
-                res.status(HttpStatus.OK).json({service:filteredServices});
+                res.status(HttpStatus.OK).json({ service: filteredServices });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -92,28 +92,30 @@ module.exports = {
         const readPermission = accessControl.can(user.userType).readAny(resources.service);
 
 
-        if (readPermission.granted && readOwnSpecialService.granted) {
+        if (readPermission.granted) {
             let services;
 
             if (readAnySpecialService.granted) {
                 if (readAnyInActiveService.granted) {
                     services = await Service.find({ isSpecialService: true });
                 } else if (readOwnInActiveService.granted) {
-                    services = await Service.find({ isSpecialService: true, $or: [{ createdBy: daiictId}, {isActive: true }] });
+                    services = await Service.find({ isSpecialService: true, $or: [{ createdBy: daiictId }, { isActive: true }] });
                 } else {
                     services = await Service.find({ isSpecialService: true, isActive: true });
                 }
             } else if (readOwnSpecialService.granted) {
-                if (readAnyInActiveService.granted || readOwnInActiveService.granted) {
+                if (readOwnInActiveService.granted) {
                     services = await Service.find({ isSpecialService: true, createdBy: daiictId });
                 } else {
-                    services = await Service.find({ isSpecialService: true, isActive: true });
+                    services = await Service.find({ isSpecialService: true, isActive: true, createdBy: daiictId});
                 }
+            } else {
+                services = await Service.find({ isSpecialService: true, isActive: true, specialServiceUsers:daiictId});
             }
 
-            if (services){
+            if (services) {
                 const filteredServices = filterResourceData(services, readPermission.attributes);
-                res.status(HttpStatus.OK).json({service:filteredServices});
+                res.status(HttpStatus.OK).json({ service: filteredServices });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -125,7 +127,7 @@ module.exports = {
 
     getService: async (req, res, next) => {
         const { user } = req;
-        const {daiictId} = user;
+        const { daiictId } = user;
         const { serviceId } = req.params;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.service);
@@ -143,9 +145,9 @@ module.exports = {
                 service = await Service.findOne({ _id: serviceId, isActive: true });
             }
 
-            if (service){
+            if (service) {
                 const filteredService = filterResourceData(service, readPermission.attributes);
-                res.status(HttpStatus.OK).json({service:filteredService});
+                res.status(HttpStatus.OK).json({ service: filteredService });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -173,7 +175,7 @@ module.exports = {
                 if (readAnyInActiveService.granted) {
                     service = await Service.find({ _id: serviceId, isSpecialService: true });
                 } else if (readOwnInActiveService.granted) {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true, $or: [{ createdBy: daiictId}, {isActive: true }] });
+                    service = await Service.find({ _id: serviceId, isSpecialService: true, $or: [{ createdBy: daiictId }, { isActive: true }] });
                 } else {
                     service = await Service.find({ _id: serviceId, isSpecialService: true, isActive: true });
                 }
@@ -187,9 +189,9 @@ module.exports = {
                 service = await Service.find({ _id: serviceId, specialServiceUsers: daiictId })
             }
 
-            if (service){
+            if (service) {
                 const filteredServices = filterResourceData(service, readPermission.attributes);
-                res.status(HttpStatus.OK).json({service:filteredServices});
+                res.status(HttpStatus.OK).json({ service: filteredServices });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -213,11 +215,11 @@ module.exports = {
             const newService = new Service(newServiceAtt);
             const service = await newService.save();
 
-            generateServiceCreatedMessage(service, daiictId);
+            await generateServiceCreatedMessage(service, daiictId);
 
 
             const filteredService = filterResourceData(service, readPermission.attributes);
-            res.status(HttpStatus.CREATED).json({service:filteredService});
+            res.status(HttpStatus.CREATED).json({ service: filteredService });
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -242,7 +244,7 @@ module.exports = {
             const filteredService = filterResourceData(service, readPermission.attributes);
             generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED).json({service:filteredService});
+            res.status(HttpStatus.ACCEPTED).json({ service: filteredService });
 
         } else if (updateOwnPermission.granted) {
 
@@ -253,7 +255,7 @@ module.exports = {
             const filteredService = filterResourceData(service, readPermission.attributes);
             generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED).json({service:filteredService});
+            res.status(HttpStatus.ACCEPTED).json({ service: filteredService });
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -271,19 +273,19 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             const service = await Service.findByIdAndRemove(serviceId);
-            
-            if (service){
+
+            if (service) {
                 res.sendStatus(HttpStatus.ACCEPTED);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
-            
+
 
         } else if (deleteOwnPermission.granted) {
 
             const service = await Service.findByOneAndRemove({ _id: serviceId, createdBy: daiictId });
-            
-            if (service){
+
+            if (service) {
                 res.sendStatus(HttpStatus.ACCEPTED);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);

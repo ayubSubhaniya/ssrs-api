@@ -90,6 +90,21 @@ module.exports = {
             maxUnits: Joi.number(),
             baseCharge: Joi.number(),
             availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            specialServiceUsers : Joi.array().items(Joi.number()),
+        }),
+        serviceUpdateSchema: Joi.object().keys({
+            name: Joi.string(),
+            description: Joi.string(),
+            department: Joi.string(),
+            isApplicationSpecific: Joi.boolean(),
+            isSpecialService: Joi.boolean(),
+            isAvailableForAlumni: Joi.boolean(),
+            isCourierAvailable: Joi.boolean(),
+            isActive:Joi.boolean(),
+            maxUnits: Joi.number(),
+            baseCharge: Joi.number(),
+            availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            specialServiceUsers : Joi.array().items(Joi.number()),
         }),
         parameterSchema: Joi.object().keys({
             name: Joi.string().required(),
@@ -122,18 +137,6 @@ module.exports = {
         notificationUpdateSchema: Joi.object().keys({
             message: Joi.string(),
             userId : Joi.number()
-        }),
-        serviceUpdateSchema: Joi.object().keys({
-            name: Joi.string(),
-            description: Joi.string(),
-            department: Joi.string(),
-            isApplicationSpecific: Joi.boolean(),
-            isSpecialService: Joi.boolean(),
-            isAvailableForAlumni: Joi.boolean(),
-            isCourierAvailable: Joi.boolean(),
-            maxUnits: Joi.number(),
-            baseCharge: Joi.number(),
-            availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
         }),
     },
 };

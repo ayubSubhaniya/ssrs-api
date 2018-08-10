@@ -51,8 +51,7 @@ const serviceSchema = new Schema({
         ref: 'parameter',
     }],
     specialServiceUsers:[{
-        type: Schema.Types.ObjectId,
-        ref:'parameter',
+        type: Number,
     }],
 });
 

@@ -105,8 +105,8 @@ module.exports = {
     signIn: async (req, res, next) => {
 
         //sign token
-        const user = req.value.body;
-        const token = signToken(user);
+        const userAtt = req.value.body;
+        const token = signToken(userAtt);
 
         //get User Id
         const { user } = req;
