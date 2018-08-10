@@ -1,13 +1,25 @@
 const express = require('express');
 const logger = require('morgan');
-const mongoose = require('mongoose'); 
+const db = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const HttpStatus = require('http-status-codes');
 const cors = require('cors');
+const dotenv = require("dotenv");
 
-const dbURI = 'mongodb://localhost/ssrs-daiict'
-mongoose.connect(dbURI);
+const { error } = dotenv.config();
+if (error) {
+    throw error('add .env file')
+}
+
+const DB_HOST = process.env.DB_HOST;
+const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
+const DB_USER = process.env.DB_USER;
+const DB_PASS = process.env.DB_PASS;
+
+const dbURI = 'mongodb://' + DB_HOST + '/' + DB_COLLECTION_NAME;
+db.connect(dbURI);
+db.set('debug',process.env.NODE_ENV === 'development');
 
 const app = express()
 
@@ -28,20 +40,20 @@ app.use(bodyParser.json());
 app.use(cookieParser())
 
 app.use(cors({
-    origin:true,
+    origin: true,
     exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
-    credentials:true,
+    credentials: true,
 }));
 
 // Routes
 app.use('/account', account)
-app.use('/news/',news)
-app.use('/user/',user)
-app.use('/access/',access)
-app.use('/service/',service)
-app.use('/parameter/',parameter)
-app.use('/notification/',notification)
-app.use('/collectionType/',collectionType)
+app.use('/news/', news)
+app.use('/user/', user)
+app.use('/access/', access)
+app.use('/service/', service)
+app.use('/parameter/', parameter)
+app.use('/notification/', notification)
+app.use('/collectionType/', collectionType)
 
 
 // Catch 404 Errors and forward them to error handler function
@@ -68,6 +80,6 @@ app.use((err, req, res, next) => {
 });
 
 // start server
-const port = app.get('port') || 3001;
+const port = process.env.PORT || 3001;
 
 app.listen(port, () => console.log(`Server is listnening on port ${port}`));
