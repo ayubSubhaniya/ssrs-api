@@ -1,5 +1,6 @@
 const router = require('express-promise-router')();
 const passport = require('passport');
+const passportConf = require('../passport');
 const notificationController = require('../controllers/notification');
 const {validateBody, schemas, validateParam} = require('../helpers/routeHelpers');
 

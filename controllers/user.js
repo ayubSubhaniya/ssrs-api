@@ -1,7 +1,7 @@
 const HttpStatus = require('http-status-codes');
 
 const User = require('../models/user');
-const {resources, errors, userTypes, daiictMailDomainName} = require('../configuration');
+const {resources, userTypes, daiictMailDomainName} = require('../configuration');
 const {accessControl} = require('./access')
 const {filterResourceData} = require('../helpers/controllerHelpers')
 
