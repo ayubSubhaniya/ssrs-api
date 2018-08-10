@@ -58,22 +58,16 @@ app.use('/collectionType/', collectionType)
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
-    const err = new Error('Not Found');
-    err.status = HttpStatus.NOT_FOUND;
-    next(err);
+    res.sendStatus(HttpStatus.NOT_FOUND);
 });
 
 // Error handler function
 app.use((err, req, res, next) => {
-    const error = app.get('env') === 'development' ? err : {};
+    const error = process.env.NODE_ENV === 'development' ? err : {};
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
     // response to client
-    res.status(status).json({
-        error: {
-            message: error.message,
-        },
-    });
+    res.sendStatus(status);
 
     // response to server
     console.error(err);
