@@ -39,13 +39,14 @@ module.exports = {
 
         const { daiictId, password } = req.value.body;
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
+
         const createdOn = new Date();
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
         //user already exist
         if (foundUser) {
-            return res.status(HttpStatus.FORBIDDEN).json({ error: errors.accountAlreadyExists });
+            return res.sendStatus(HttpStatus.FORBIDDEN);
         }
 
         const randomHash = randomstring.generate();
@@ -69,13 +70,37 @@ module.exports = {
             randomHash
         });
         const savedUser = await newUser.save();
-
+        const resendVerificationLink = httpProtocol + "://" + host + "/account/resendVerificationLink/" + daiictId;
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
-                res.end("error");
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).end("error");
             } else {
-                res.sendStatus(HttpStatus.CREATED).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1>");
+                res.status(HttpStatus.CREATED).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
+            }
+        });
+    },
+
+    resendVerificationLink: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const user = await tempUser.findOne({ daiictId });
+        const primaryEmail = daiictId + '@' + daiictMailDomainName;
+        const host = req.get('host');
+        const link = httpProtocol + "://" + host + "/account/verify/" + daiictId + "?id=" + user.randomHash;
+        const mailOptions = {
+            from: mailAccountUserName,
+            to: primaryEmail,
+            subject: "Please confirm your Email account",
+            html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>",
+
+        }
+        const resendVerificationLink = httpProtocol + "://" + host + "/account/resendVerificationLink/" + daiictId;        
+        smtpTransport.sendMail(mailOptions, function (error, response) {
+            if (error) {
+                console.log(error);
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).end("error");
+            } else {
+                res.status(HttpStatus.OK).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
             }
         });
     },

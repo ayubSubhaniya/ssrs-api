@@ -15,6 +15,11 @@ router.route('/verify/:daiictId')
         AccountController.verifyAccount
     )
 
+router.route('/resendVerificationLink/:daiictId')
+    .get(
+        AccountController.resendVerificationLink
+    )
+
 router.route('/signin')
     .post(
         validateBody(schemas.authSchema),
