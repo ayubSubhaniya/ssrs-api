@@ -44,7 +44,7 @@ module.exports = {
             res.sendStatus(HttpStatus.ACCEPTED);
         } else if (deleteOwnPermission.granted){
             
-            const deletedCollectionType=await Parameter.findOneAndRemove({_id:requestedCollectionTypeId,createdBy:daiictId});
+            const deletedCollectionType=await CollectionType.findOneAndRemove({_id:requestedCollectionTypeId,createdBy:daiictId});
             
             if (deletedCollectionType){
                 res.sendStatus(HttpStatus.ACCEPTED);
@@ -58,6 +58,7 @@ module.exports = {
 
     getCollectionType: async (req, res, next) => {
         const {user} = req; 
+        const {daiictId} = user;
         const { requestedCollectionTypeId } = req.params;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.collectionType);
@@ -89,6 +90,7 @@ module.exports = {
 
     getAllCollectionType: async (req, res, next) => {
         const {user} = req; 
+        const {daiictId} = user;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.collectionType);
         const readAnyInActiveResource = accessControl.can(user.userType).readAny(resources.inActiveResource);

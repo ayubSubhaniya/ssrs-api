@@ -25,7 +25,7 @@ const smtpTransport = nodemailer.createTransport({
 /*------------------SMTP Over-----------------------------*/
 
 //sign a new token
-signToken = user => {
+const signToken = user => {
     return JWT.sign({
         iss: JWT_ISSUER,
         sub: user.daiictId,
@@ -75,7 +75,7 @@ module.exports = {
                 console.log(error);
                 res.end("error");
             } else {
-                res.end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1>");
+                res.sendStatus(HttpStatus.CREATED).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1>");
             }
         });
     },
@@ -85,7 +85,7 @@ module.exports = {
         const { daiictId } = req.params;
         const user = await tempUser.findOne({ daiictId })
 
-        if (req.query.id == user.randomHash) {
+        if (req.query.id === user.randomHash) {
             //create new user
             const newUser = new User({
                 daiictId: user.daiictId,
@@ -105,7 +105,8 @@ module.exports = {
     signIn: async (req, res, next) => {
 
         //sign token
-        const token = signToken(req.value.body);
+        const user = req.value.body;
+        const token = signToken(user);
 
         //get User Id
         const { user } = req;
@@ -136,7 +137,7 @@ module.exports = {
 
         for (let i = 0; i < fieldsToUpdate.length; i++) {
             if (!editableField.includes(fieldsToUpdate[i])) {
-                if (userInDB[fieldsToUpdate[i]] != user[fieldsToUpdate[i]]) {
+                if (userInDB[fieldsToUpdate[i]] !== user[fieldsToUpdate[i]]) {
                     permission.granted = false;
                     break;
                 }

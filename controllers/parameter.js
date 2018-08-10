@@ -58,6 +58,7 @@ module.exports = {
 
     getParameter: async (req, res, next) => {
         const {user} = req; 
+        const {daiictId} = user;
         const { requestedParameterId } = req.params;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.parameter);
@@ -89,6 +90,7 @@ module.exports = {
 
     getAllParameter: async (req, res, next) => {
         const {user} = req; 
+        const {daiictId} = user;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.parameter);
         const readAnyInActiveResource = accessControl.can(user.userType).readAny(resources.inActiveResource);

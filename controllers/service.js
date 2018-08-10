@@ -7,27 +7,6 @@ const { filterResourceData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources } = require('../configuration');
 
-const generateServiceCreatedMessage = async (service, daiictId) => {
-    let message = "New service " + service.name + " created";
-
-    if (service.isSpecialService) {
-        generateNotification(message, daiictId, service.specialServiceUsers);
-    } else {
-        generateNews(message, daiictId);
-    }
-};
-
-
-const generateServiceUpdatedMessage = async (service, daiictId) => {
-    let message = "Service " + service.name + " updated";
-
-    if (service.isSpecialService) {
-        generateNotification(message, daiictId, service.specialServiceUsers);
-    } else {
-        generateNews(message, daiictId);
-    }
-};
-
 const generateNews = async (message, daiictId) => {
     const news = new News({
         message,
@@ -48,6 +27,27 @@ const generateNotification = async (message, daiictId, userIds) => {
         });
         await notification.save();
     });
+};
+
+const generateServiceCreatedMessage = async (service, daiictId) => {
+    let message = "New service " + service.name + " created";
+
+    if (service.isSpecialService) {
+        generateNotification(message, daiictId, service.specialServiceUsers);
+    } else {
+        generateNews(message, daiictId);
+    }
+};
+
+
+const generateServiceUpdatedMessage = async (service, daiictId) => {
+    let message = "Service " + service.name + " updated";
+
+    if (service.isSpecialService) {
+        generateNotification(message, daiictId, service.specialServiceUsers);
+    } else {
+        generateNews(message, daiictId);
+    }
 };
 
 module.exports = {
