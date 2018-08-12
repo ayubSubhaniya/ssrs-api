@@ -1,50 +1,102 @@
-const moongose = require('mongoose');
+const db = require('mongoose');
 
-const { Schema } = moongose;
-/**Payment remaining */
-const orderSchema = new Schema({
-    collectionCode:{
-        type:String,
-        required:true,
-        unique:true,
+const { Schema } = db;
+
+const paymentSchema = {
+    paymentType: {
+        type: String,
+        required: true,
     },
+    isPaymentDone: {
+        type: Boolean,
+        default: false,
+    },
+    paymentId: {
+        type: String,
+    },
+};
+
+const paymentSchemaValidator = (payment) => {
+    return !payment.isPaymentDone || payment.paymentId;
+};
+
+const collectionTypeSchema = {
+    courier: {
+        type: Schema.Types.ObjectId,
+        ref: 'courier'
+    },
+    pickup: {
+        type: Schema.Types.ObjectId,
+        ref: 'collector'
+    },
+};
+
+const collectionTypeSchemaValidator = (collectionType) => {
+    return !collectionType.courier || !collectionType.pickup;
+};
+
+const orderSchema = new Schema({
     requestedBy: {
         type: Number,
-        required:true,
+        required: true,
+    },
+    serviceName: {
+        type: String,
+        required: true,
     },
     serviceId: {
         type: Schema.Types.ObjectId,
         ref: 'service',
-        required:true,
+        required: true,
     },
-    collectionType:{
-        courier:{
-            type:Schema.Types.ObjectId,
-            ref: 'courier'
-        },
-        pickup:{
-            type:Schema.Types.ObjectId,
-            ref: 'collector'
-        },
+    createdOn: {
+        type: Date,
+        required: true,
     },
-    createdOn:{
-        type:Date,
-        required:true,
+    lastModified: {
+        type: Date,
     },
-    amount:{
-        type:Number,
-        require:true,
+    lastModifiedBy: {
+        type: Number,
     },
-    status:{
-        type:Number,
-        default:0,
+    serviceCost: {
+        type: Number,
+        require: true,
     },
-    parameters:[{
+    parameterCost: {
+        type: Number,
+        require: true,
+    },
+    collectionTypeCost: {
+        type: Number,
+        require: true,
+    },
+    totalCost: {
+        type: Number,
+        require: true,
+    },
+    status: {
+        type: Number,
+        default: 0,
+    },
+    parameters: [{
         type: Schema.Types.ObjectId,
         ref: 'parameter',
     }],
+    payment: {
+        type: paymentSchema,
+        validate: paymentSchemaValidator,
+    },
+    collectionType: {
+        type: collectionTypeSchema,
+        validate: collectionTypeSchemaValidator,
+    },
 });
 
+orderSchema.pre('save', function (next) {
+    this.totalCost = this.serviceCost + this.parameterCost + this.collectionTypeCost;
+    next();
+});
 
-const Order = moongose.model('order', orderSchema);
+const Order = db.model('order', orderSchema);
 module.exports = Order;

@@ -5,11 +5,11 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const HttpStatus = require('http-status-codes');
 const cors = require('cors');
-const dotenv = require("dotenv");
+const dotenv = require('dotenv');
 
 const { error } = dotenv.config();
 if (error) {
-    throw error('add .env file')
+    throw error('add .env file');
 }
 
 const DB_HOST = process.env.DB_HOST;
@@ -17,11 +17,11 @@ const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
-const dbURI = 'mongodb://' + DB_HOST + '/' + DB_COLLECTION_NAME;
+const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
 db.connect(dbURI);
-db.set('debug',process.env.NODE_ENV === 'development');
+db.set('debug', process.env.NODE_ENV === 'development');
 
-const app = express()
+const app = express();
 
 // Routes
 const order = require('./routes/order');
@@ -37,7 +37,7 @@ const collectionType = require('./routes/collectionType');
 // Middlewares
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.use(cors({
     origin: true,
@@ -46,14 +46,15 @@ app.use(cors({
 }));
 
 // Routes
-app.use('/account', account)
-app.use('/news/', news)
-app.use('/user/', user)
-app.use('/access/', access)
-app.use('/service/', service)
-app.use('/parameter/', parameter)
-app.use('/notification/', notification)
-app.use('/collectionType/', collectionType)
+app.use('/account', account);
+app.use('/news/', news);
+app.use('/user/', user);
+app.use('/access/', access);
+app.use('/service/', service);
+app.use('/parameter/', parameter);
+app.use('/notification/', notification);
+app.use('/collectionType/', collectionType);
+app.use('/order/',order);
 
 
 // Catch 404 Errors and forward them to error handler function
@@ -67,7 +68,7 @@ app.use((err, req, res, next) => {
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
     // response to client
-    res.status(status).json({error});
+    res.status(status).json({ error });
 
     // response to server
     console.error(err);

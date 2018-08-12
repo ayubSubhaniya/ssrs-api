@@ -1,5 +1,6 @@
-const moongose = require('mongoose');
-const Schema = moongose.Schema;
+const db = require('mongoose');
+const Schema = db.Schema;
+const collectorIdGenerator = require('shortid');
 
 const collectorSchema = new Schema({
     name : {
@@ -17,7 +18,30 @@ const collectorSchema = new Schema({
         type:String,
         required:true,
     },
+    collectionCode: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    createdOn:{
+        type:Date,
+        required:true
+    },
+    createdBy:{
+        type:Number,
+        required:true
+    },
+    orderId: {
+        type: Schema.Types.ObjectId,
+        ref:'order',
+        required:true,
+    }
 });
 
-const Collector = moongose.model('collector', collectorSchema);
+collectorSchema.pre('validate',function (next) {
+    this.collectionCode = collectorIdGenerator.generate();
+    next();
+});
+
+const Collector = db.model('collector', collectorSchema);
 module.exports = Collector;

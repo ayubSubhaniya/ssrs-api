@@ -8,17 +8,17 @@ const {filterResourceData} = require('../helpers/controllerHelpers')
 module.exports = {
 
     addParameter: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const {daiictId} = user;
 
         const createPermission = accessControl.can(user.userType).createAny(resources.parameter);
         const readPermission = accessControl.can(user.userType).readAny(resources.parameter);
-        
+
         if (createPermission.granted) {
             let parameterAtt = req.value.body;
             parameterAtt.createdOn =  new Date();
             parameterAtt.createdBy = daiictId;
-            
+
             const newParameter = new Parameter(parameterAtt);
             const parameter = await newParameter.save();
 
@@ -30,22 +30,22 @@ module.exports = {
     },
 
     deleteParameter: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const {daiictId} = user;
         const { requestedParameterId } = req.params;
 
         const deleteAnyPermission = accessControl.can(user.userType).deleteAny(resources.parameter);
         const deleteOwnPermission = accessControl.can(user.userType).deleteOw(resources.parameter);
 
-        
+
         if (deleteAnyPermission.granted) {
-            
+
             await Parameter.findByIdAndRemove(requestedParameterId);
             res.sendStatus(HttpStatus.ACCEPTED);
         } else if (deleteOwnPermission.granted){
-            
+
             const deletedParameter=await Parameter.findOneAndRemove({_id:requestedParameterId,createdBy:daiictId});
-            
+
             if (deletedParameter){
                 res.sendStatus(HttpStatus.ACCEPTED);
             } else {
@@ -57,7 +57,7 @@ module.exports = {
     },
 
     getParameter: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const {daiictId} = user;
         const { requestedParameterId } = req.params;
 
@@ -67,7 +67,7 @@ module.exports = {
 
         if (readPermission.granted) {
             let requestedParameter;
-            
+
             if (readAnyInActiveResource.granted){
                 requestedParameter = await Parameter.findById(requestedParameterId);
             } else if (readOwnInActiveResource.granted){
@@ -75,21 +75,21 @@ module.exports = {
             } else {
                 requestedParameter = await Parameter.findOne({_id:requestedParameterId,isActive:true});
             }
-            
+
             if (requestedParameter){
                 const filteredParameter = filterResourceData(requestedParameter,readPermission.attributes);
                 res.status(HttpStatus.ACCEPTED).json({parameter:filteredParameter});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
-            
+
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
     getAllParameter: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const {daiictId} = user;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.parameter);
@@ -102,18 +102,18 @@ module.exports = {
             if (readAnyInActiveResource.granted){
                 requestedParameters = await Parameter.find({});
             } else if (readOwnInActiveResource.granted){
-                requestedParameters = await Parameter.findMany({$or:[{createdBy:daiictId},{isActive:true}]});
+                requestedParameters = await Parameter.find({$or:[{createdBy:daiictId},{isActive:true}]});
             } else {
-                requestedParameters = await Parameter.findMany({isActive:true});
+                requestedParameters = await Parameter.find({isActive:true});
             }
-            
+
             if (requestedParameters){
                 const filteredParameters = filterResourceData(requestedParameters,readPermission.attributes);
                 res.status(HttpStatus.ACCEPTED).json({parameter:filteredParameters});
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
-            
+
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -126,13 +126,13 @@ module.exports = {
 
         const updatePermission = accessControl.can(user.userType).updateAny(resources.parameter);
         const readPermission = accessControl.can(user.userType).readAny(resources.parameter);
-        
+
         if (updatePermission.granted) {
             const updatedParameter = req.value.body;
             const result = await Parameter.findByIdAndUpdate(requestedParameterId, updatedParameter, {new:true});
             const filteredParameter = filterResourceData(result,readPermission.attributes);
             res.status(HttpStatus.ACCEPTED).json({parameter:filteredParameter});
-            
+
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }

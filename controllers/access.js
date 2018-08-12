@@ -34,39 +34,61 @@ const grantDefaultAdminAccess = () => {
 };
 
 const grantDefaultAccess = () => {
-    let resourceType = resources.user
+    let resourceType = resources.user;
 
     Object.keys(userTypes).forEach(userType => {
         accessControl.grant(userTypes[userType])
             .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
             .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
             .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate']);
-    })
+    });
 
-    resourceType = resources.news
+    resourceType = resources.news;
     Object.keys(userTypes).forEach(userType => {
         accessControl.grant(userType)
             .readAny(resourceType, fieldAccess[resourceType][userType]['canRead'])
-    })
+    });
 
-    resourceType = resources.parameter
+    resourceType = resources.parameter;
     Object.keys(userTypes).forEach(userType => {
         accessControl.grant(userType)
             .readAny(resourceType, fieldAccess[resourceType][userType]['canRead'])
-    })
+    });
 
-    resourceType = resources.service
+    resourceType = resources.service;
     Object.keys(userTypes).forEach(userType => {
         accessControl.grant(userType)
             .readAny(resourceType, fieldAccess[resourceType][userType]['canRead'])
-    })
+    });
 
-    resourceType = resources.notification
+    resourceType = resources.order;
+    Object.keys(userTypes).forEach(userType => {
+        accessControl.grant(userType)
+            .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
+            .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
+            .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate']);
+    });
+
+    resourceType = resources.collector;
+    Object.keys(userTypes).forEach(userType => {
+        accessControl.grant(userType)
+            .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
+            .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
+    });
+
+    resourceType = resources.courier;
+    Object.keys(userTypes).forEach(userType => {
+        accessControl.grant(userType)
+            .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
+            .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
+    });
+
+    resourceType = resources.notification;
     Object.keys(userTypes).forEach(userType => {
         accessControl.grant(userType)
             .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
             .deleteOwn(resourceType)
-    })
+    });
 };
 
 const saveAccessRoleInFile = () => {
@@ -98,7 +120,7 @@ module.exports = {
     accessControl,
 
     getAccessLevel: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         if (accessControl.can(user.userType).readAny(resources.accessLevel)) {
             const result = accessControl.getGrants()
@@ -109,7 +131,7 @@ module.exports = {
     },
 
     addAccessLevel: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         if (accessControl.can(user.userType).createAny(resources.accessLevel)) {
             const { userType, resource, permissionsGranted, permissionsDenied } = req.body
@@ -188,7 +210,7 @@ module.exports = {
     },
 
     getRoles: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         if (accessControl.can(user.userType).readAny(resources.role)) {
             res.status(HttpStatus.ACCEPTED).json({ userTypes, adminTypes })
@@ -198,7 +220,7 @@ module.exports = {
     },
 
     addRoles: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         if (accessControl.can(user.userType).createAny(resources.role)) {
             const newRoles = req.body
@@ -214,7 +236,7 @@ module.exports = {
     },
 
     deleteRoles: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         if (accessControl.can(user.userType).deleteAny(resources.role)) {
             const rolesToRemove = req.body

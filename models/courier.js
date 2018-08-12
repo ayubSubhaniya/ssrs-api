@@ -6,9 +6,6 @@ const courierSchema = new Schema({
         type:String,
         required:true,
     },
-    daiictId:{
-        type:Number,
-    },
     contactNo:{
         type:Number,
         required:true,
@@ -17,17 +14,27 @@ const courierSchema = new Schema({
         type:String,
         required:true,
     },
+    createdOn:{
+      type:Date,
+      required:true
+    },
+    createdBy:{
+        type:Number,
+        required:true
+    },
     address:{
-        addressLine1:{
+        line1:{
             type:String,
+            required:true,
         },
-        addressLine2:{
+        line2:{
             type:String,
+            required:true,
         },
-        addressLin3:{
+        line3:{
             type:String,
+            required:true,
         },
-        required:true,
     },
     city:{
         type:String,
@@ -41,7 +48,7 @@ const courierSchema = new Schema({
         type:String,
         default:'India',
     },
-    pincode:{
+    pinCode:{
         type:Number,
         required:true,
     },
@@ -50,6 +57,11 @@ const courierSchema = new Schema({
     },
     speedPostName:{
         type:String,
+    },
+    orderId: {
+        type: Schema.Types.ObjectId,
+        ref:'order',
+        required:true,
     }
 });
 
