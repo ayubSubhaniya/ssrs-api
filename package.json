@@ -38,7 +38,8 @@
     "passport": "^0.4.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
-    "randomstring": "^1.1.5"
+    "randomstring": "^1.1.5",
+    "shortid": "^2.2.12"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
