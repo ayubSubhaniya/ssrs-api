@@ -457,6 +457,10 @@ module.exports = {
             .readAny(resources.service);
         const createPermission = accessControl.can(user.userType)
             .createAny(resources.service);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         if (createPermission.granted) {
             const currentTimestamp = new Date();
@@ -491,17 +495,35 @@ module.exports = {
             .updateAny(resources.service);
         const updateOwnPermission = accessControl.can(user.userType)
             .updateOwn(resources.service);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         if (updateAnyPermission.granted) {
 
             let newService = req.value.body;
 
-            const service = await Service.findByIdAndUpdate(serviceId, newService, { new: true });
-            const filteredService = filterResourceData(service, readPermission.attributes);
-            await generateServiceUpdatedMessage(service, daiictId);
+            const service = await Service.findByIdAndUpdate(serviceId, newService, { new: true })
+                .populate({
+                    path: 'collectionTypes',
+                    select: readCollectionTypePermission.attributes
+                })
+                .populate({
+                    path: 'availableParameters',
+                    select: readParameterPermission.attributes
+                })
+                .exec();
+            if (service) {
+                const filteredService = filterResourceData(service, readPermission.attributes);
+                await generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED)
-                .json({ service: filteredService });
+                res.status(HttpStatus.ACCEPTED)
+                    .json({ service: filteredService });
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+            }
+
 
         } else if (updateOwnPermission.granted) {
 
@@ -511,7 +533,16 @@ module.exports = {
             const service = await Service.updateOne({
                 _id: serviceId,
                 createdBy: daiictId
-            }, newService, { new: true });
+            }, newService, { new: true })
+                .populate({
+                    path: 'collectionTypes',
+                    select: readCollectionTypePermission.attributes
+                })
+                .populate({
+                    path: 'availableParameters',
+                    select: readParameterPermission.attributes
+                })
+                .exec();
             const filteredService = filterResourceData(service, readPermission.attributes);
             await generateServiceUpdatedMessage(service, daiictId);
 
