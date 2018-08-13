@@ -62,22 +62,21 @@ module.exports = {
 
 
         //create new temp user
-        const newUser = new tempUser({
+        const newUser = {
             daiictId,
             primaryEmail,
             password,
             createdOn,
             randomHash
-        });
-        const savedUser = await newUser.save();
+        };
+        const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
-        smtpTransport.sendMail(mailOptions, function (error, response) {
-            if (error) {
-                console.log(error);
-            }
-        });
+        const info = await smtpTransport.sendMail(mailOptions);
+
         res.status(HttpStatus.CREATED)
             .end('<h1>Verification link sent to email ' + savedUser.primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
+
+
     },
 
     resendVerificationLink: async (req, res, next) => {
@@ -94,14 +93,10 @@ module.exports = {
 
         };
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
-        smtpTransport.sendMail(mailOptions, function (error, response) {
-            if (error) {
-                console.log(error);
-                res.end('error');
-            } else {
-                res.end('<h1>Verification link sent to email ' + user.primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
-            }
-        });
+        const info = await smtpTransport.sendMail(mailOptions);
+
+        res.status(HttpStatus.CREATED)
+            .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
     },
 
 
@@ -117,7 +112,7 @@ module.exports = {
                 password: user.password,
                 createdOn: user.createdOn
             });
-            var savedUser = await newUser.save();
+            const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
             res.end('<h1>Email ' + user.daiictId + ' is been Successfully verified</h1>');
         }
