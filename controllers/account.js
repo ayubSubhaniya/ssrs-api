@@ -94,7 +94,7 @@ module.exports = {
             html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>",
 
         }
-        const resendVerificationLink = httpProtocol + "://" + host + "/account/resendVerificationLink/" + daiictId;        
+        const resendVerificationLink = httpProtocol + "://" + host + "/account/resendVerificationLink/" + daiictId;
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
@@ -140,7 +140,7 @@ module.exports = {
         var filteredUser = filterResourceData(user, permission.attributes)
 
         res.cookie(cookiesName.jwt, token, {
-            httpOnly: true,
+            httpOnly: false,
             expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         }).status(HttpStatus.ACCEPTED).json({ user: filteredUser });
     },
