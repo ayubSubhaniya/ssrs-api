@@ -74,11 +74,9 @@ module.exports = {
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
-                res.status(HttpStatus.INTERNAL_SERVER_ERROR).end("error");
-            } else {
-                res.status(HttpStatus.CREATED).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
             }
         });
+        res.status(HttpStatus.CREATED).end("<h1>Verification link sent to email " + savedUser.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
     },
 
     resendVerificationLink: async (req, res, next) => {
@@ -98,9 +96,9 @@ module.exports = {
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).end("error");
+                res.end("error");
             } else {
-                return res.status(HttpStatus.OK).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
+                res.end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
             }
         });
     },
