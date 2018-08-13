@@ -6,12 +6,12 @@ const newsSchema = new Schema({
     createdBy: {
         type: Number,
     },
-    message:{
-        type:String
-    } ,
-    createdOn : {
-        type:Date,
-        default:new Date()
+    message: {
+        type: String
+    },
+    createdOn: {
+        type: Date,
+        default: new Date()
     }
 });
 

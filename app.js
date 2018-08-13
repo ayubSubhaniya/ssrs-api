@@ -54,7 +54,7 @@ app.use('/service/', service);
 app.use('/parameter/', parameter);
 app.use('/notification/', notification);
 app.use('/collectionType/', collectionType);
-app.use('/order/',order);
+app.use('/order/', order);
 
 
 // Catch 404 Errors and forward them to error handler function
@@ -68,7 +68,8 @@ app.use((err, req, res, next) => {
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
     // response to client
-    res.status(status).json({ error });
+    res.status(status)
+        .json({ error });
 
     // response to server
     console.error(err);

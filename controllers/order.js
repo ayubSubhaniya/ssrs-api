@@ -297,8 +297,8 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
             }
 
-            order.lastModifiedBy=daiictId;
-            order.lastModified=new Date();
+            order.lastModifiedBy = daiictId;
+            order.lastModified = new Date();
             order.parameterCost = cost;
             order.parameters = parameters;
 
@@ -327,8 +327,8 @@ module.exports = {
 
         if (updateOwnPermission.granted) {
             const courier = new Courier(req.body.courier);
-            courier.createdOn=timeStamp;
-            courier.createdBy=daiictId;
+            courier.createdOn = timeStamp;
+            courier.createdBy = daiictId;
 
             const cost = await collectionTypeCost(collectionTypes.courier);
             const order = await Order.findOne({
@@ -340,13 +340,13 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
             }
 
-            order.lastModifiedBy=daiictId;
-            order.lastModified=timeStamp;
+            order.lastModifiedBy = daiictId;
+            order.lastModified = timeStamp;
             order.collectionTypeCost = cost;
             order.collectionType = {
                 courier: courier._id,
             };
-            courier.orderId=order._id;
+            courier.orderId = order._id;
             const newCourier = await courier.save();
             const newOrder = await order.save();
 
@@ -387,10 +387,10 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
             }
 
-            order.lastModifiedBy=daiictId;
-            order.lastModified=timeStamp;
+            order.lastModifiedBy = daiictId;
+            order.lastModified = timeStamp;
 
-            const newCourier = await Courier.findByIdAndUpdate(order.collectionType.courier,courier);
+            const newCourier = await Courier.findByIdAndUpdate(order.collectionType.courier, courier);
             const newOrder = await order.save();
 
             const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
@@ -421,8 +421,8 @@ module.exports = {
 
         if (updateOwnPermission.granted) {
             const pickup = new Collector(req.body.pickup);
-            pickup.createdOn=timeStamp;
-            pickup.createdBy=daiictId;
+            pickup.createdOn = timeStamp;
+            pickup.createdBy = daiictId;
 
             const cost = await collectionTypeCost(collectionTypes.pickup);
             const order = await Order.findOne({
@@ -434,13 +434,13 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
             }
 
-            order.lastModifiedBy=daiictId;
-            order.lastModified=timeStamp;
+            order.lastModifiedBy = daiictId;
+            order.lastModified = timeStamp;
             order.collectionTypeCost = cost;
             order.collectionType = {
                 pickup: pickup._id,
             };
-            pickup.orderId=order._id;
+            pickup.orderId = order._id;
             const newPickup = await pickup.save();
             const newOrder = await order.save();
 
@@ -482,10 +482,10 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
             }
 
-            order.lastModifiedBy=daiictId;
-            order.lastModified=timeStamp;
+            order.lastModifiedBy = daiictId;
+            order.lastModified = timeStamp;
 
-            const newPickup = await Collector.findByIdAndUpdate(order.collectionType.pickup,pickup);
+            const newPickup = await Collector.findByIdAndUpdate(order.collectionType.pickup, pickup);
             const newOrder = await order.save();
 
             const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);

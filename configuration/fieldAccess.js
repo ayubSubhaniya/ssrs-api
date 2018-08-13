@@ -1,187 +1,177 @@
 module.exports = {
-    User:{
-        superAdmin:{
-            canUpdate:[
-                "name" ,
-                "secondaryEmail",
-                "contactNo",
-                "gender",
-                "programme",
-                "requestedServices",
-                "password",
+    User: {
+        superAdmin: {
+            canUpdate: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'requestedServices',
+                'password',
             ],
-            canRead:[
-                "name" ,
-                "secondaryEmail",
-                "contactNo",
-                "gender",
-                "programme",
-                "userType",
-                "isActive",
-                "requestedServices",
-                "notifications",
-                "daiictId",
-                "primaryEmail",
-                "createdOn",
+            canRead: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'userType',
+                'isActive',
+                'requestedServices',
+                'notifications',
+                'daiictId',
+                'primaryEmail',
+                'createdOn',
             ],
-            canCreate:[
-                "name" ,
-                "secondaryEmail",
-                "contactNo",
-                "gender",
-                "programme",
-                "requestedServices",
-                "daiictId",
-                "primaryEmail",
-                "password",
-            ],
-        },
-        student:{
-            canUpdate:[
-                "name" ,
-                "secondaryEmail",
-                "contactNo",
-                "gender",
-                "programme",
-                "requestedServices",
-                "password",
-            ],
-            canRead:[
-                "name" ,
-                "secondaryEmail",
-                "contactNo",
-                "gender",
-                "programme",
-                "userType",
-                "isActive",
-                "requestedServices",
-                "notifications",
-                "daiictId",
-                "primaryEmail",
-                "createdOn",
-            ],
-            canCreate:[
-                "name" ,
-                "secondaryEmail",
-                "contactNo",
-                "gender",
-                "programme",
-                "requestedServices",
-                "daiictId",
-                "primaryEmail",
-                "password",
+            canCreate: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'requestedServices',
+                'daiictId',
+                'primaryEmail',
+                'password',
             ],
         },
-    },
-    News:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "message",
-                "createdOn",
+        student: {
+            canUpdate: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'requestedServices',
+                'password',
             ],
-            canCreate:[
-                "message",
+            canRead: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'userType',
+                'isActive',
+                'requestedServices',
+                'notifications',
+                'daiictId',
+                'primaryEmail',
+                'createdOn',
             ],
-            canUpdate:[
-                "message",
-            ],
-        },
-        student:{
-            canRead:[
-                "message",
-                "createdOn",
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
+            canCreate: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'requestedServices',
+                'daiictId',
+                'primaryEmail',
+                'password',
             ],
         },
     },
-    Notification:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "message",
-                "createdOn",
+    News: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'message',
+                'createdOn',
             ],
-            canCreate:[
-                "message",
+            canCreate: [
+                'message',
             ],
-            canUpdate:[
-                "message",
+            canUpdate: [
+                'message',
             ],
         },
-        student:{
-            canRead:[
-                "message",
-                "createdOn",
+        student: {
+            canRead: [
+                'message',
+                'createdOn',
             ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
-            ],
+            canCreate: [],
+            canUpdate: [],
         },
     },
-    Order:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "requestedBy",
-                "serviceId",
-                "createdOn",
-                "lastModified",
-                "lastModifiedBy",
-                "serviceCost",
-                "parameterCost",
-                "collectionTypeCost",
-                "totalCost",
-                "status",
-                "parameters",
-                "payment",
-                "collectionType"
+    Notification: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'message',
+                'createdOn',
             ],
-            canCreate:[
-
+            canCreate: [
+                'message',
             ],
-            canUpdate:[
-                "status"
+            canUpdate: [
+                'message',
             ],
         },
-        student:{
-            canRead:[
-                "_id",
-                "requestedBy",
-                "serviceId",
-                "createdOn",
-                "lastModified",
-                "serviceCost",
-                "parameterCost",
-                "collectionTypeCost",
-                "totalCost",
-                "status",
-                "parameters",
-                "payment",
-                "collectionType",
+        student: {
+            canRead: [
+                'message',
+                'createdOn',
             ],
-            canCreate:[
-                "serviceId",
-                "parameters",
-                "payment",
-                "collectionType",
+            canCreate: [],
+            canUpdate: [],
+        },
+    },
+    Order: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'requestedBy',
+                'serviceId',
+                'createdOn',
+                'lastModified',
+                'lastModifiedBy',
+                'serviceCost',
+                'parameterCost',
+                'collectionTypeCost',
+                'totalCost',
+                'status',
+                'parameters',
+                'payment',
+                'collectionType'
             ],
-            canUpdate:[
-                "payment",
+            canCreate: [],
+            canUpdate: [
+                'status'
+            ],
+        },
+        student: {
+            canRead: [
+                '_id',
+                'requestedBy',
+                'serviceId',
+                'createdOn',
+                'lastModified',
+                'serviceCost',
+                'parameterCost',
+                'collectionTypeCost',
+                'totalCost',
+                'status',
+                'parameters',
+                'payment',
+                'collectionType',
+            ],
+            canCreate: [
+                'serviceId',
+                'parameters',
+                'payment',
+                'collectionType',
+            ],
+            canUpdate: [
+                'payment',
             ]
         },
     },
-    Service:{
-        superAdmin:{
-            canRead:[
+    Service: {
+        superAdmin: {
+            canRead: [
                 '_id',
                 'name',
                 'description',
@@ -199,7 +189,7 @@ module.exports = {
                 'paymentModes',
                 'collectionTypes',
             ],
-            canCreate:[
+            canCreate: [
                 'name',
                 'description',
                 'isApplicationSpecific',
@@ -214,7 +204,7 @@ module.exports = {
                 'paymentModes',
                 'collectionTypes',
             ],
-            canUpdate:[
+            canUpdate: [
                 'name',
                 'description',
                 'isApplicationSpecific',
@@ -230,8 +220,8 @@ module.exports = {
                 'collectionTypes',
             ],
         },
-        student:{
-            canRead:[
+        student: {
+            canRead: [
                 '_id',
                 'name',
                 'description',
@@ -241,280 +231,228 @@ module.exports = {
                 'paymentModes',
                 'collectionTypes',
             ],
-            canCreate:[
-
+            canCreate: [],
+            canUpdate: []
+        },
+    },
+    SpecialService: {
+        superAdmin: {
+            canRead: [
+                '*'
             ],
-            canUpdate:[
-
+            canCreate: [],
+            canUpdate: [],
+        },
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
+        },
+    },
+    InActiveResource: {
+        superAdmin: {
+            canRead: [
+                '*'
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
+        },
+    },
+    Collector: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'daiictId',
+                'contactNo',
+                'email',
+                'collectionCode',
+                'createdOn',
+                'createdBy',
+                'orderId',
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
+        student: {
+            canRead: [
+                '_id',
+                'name',
+                'daiictId',
+                'contactNo',
+                'email',
+                'collectionCode',
+                'orderId',
+            ],
+            canCreate: [
+                'name',
+                'daiictId',
+                'contactNo',
+                'email',
+            ],
+            canUpdate: [
+                'name',
+                'daiictId',
+                'contactNo',
+                'email',
             ]
         },
     },
-    SpecialService:{
-        superAdmin:{
-            canRead:[
-                "*"
+    Courier: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'createdOn',
+                'createdBy',
+                'pinCode',
+                'trackingId',
+                'speedPostName',
+                'orderId',
             ],
-            canCreate:[
-            ],
-            canUpdate:[
-            ],
+            canCreate: [],
+            canUpdate: [],
         },
-        student:{
-            canRead:[
-
+        student: {
+            canRead: [
+                '_id',
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'pinCode',
+                'trackingId',
+                'speedPostName',
+                'orderId',
             ],
-            canCreate:[
-
+            canCreate: [
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'pinCode',
             ],
-            canUpdate:[
-
+            canUpdate: [
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'pinCode',
             ]
         },
     },
-    InActiveResource:{
-        superAdmin:{
-            canRead:[
-                "*"
+    Parameter: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'createdOn',
+                'createdBy',
+                'isActive'
             ],
-            canCreate:[
+            canCreate: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
             ],
-            canUpdate:[
-            ],
-        },
-        student:{
-            canRead:[
-
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
-            ]
-        },
-    },
-    Collector:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "name",
-                "daiictId",
-                "contactNo",
-                "email",
-                "collectionCode",
-                "createdOn",
-                "createdBy",
-                "orderId",
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
+            canUpdate: [
+                'name',
+                'description',
+                'baseCharge',
+                'isActive'
             ],
         },
-        student:{
-            canRead:[
-                "_id",
-                "name",
-                "daiictId",
-                "contactNo",
-                "email",
-                "collectionCode",
-                "orderId",
+        student: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
             ],
-            canCreate:[
-                "name",
-                "daiictId",
-                "contactNo",
-                "email",
-            ],
-            canUpdate:[
-                "name",
-                "daiictId",
-                "contactNo",
-                "email",
-            ]
+            canCreate: [],
+            canUpdate: []
         },
     },
-    Courier:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "name",
-                "contactNo",
-                "email",
-                "address",
-                "city",
-                "state",
-                "country",
-                "createdOn",
-                "createdBy",
-                "pinCode",
-                "trackingId",
-                "speedPostName",
-                "orderId",
+    CollectionType: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'createdOn',
+                'createdBy',
+                'isActive'
             ],
-            canCreate:[
-
+            canCreate: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
             ],
-            canUpdate:[
+            canUpdate: [
+                'name',
+                'description',
+                'baseCharge',
+                'isActive'
             ],
         },
-        student:{
-            canRead:[
-                "_id",
-                "name",
-                "contactNo",
-                "email",
-                "address",
-                "city",
-                "state",
-                "country",
-                "pinCode",
-                "trackingId",
-                "speedPostName",
-                "orderId",
+        student: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
             ],
-            canCreate:[
-                "name",
-                "contactNo",
-                "email",
-                "address",
-                "city",
-                "state",
-                "country",
-                "pinCode",
-            ],
-            canUpdate:[
-                "name",
-                "contactNo",
-                "email",
-                "address",
-                "city",
-                "state",
-                "country",
-                "pinCode",
-            ]
+            canCreate: [],
+            canUpdate: []
         },
     },
-    Parameter:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "name",
-                "description",
-                "baseCharge",
-                "createdOn",
-                "createdBy",
-                "isActive"
-            ],
-            canCreate:[
-                "_id",
-                "name",
-                "description",
-                "baseCharge",
-            ],
-            canUpdate:[
-                "name",
-                "description",
-                "baseCharge",
-                "isActive"
-            ],
+    AccessLevel: {
+        superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [],
         },
-        student:{
-            canRead:[
-                "_id",
-                "name",
-                "description",
-                "baseCharge",
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
-            ]
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
         },
     },
-    CollectionType:{
-        superAdmin:{
-            canRead:[
-                "_id",
-                "name",
-                "description",
-                "baseCharge",
-                "createdOn",
-                "createdBy",
-                "isActive"
-            ],
-            canCreate:[
-                "_id",
-                "name",
-                "description",
-                "baseCharge",
-            ],
-            canUpdate:[
-                "name",
-                "description",
-                "baseCharge",
-                "isActive"
-            ],
+    Role: {
+        superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [],
         },
-        student:{
-            canRead:[
-                "_id",
-                "name",
-                "description",
-                "baseCharge",
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
-            ]
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
         },
     },
-    AccessLevel:{
-        superAdmin:{
-            canRead:[
-            ],
-            canCreate:[
-            ],
-            canUpdate:[
-            ],
-        },
-        student:{
-            canRead:[
-
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
-            ]
-        },
-    },
-    Role:{
-        superAdmin:{
-            canRead:[
-            ],
-            canCreate:[
-            ],
-            canUpdate:[
-            ],
-        },
-        student:{
-            canRead:[
-
-            ],
-            canCreate:[
-
-            ],
-            canUpdate:[
-
-            ]
-        },
-    },
-}
+};

@@ -6,9 +6,9 @@ module.exports = {
     JWT_EXPIRY_TIME: 1,
     NEWS_EXPIRY_TIME: 8,
     NOTIFICATION_EXPIRY_TIME: 8,
-    collectionTypes : {
-      courier:'Courier',
-      pickup : 'Pickup',
+    collectionTypes: {
+        courier: 'Courier',
+        pickup: 'Pickup',
     },
     permissions: {
         readAny: 'readAny',

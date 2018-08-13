@@ -1,12 +1,12 @@
 const JWT = require(`jsonwebtoken`);
 const HttpStatus = require('http-status-codes');
-const nodemailer = require("nodemailer");
-const randomstring = require("randomstring");
+const nodemailer = require('nodemailer');
+const randomstring = require('randomstring');
 const User = require('../models/user');
 const tempUser = require('../models/tempUser');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
 const { accessControl } = require('./access');
-const { filterResourceData } = require('../helpers/controllerHelpers')
+const { filterResourceData } = require('../helpers/controllerHelpers');
 
 const mailAccountUserName = process.env.MAIL_USER;
 const mailAccountPassword = process.env.MAIL_PASS;
@@ -15,10 +15,10 @@ const mailAccountPassword = process.env.MAIL_PASS;
     STMP is mail server which is responsible for sending and recieving email.
 */
 const smtpTransport = nodemailer.createTransport({
-    service: "Gmail",
+    service: 'Gmail',
     auth: {
-        user:mailAccountUserName,
-        pass:mailAccountPassword
+        user: mailAccountUserName,
+        pass: mailAccountPassword
     },
     tls: { rejectUnauthorized: false }
 });
@@ -51,14 +51,14 @@ module.exports = {
 
         const randomHash = randomstring.generate();
         const host = req.get('host');
-        const link = httpProtocol + "://" + host + "/account/verify/" + daiictId + "?id=" + randomHash;
+        const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + randomHash;
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: "Please confirm your Email account",
-            html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>",
+            subject: 'Please confirm your Email account',
+            html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
 
-        }
+        };
 
 
         //create new temp user
@@ -70,13 +70,14 @@ module.exports = {
             randomHash
         });
         const savedUser = await newUser.save();
-        const resendVerificationLink = httpProtocol + "://" + host + "/account/resendVerificationLink/" + daiictId;
+        const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
             }
         });
-        res.status(HttpStatus.CREATED).end("<h1>Verification link sent to email " + savedUser.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
+        res.status(HttpStatus.CREATED)
+            .end('<h1>Verification link sent to email ' + savedUser.primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
     },
 
     resendVerificationLink: async (req, res, next) => {
@@ -84,21 +85,21 @@ module.exports = {
         const user = await tempUser.findOne({ daiictId });
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
         const host = req.get('host');
-        const link = httpProtocol + "://" + host + "/account/verify/" + daiictId + "?id=" + user.randomHash;
+        const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: "Please confirm your Email account",
-            html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>",
+            subject: 'Please confirm your Email account',
+            html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
 
-        }
-        const resendVerificationLink = httpProtocol + "://" + host + "/account/resendVerificationLink/" + daiictId;
+        };
+        const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
-                res.end("error");
+                res.end('error');
             } else {
-                res.end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
+                res.end('<h1>Verification link sent to email ' + user.primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
             }
         });
     },
@@ -106,7 +107,7 @@ module.exports = {
 
     verifyAccount: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await tempUser.findOne({ daiictId })
+        const user = await tempUser.findOne({ daiictId });
 
         if (req.query.id === user.randomHash) {
             //create new user
@@ -118,10 +119,10 @@ module.exports = {
             });
             var savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
-            res.end("<h1>Email " + user.daiictId + " is been Successfully verified</h1>");
+            res.end('<h1>Email ' + user.daiictId + ' is been Successfully verified</h1>');
         }
         else {
-            res.end("<h1>Bad Request</h1>");
+            res.end('<h1>Bad Request</h1>');
         }
     },
 
@@ -133,19 +134,23 @@ module.exports = {
 
         //get User Id
         const { user } = req;
-        const permission = accessControl.can(user.userType).readOwn(resources.user);
+        const permission = accessControl.can(user.userType)
+            .readOwn(resources.user);
 
-        var filteredUser = filterResourceData(user, permission.attributes)
+        var filteredUser = filterResourceData(user, permission.attributes);
 
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,
             expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-        }).status(HttpStatus.ACCEPTED).json({ user: filteredUser });
+        })
+            .status(HttpStatus.ACCEPTED)
+            .json({ user: filteredUser });
     },
 
     signOut: async (req, res, next) => {
-        res.clearCookie("jwt");
-        res.status(HttpStatus.OK).end();
+        res.clearCookie('jwt');
+        res.status(HttpStatus.OK)
+            .end();
     },
 
     updateInformation: async (req, res, next) => {
@@ -154,7 +159,8 @@ module.exports = {
 
         const userInDB = req.user;
 
-        const permission = accessControl.can(userTypes.student).readOwn(resources.user);
+        const permission = accessControl.can(userTypes.student)
+            .readOwn(resources.user);
         const editableField = permission.attributes;
         const fieldsToUpdate = Object.keys(user);
 
@@ -170,12 +176,13 @@ module.exports = {
         if (permission.granted) {
             const savedUser = await User.findByIdAndUpdate(userInDB._id, user);
 
-            var filteredUser = filterResourceData(savedUser, permission.attributes)
+            var filteredUser = filterResourceData(savedUser, permission.attributes);
 
-            res.status(HttpStatus.ACCEPTED).json({ user: filteredUser });
+            res.status(HttpStatus.ACCEPTED)
+                .json({ user: filteredUser });
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
-}
+};

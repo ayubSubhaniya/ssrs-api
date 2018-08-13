@@ -14,9 +14,9 @@ const serviceSchema = new Schema({
         type: Date,
         required: true,
     },
-    createdBy:{
-        type:Number,
-        required:true,
+    createdBy: {
+        type: Number,
+        required: true,
     },
     isApplicationSpecific: {
         type: Boolean,
@@ -47,24 +47,24 @@ const serviceSchema = new Schema({
         default: 0,
     },
     paymentModes: {
-        debitCard:{
-            type:Boolean,
-            default:false,
+        debitCard: {
+            type: Boolean,
+            default: false,
         },
-        netBanking:{
-            type:Boolean,
-            default:false,
+        netBanking: {
+            type: Boolean,
+            default: false,
         },
-        paytm:{
-            type:Boolean,
-            default:false,
+        paytm: {
+            type: Boolean,
+            default: false,
         },
-        cashOnDelivery:{
-            type:Boolean,
-            default:false,
+        cashOnDelivery: {
+            type: Boolean,
+            default: false,
         },
     },
-    collectionTypes:[{
+    collectionTypes: [{
         type: Schema.Types.ObjectId,
         ref: 'collectionType'
     }],
@@ -72,7 +72,7 @@ const serviceSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'parameter',
     }],
-    specialServiceUsers:[{
+    specialServiceUsers: [{
         type: Number,
     }],
 });

@@ -4,27 +4,27 @@ const { Schema } = moongose;
 
 const parameterSchema = new Schema({
     name: {
-        type:String,
-        required:true,
+        type: String,
+        required: true,
     },
-    description:{
-        type:String
+    description: {
+        type: String
     },
-    baseCharge:{
-        type:Number,
-        default:0,
+    baseCharge: {
+        type: Number,
+        default: 0,
     },
     createdOn: {
-        type:Date,
-        required:true,
+        type: Date,
+        required: true,
     },
     createdBy: {
-        type:Number,
-        required:true,
+        type: Number,
+        required: true,
     },
     isActive: {
-        type:Boolean,
-        default:true,
+        type: Boolean,
+        default: true,
     }
 });
 
