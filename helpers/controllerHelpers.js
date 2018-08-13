@@ -8,7 +8,9 @@ const filterResourceData = (resourcesData, attributes) => {
             let filteredData = {};
 
             attributes.forEach(attribute => {
-                filteredData[attribute] = resourceData[attribute];
+                if (resourceData[attribute]){
+                    filteredData[attribute] = resourceData[attribute];
+                }
             });
             filteredResourcesData.push(filteredData);
         }
@@ -18,7 +20,9 @@ const filterResourceData = (resourcesData, attributes) => {
         let filteredResourceData = {};
 
         attributes.forEach(attribute => {
-            filteredResourceData[attribute] = resourcesData[attribute];
+            if (resourcesData[attribute]){
+                filteredResourceData[attribute] = resourcesData[attribute];
+            }
         });
 
         return filteredResourceData;

@@ -5,13 +5,14 @@ const randomstring = require('randomstring');
 const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
-const TempUser = require('../models/TempUser');
+const tempUser = require('../models/tempUser');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 
 const mailAccountUserName = process.env.MAIL_USER;
 const mailAccountPassword = process.env.MAIL_PASS;
+
 /*
     Here we are configuring our SMTP Server details.
     STMP is mail server which is responsible for sending and recieving email.
@@ -81,7 +82,7 @@ module.exports = {
             createdOn,
             randomHash
         };
-        const savedUser = await TempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
+        const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
 
@@ -93,7 +94,7 @@ module.exports = {
 
     resendVerificationLink: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await TempUser.findOne({ daiictId });
+        const user = await tempUser.findOne({ daiictId });
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
@@ -114,7 +115,7 @@ module.exports = {
 
     verifyAccount: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await TempUser.findOne({ daiictId });
+        const user = await tempUser.findOne({ daiictId });
 
         if (req.query.id === user.randomHash) {
             //create new user
@@ -125,7 +126,7 @@ module.exports = {
                 createdOn: user.createdOn
             });
             const savedUser = await newUser.save();
-            await TempUser.findByIdAndRemove(user._id);
+            await tempUser.findByIdAndRemove(user._id);
             res.end('<h1>Email ' + user.daiictId + ' is been Successfully verified</h1>');
         }
         else {
@@ -162,28 +163,16 @@ module.exports = {
 
     updateInformation: async (req, res, next) => {
         //sign token
-        const user = req.value.body;
-
         const userInDB = req.user;
 
-        const permission = accessControl.can(userTypes.student)
+        const updateOwnPermission = accessControl.can(userInDB.userType)
             .readOwn(resources.user);
-        const editableField = permission.attributes;
-        const fieldsToUpdate = Object.keys(user);
+        const user = filterResourceData(req.value.body,updateOwnPermission.attributes);
 
-        /*for (let i = 0; i < fieldsToUpdate.length; i++) {
-            if (!editableField.includes(fieldsToUpdate[i])) {
-                if (userInDB[fieldsToUpdate[i]] !== user[fieldsToUpdate[i]]) {
-                    permission.granted = false;
-                    break;
-                }
-            }
-        }*/
+        if (updateOwnPermission.granted) {
+            const savedUser = await User.findByIdAndUpdate(userInDB._id, user,{new:true});
 
-        if (permission.granted) {
-            const savedUser = await User.findByIdAndUpdate(userInDB._id, user);
-
-            var filteredUser = filterResourceData(savedUser, permission.attributes);
+            const filteredUser = filterResourceData(savedUser, updateOwnPermission.attributes);
 
             res.status(HttpStatus.ACCEPTED)
                 .json({ user: filteredUser });
