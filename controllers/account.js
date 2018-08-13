@@ -2,8 +2,10 @@ const JWT = require(`jsonwebtoken`);
 const HttpStatus = require('http-status-codes');
 const nodemailer = require('nodemailer');
 const randomstring = require('randomstring');
+const bcrypt = require('bcryptjs');
+
 const User = require('../models/user');
-const tempUser = require('../models/tempUser');
+const TempUser = require('../models/TempUser');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -15,14 +17,24 @@ const mailAccountPassword = process.env.MAIL_PASS;
     STMP is mail server which is responsible for sending and recieving email.
 */
 const smtpTransport = nodemailer.createTransport({
-    service: 'Gmail',
+    host: 'webmail.daiict.ac.in',
+    port: 465,
+    secureConnection: false,
     auth: {
         user: mailAccountUserName,
         pass: mailAccountPassword
-    },
-    tls: { rejectUnauthorized: false }
+    }
 });
 /*------------------SMTP Over-----------------------------*/
+
+const hashPassword = async (password) => {
+    //generate a salt
+    const salt = await bcrypt.genSalt();
+    //generate password hash
+    const passwordHashed = await bcrypt.hash(password, salt);
+    //reassign hashed password
+    return passwordHashed;
+};
 
 //sign a new token
 const signToken = user => {
@@ -65,23 +77,23 @@ module.exports = {
         const newUser = {
             daiictId,
             primaryEmail,
-            password,
+            password: await hashPassword(password),
             createdOn,
             randomHash
         };
-        const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
+        const savedUser = await TempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
 
         res.status(HttpStatus.CREATED)
-            .end('<h1>Verification link sent to email ' + savedUser.primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
+            .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
 
 
     },
 
     resendVerificationLink: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await tempUser.findOne({ daiictId });
+        const user = await TempUser.findOne({ daiictId });
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
@@ -102,7 +114,7 @@ module.exports = {
 
     verifyAccount: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await tempUser.findOne({ daiictId });
+        const user = await TempUser.findOne({ daiictId });
 
         if (req.query.id === user.randomHash) {
             //create new user
@@ -113,7 +125,7 @@ module.exports = {
                 createdOn: user.createdOn
             });
             const savedUser = await newUser.save();
-            await tempUser.findByIdAndRemove(user._id);
+            await TempUser.findByIdAndRemove(user._id);
             res.end('<h1>Email ' + user.daiictId + ' is been Successfully verified</h1>');
         }
         else {
@@ -132,7 +144,7 @@ module.exports = {
         const permission = accessControl.can(user.userType)
             .readOwn(resources.user);
 
-        var filteredUser = filterResourceData(user, permission.attributes);
+        const filteredUser = filterResourceData(user, permission.attributes);
 
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,
@@ -159,14 +171,14 @@ module.exports = {
         const editableField = permission.attributes;
         const fieldsToUpdate = Object.keys(user);
 
-        for (let i = 0; i < fieldsToUpdate.length; i++) {
+        /*for (let i = 0; i < fieldsToUpdate.length; i++) {
             if (!editableField.includes(fieldsToUpdate[i])) {
                 if (userInDB[fieldsToUpdate[i]] !== user[fieldsToUpdate[i]]) {
                     permission.granted = false;
                     break;
                 }
             }
-        }
+        }*/
 
         if (permission.granted) {
             const savedUser = await User.findByIdAndUpdate(userInDB._id, user);
