@@ -98,9 +98,9 @@ module.exports = {
         smtpTransport.sendMail(mailOptions, function (error, response) {
             if (error) {
                 console.log(error);
-                res.status(HttpStatus.INTERNAL_SERVER_ERROR).end("error");
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).end("error");
             } else {
-                res.status(HttpStatus.OK).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
+                return res.status(HttpStatus.OK).end("<h1>Verification link sent to email " + user.primaryEmail + " please verify your account</h1><br><a href=" + resendVerificationLink + ">Click here to resend verification link</a>");
             }
         });
     },
@@ -119,7 +119,7 @@ module.exports = {
                 createdOn: user.createdOn
             });
             var savedUser = await newUser.save();
-            tempUser.findByIdAndRemove(user._id);
+            await tempUser.findByIdAndRemove(user._id);
             res.end("<h1>Email " + user.daiictId + " is been Successfully verified</h1>");
         }
         else {

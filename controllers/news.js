@@ -7,7 +7,7 @@ const { accessControl } = require('./access');
 
 module.exports = {
     getAllNews: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         const readPermission = accessControl.can(user.userType).readAny(resources.news);
         if (readPermission.granted) {
@@ -26,17 +26,17 @@ module.exports = {
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
-            
+
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
     getNews: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const {daiictId} = user;
         const { newsId } = req.params;
-        
+
 
         const readAnyPermission = accessControl.can(user.userType).readAny(resources.news);
         const readOwnPermission = accessControl.can(user.userType).readOwn(resources.news);
@@ -49,7 +49,7 @@ module.exports = {
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
-            
+
         } else if (readOwnPermission.granted) {
             const news = await News.findOne({_id:newsId,createdBy:daiictId});
             if (news){
@@ -58,14 +58,14 @@ module.exports = {
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
-            
+
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
     getNewsCreatedByMe: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const { daiictId } = user;
 
         const readPermission = accessControl.can(user.userType).readOwn(resources.news);
@@ -86,14 +86,14 @@ module.exports = {
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
-            
+
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
 
     addNews: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const { daiictId } = user;
 
         const createPermission = accessControl.can(user.userType).createOwn(resources.news);
@@ -126,7 +126,7 @@ module.exports = {
 
         if (deleteAnyPermission.granted){
             const news = await News.findByIdAndRemove(newsId);
-            
+
             if (news){
                 res.sendStatus(HttpStatus.ACCEPTED);
             } else {
@@ -145,7 +145,7 @@ module.exports = {
     },
 
     deleteAllNews: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
 
         const deletePermission = accessControl.can(user.userType).deleteAny(resources.news);
         if (deletePermission.granted) {
@@ -157,7 +157,7 @@ module.exports = {
     },
 
     deleteNewsCreatedByMe: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
         const { daiictId } = user;
 
         const deletePermission = accessControl.can(user.userType).deleteOwn(resources.news);
@@ -171,21 +171,22 @@ module.exports = {
     },
 
     updateNews: async (req, res, next) => {
-        const {user} = req; 
+        const {user} = req;
+        const {daiictId} = user;
         const { newsId } = req.params;
 
         const updateAnyPermission = accessControl.can(user.userType).updateAny(resources.news);
         const updateOwnPermission = accessControl.can(user.userType).updateOwn(resources.news);
         const readAnyPermission = accessControl.can(user.userType).readAny(resources.news);
         const readOwnPermission = accessControl.can(user.userType).readOwn(resources.news);
-        
+
         const newNews = {
             message:req.body.message
         };
 
         if (updateAnyPermission.granted){
             const news = await News.findByIdAndUpdate(newsId, newNews, {new:true});
-            
+
             if (news){
                 const filteredNews = filterResourceData(news, readAnyPermission.attributes);
                 res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
@@ -194,7 +195,7 @@ module.exports = {
             }
         } else if (updateOwnPermission.granted){
             const news = await News.updateOne({_id:newsId,createdBy:daiictId}, newNews, {new:true});
-            
+
             if (news){
                 const filteredNews = filterResourceData(news, readOwnPermission.attributes);
                 res.status(HttpStatus.ACCEPTED).json({news:filteredNews});
