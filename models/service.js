@@ -1,5 +1,4 @@
 const moongose = require('mongoose');
-const beautifyUnique = require('mongoose-beautiful-unique-validation');
 const { Schema } = moongose;
 
 const serviceSchema = new Schema({
@@ -15,7 +14,7 @@ const serviceSchema = new Schema({
         required: true,
     },
     createdBy: {
-        type: Number,
+        type: String,
         required: true,
     },
     isApplicationSpecific: {
@@ -73,11 +72,9 @@ const serviceSchema = new Schema({
         ref: 'parameter',
     }],
     specialServiceUsers: [{
-        type: Number,
+        type: String,
     }],
 });
-
-serviceSchema.plugin(beautifyUnique);
 
 const Service = moongose.model('service', serviceSchema);
 module.exports = Service;

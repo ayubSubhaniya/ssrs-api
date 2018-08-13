@@ -4,14 +4,16 @@ const { Schema } = moongose;
 
 const newsSchema = new Schema({
     createdBy: {
-        type: Number,
+        type: String,
+        required: true,
     },
     message: {
-        type: String
+        type: String,
+        required: true,
     },
     createdOn: {
         type: Date,
-        default: new Date()
+        required: true,
     }
 });
 

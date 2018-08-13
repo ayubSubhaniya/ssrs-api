@@ -4,7 +4,7 @@ const { Schema } = moongose;
 
 const notificationSchema = new Schema({
     createdBy: {
-        type: Number,
+        type: String,
         required: true
     },
     message: {
@@ -16,7 +16,7 @@ const notificationSchema = new Schema({
         required: true,
     },
     userId: {
-        type: Number,
+        type: String,
         required: true,
     }
 });

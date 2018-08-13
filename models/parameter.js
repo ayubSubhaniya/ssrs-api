@@ -19,7 +19,7 @@ const parameterSchema = new Schema({
         required: true,
     },
     createdBy: {
-        type: Number,
+        type: String,
         required: true,
     },
     isActive: {

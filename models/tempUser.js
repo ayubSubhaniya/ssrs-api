@@ -33,20 +33,6 @@ const userSchema = new Schema({
 
 });
 
-userSchema.pre('save', async function (next) {
-    try {
-        //generate a salt
-        const salt = await bcrypt.genSalt();
-        //generate password hash
-        const passwordHashed = await bcrypt.hash(this.password, salt);
-        //reassign hashed password
-        this.password = passwordHashed;
-        next();
-    } catch (error) {
-        next(error);
-    }
-});
-
 userSchema.methods.isValid = async function (newPassword) {
     try {
         return await bcrypt.compare(newPassword, this.password);
@@ -54,7 +40,6 @@ userSchema.methods.isValid = async function (newPassword) {
         throw new Error(error);
     }
 };
-
 
 const tempUser = moongose.model('tempUser', userSchema);
 module.exports = tempUser;

@@ -8,7 +8,7 @@ const collectorSchema = new Schema({
         required: true,
     },
     daiictId: {
-        type: Number,
+        type: String,
     },
     contactNo: {
         type: Number,
@@ -28,7 +28,7 @@ const collectorSchema = new Schema({
         required: true
     },
     createdBy: {
-        type: Number,
+        type: String,
         required: true
     },
     orderId: {

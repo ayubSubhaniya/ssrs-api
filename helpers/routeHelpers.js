@@ -46,14 +46,14 @@ module.exports = {
     schemas: {
         authSchema: Joi.object()
             .keys({
-                daiictId: Joi.number()
+                daiictId: Joi.string()
                     .required(),
                 password: Joi.string()
                     .required(),
             }),
         addUserSchema: Joi.object()
             .keys({
-                daiictId: Joi.number()
+                daiictId: Joi.string()
                     .required(),
                 password: Joi.string()
                     .required(),
@@ -86,7 +86,7 @@ module.exports = {
             }),
         daiictIdSchema: Joi.object()
             .keys({
-                param: Joi.number()
+                param: Joi.string()
                     .required(),
             }),
         idSchema: Joi.object()

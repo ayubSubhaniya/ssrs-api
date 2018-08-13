@@ -37,7 +37,7 @@ const collectionTypeSchemaValidator = (collectionType) => {
 
 const orderSchema = new Schema({
     requestedBy: {
-        type: Number,
+        type: String,
         required: true,
     },
     serviceName: {
@@ -57,7 +57,7 @@ const orderSchema = new Schema({
         type: Date,
     },
     lastModifiedBy: {
-        type: Number,
+        type: String,
     },
     serviceCost: {
         type: Number,
