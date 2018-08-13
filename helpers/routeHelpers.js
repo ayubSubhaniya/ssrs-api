@@ -9,7 +9,7 @@ module.exports = {
                 // Error Happened
                 return res.status(400).json(result.error);
             } else {
-                
+
                 // Add body in req.value
                 if (!req.value) {
                     req.value = {};
@@ -90,6 +90,7 @@ module.exports = {
             maxUnits: Joi.number(),
             baseCharge: Joi.number(),
             availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            collectionTypes: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
             paymentModes: {
                 debitCard:Joi.boolean(),
                 netBanking:Joi.boolean(),
@@ -110,6 +111,7 @@ module.exports = {
             maxUnits: Joi.number(),
             baseCharge: Joi.number(),
             availableParameters: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
+            collectionTypes: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)),
             paymentModes: {
                 debitCard:Joi.boolean(),
                 netBanking:Joi.boolean(),

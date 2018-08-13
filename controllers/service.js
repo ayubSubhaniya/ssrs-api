@@ -30,23 +30,23 @@ const generateNotification = async (message, daiictId, userIds) => {
 };
 
 const generateServiceCreatedMessage = async (service, daiictId) => {
-    let message = "New service " + service.name + " created";
+    let message = 'New service ' + service.name + ' created';
 
     if (service.isSpecialService) {
-        generateNotification(message, daiictId, service.specialServiceUsers);
+        await generateNotification(message, daiictId, service.specialServiceUsers);
     } else {
-        generateNews(message, daiictId);
+        await generateNews(message, daiictId);
     }
 };
 
 
 const generateServiceUpdatedMessage = async (service, daiictId) => {
-    let message = "Service " + service.name + " updated";
+    let message = 'Service ' + service.name + ' updated';
 
     if (service.isSpecialService) {
-        generateNotification(message, daiictId, service.specialServiceUsers);
+        await generateNotification(message, daiictId, service.specialServiceUsers);
     } else {
-        generateNews(message, daiictId);
+        await generateNews(message, daiictId);
     }
 };
 
@@ -55,23 +55,65 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
-        const readPermission = accessControl.can(user.userType).readAny(resources.service);
+        const readAnyInActiveService = accessControl.can(user.userType)
+            .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
+        const readServicePermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
-        if (readPermission.granted) {
+
+        if (readServicePermission.granted) {
             let services;
             if (readAnyInActiveService.granted) {
-                services = await Service.find({ isSpecialService: false });
+                services = await Service.find({ isSpecialService: false })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             } else if (readOwnInActiveService.granted) {
-                services = await Service.find({ isSpecialService: false, $or: [{ createdBy: daiictId }, { isActive: true }] });
+                services = await Service.find({
+                    isSpecialService: false,
+                    $or: [{ createdBy: daiictId }, { isActive: true }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             } else {
-                services = await Service.find({ isSpecialService: false, isActive: true });
+                services = await Service.find({
+                    isSpecialService: false,
+                    isActive: true
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             }
 
             if (services) {
-                const filteredServices = filterResourceData(services, readPermission.attributes);
-                res.status(HttpStatus.OK).json({ service: filteredServices });
+                const filteredServices = filterResourceData(services, readServicePermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ service: filteredServices });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -85,11 +127,20 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
-        const readAnySpecialService = accessControl.can(user.userType).readAny(resources.specialService);
-        const readOwnSpecialService = accessControl.can(user.userType).readOwn(resources.specialService);
-        const readPermission = accessControl.can(user.userType).readAny(resources.service);
+        const readAnyInActiveService = accessControl.can(user.userType)
+            .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
+        const readAnySpecialService = accessControl.can(user.userType)
+            .readAny(resources.specialService);
+        const readOwnSpecialService = accessControl.can(user.userType)
+            .readOwn(resources.specialService);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
 
         if (readPermission.granted) {
@@ -97,25 +148,97 @@ module.exports = {
 
             if (readAnySpecialService.granted) {
                 if (readAnyInActiveService.granted) {
-                    services = await Service.find({ isSpecialService: true });
+                    services = await Service.find({ isSpecialService: true })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 } else if (readOwnInActiveService.granted) {
-                    services = await Service.find({ isSpecialService: true, $or: [{ createdBy: daiictId }, { isActive: true }] });
+                    services = await Service.find({
+                        isSpecialService: true,
+                        $or: [{ createdBy: daiictId }, { isActive: true }]
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 } else {
-                    services = await Service.find({ isSpecialService: true, isActive: true });
+                    services = await Service.find({
+                        isSpecialService: true,
+                        isActive: true
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 }
             } else if (readOwnSpecialService.granted) {
                 if (readOwnInActiveService.granted) {
-                    services = await Service.find({ isSpecialService: true, createdBy: daiictId });
+                    services = await Service.find({
+                        isSpecialService: true,
+                        createdBy: daiictId
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 } else {
-                    services = await Service.find({ isSpecialService: true, isActive: true, createdBy: daiictId});
+                    services = await Service.find({
+                        isSpecialService: true,
+                        isActive: true,
+                        createdBy: daiictId
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 }
             } else {
-                services = await Service.find({ isSpecialService: true, isActive: true, specialServiceUsers:daiictId});
+                services = await Service.find({
+                    isSpecialService: true,
+                    isActive: true,
+                    specialServiceUsers: daiictId
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             }
 
             if (services) {
                 const filteredServices = filterResourceData(services, readPermission.attributes);
-                res.status(HttpStatus.OK).json({ service: filteredServices });
+                res.status(HttpStatus.OK)
+                    .json({ service: filteredServices });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -130,24 +253,65 @@ module.exports = {
         const { daiictId } = user;
         const { serviceId } = req.params;
 
-        const readPermission = accessControl.can(user.userType).readAny(resources.service);
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readAnyInActiveService = accessControl.can(user.userType)
+            .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         if (readPermission.granted) {
             let service;
 
             if (readAnyInActiveService.granted) {
-                service = await Service.findById(serviceId);
+                service = await Service.findById(serviceId)
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             } else if (readOwnInActiveService.granted) {
-                service = await Service.findOne({ _id: serviceId, $or: [{ createdBy: daiictId }, { isActive: true }] });
+                service = await Service.findOne({
+                    _id: serviceId,
+                    $or: [{ createdBy: daiictId }, { isActive: true }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             } else {
-                service = await Service.findOne({ _id: serviceId, isActive: true });
+                service = await Service.findOne({
+                    _id: serviceId,
+                    isActive: true
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             }
 
             if (service) {
                 const filteredService = filterResourceData(service, readPermission.attributes);
-                res.status(HttpStatus.OK).json({ service: filteredService });
+                res.status(HttpStatus.OK)
+                    .json({ service: filteredService });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -162,36 +326,122 @@ module.exports = {
         const { daiictId } = user;
         const { serviceId } = req.params;
 
-        const readAnyInActiveService = accessControl.can(user.userType).readAny(resources.inActiveResource);
-        const readOwnInActiveService = accessControl.can(user.userType).readOwn(resources.inActiveResource);
-        const readAnySpecialService = accessControl.can(user.userType).readAny(resources.specialService);
-        const readOwnSpecialService = accessControl.can(user.userType).readOwn(resources.specialService);
-        const readPermission = accessControl.can(user.userType).readAny(resources.service);
+        const readAnyInActiveService = accessControl.can(user.userType)
+            .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
+        const readAnySpecialService = accessControl.can(user.userType)
+            .readAny(resources.specialService);
+        const readOwnSpecialService = accessControl.can(user.userType)
+            .readOwn(resources.specialService);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         if (readPermission.granted) {
             let service;
 
             if (readAnySpecialService.granted) {
                 if (readAnyInActiveService.granted) {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true });
+                    service = await Service.find({
+                        _id: serviceId,
+                        isSpecialService: true
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 } else if (readOwnInActiveService.granted) {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true, $or: [{ createdBy: daiictId }, { isActive: true }] });
+                    service = await Service.find({
+                        _id: serviceId,
+                        isSpecialService: true,
+                        $or: [{ createdBy: daiictId }, { isActive: true }]
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 } else {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true, isActive: true });
+                    service = await Service.find({
+                        _id: serviceId,
+                        isSpecialService: true,
+                        isActive: true
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 }
             } else if (readOwnSpecialService.granted) {
                 if (readAnyInActiveService.granted || readOwnInActiveService.granted) {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true, createdBy: daiictId });
+                    service = await Service.find({
+                        _id: serviceId,
+                        isSpecialService: true,
+                        createdBy: daiictId
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 } else {
-                    service = await Service.find({ _id: serviceId, isSpecialService: true, isActive: true });
+                    service = await Service.find({
+                        _id: serviceId,
+                        isSpecialService: true,
+                        isActive: true
+                    })
+                        .populate({
+                            path: 'collectionTypes',
+                            select: readCollectionTypePermission.attributes
+                        })
+                        .populate({
+                            path: 'availableParameters',
+                            select: readParameterPermission.attributes
+                        })
+                        .exec();
                 }
             } else {
-                service = await Service.find({ _id: serviceId, specialServiceUsers: daiictId })
+                service = await Service.find({
+                    _id: serviceId,
+                    specialServiceUsers: daiictId
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
             }
 
             if (service) {
                 const filteredServices = filterResourceData(service, readPermission.attributes);
-                res.status(HttpStatus.OK).json({ service: filteredServices });
+                res.status(HttpStatus.OK)
+                    .json({ service: filteredServices });
             } else {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
@@ -203,8 +453,10 @@ module.exports = {
     addService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
-        const readPermission = accessControl.can(user.userType).readAny(resources.service);
-        const createPermission = accessControl.can(user.userType).createAny(resources.service);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const createPermission = accessControl.can(user.userType)
+            .createAny(resources.service);
 
         if (createPermission.granted) {
             const currentTimestamp = new Date();
@@ -219,7 +471,8 @@ module.exports = {
 
 
             const filteredService = filterResourceData(service, readPermission.attributes);
-            res.status(HttpStatus.CREATED).json({ service: filteredService });
+            res.status(HttpStatus.CREATED)
+                .json({ service: filteredService });
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -232,9 +485,12 @@ module.exports = {
         const { daiictId } = user;
         const { serviceId } = req.params;
 
-        const readPermission = accessControl.can(user.userType).readAny(resources.service);
-        const updateAnyPermission = accessControl.can(user.userType).updateAny(resources.service);
-        const updateOwnPermission = accessControl.can(user.userType).updateOwn(resources.service);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const updateAnyPermission = accessControl.can(user.userType)
+            .updateAny(resources.service);
+        const updateOwnPermission = accessControl.can(user.userType)
+            .updateOwn(resources.service);
 
         if (updateAnyPermission.granted) {
 
@@ -242,20 +498,25 @@ module.exports = {
 
             const service = await Service.findByIdAndUpdate(serviceId, newService, { new: true });
             const filteredService = filterResourceData(service, readPermission.attributes);
-            generateServiceUpdatedMessage(service, daiictId);
+            await generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED).json({ service: filteredService });
+            res.status(HttpStatus.ACCEPTED)
+                .json({ service: filteredService });
 
         } else if (updateOwnPermission.granted) {
 
             let newService = req.value.body;
             newService.createdOn = new Date();
 
-            const service = await Service.updateOne({ _id: serviceId, createdBy: daiictId }, newService, { new: true });
+            const service = await Service.updateOne({
+                _id: serviceId,
+                createdBy: daiictId
+            }, newService, { new: true });
             const filteredService = filterResourceData(service, readPermission.attributes);
-            generateServiceUpdatedMessage(service, daiictId);
+            await generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED).json({ service: filteredService });
+            res.status(HttpStatus.ACCEPTED)
+                .json({ service: filteredService });
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
@@ -267,8 +528,10 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
         const { serviceId } = req.params;
-        const deleteAnyPermission = accessControl.can(user.userType).deleteAny(resources.service);
-        const deleteOwnPermission = accessControl.can(user.userType).deleteOwn(resources.service);
+        const deleteAnyPermission = accessControl.can(user.userType)
+            .deleteAny(resources.service);
+        const deleteOwnPermission = accessControl.can(user.userType)
+            .deleteOwn(resources.service);
 
         if (deleteAnyPermission.granted) {
 
@@ -283,7 +546,10 @@ module.exports = {
 
         } else if (deleteOwnPermission.granted) {
 
-            const service = await Service.findByOneAndRemove({ _id: serviceId, createdBy: daiictId });
+            const service = await Service.findOneAndRemove({
+                _id: serviceId,
+                createdBy: daiictId
+            });
 
             if (service) {
                 res.sendStatus(HttpStatus.ACCEPTED);

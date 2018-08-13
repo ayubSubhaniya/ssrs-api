@@ -64,6 +64,10 @@ const serviceSchema = new Schema({
             default:false,
         },
     },
+    collectionTypes:[{
+        type: Schema.Types.ObjectId,
+        ref: 'collectionType'
+    }],
     availableParameters: [{
         type: Schema.Types.ObjectId,
         ref: 'parameter',
