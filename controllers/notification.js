@@ -15,7 +15,7 @@ module.exports = {
         const expiresInDays = NOTIFICATION_EXPIRY_TIME;
 
         if (readOwnPermission.granted) {
-            var startDate = new Date();
+            const startDate = new Date();
             startDate.setDate(startDate.getDate() - expiresInDays);
 
             const notification = await Notification.find({
@@ -24,7 +24,8 @@ module.exports = {
                     $gte: startDate,
                     $lt: new Date()
                 }
-            });
+            })
+                .sort({ createdOn: -1 });
 
             if (notification) {
                 const filteredNotification = filterResourceData(notification, readOwnPermission.attributes);
@@ -56,7 +57,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.startDate(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else if (readOwnPermission.granted) {
             const notification = await Notification.findOne({
@@ -68,7 +69,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.startDate(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);

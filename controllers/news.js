@@ -13,14 +13,15 @@ module.exports = {
             .readAny(resources.news);
         if (readPermission.granted) {
 
-            var startDate = new Date();
+            const startDate = new Date();
             startDate.setDate(startDate.getDate() - NEWS_EXPIRY_TIME);
             const news = await News.find({
                 createdOn: {
                     $gte: startDate,
                     $lt: new Date()
                 }
-            });
+            })
+                .sort({ createdOn: -1 });
 
             if (news) {
                 const filteredNews = filterResourceData(news, readPermission.attributes);
@@ -81,7 +82,7 @@ module.exports = {
         const readPermission = accessControl.can(user.userType)
             .readOwn(resources.news);
         if (readPermission.granted) {
-            var startDate = new Date();
+            const startDate = new Date();
             startDate.setDate(startDate.getDate() - NEWS_EXPIRY_TIME);
 
             const news = await News.find({
@@ -90,7 +91,8 @@ module.exports = {
                     '$lt': new Date()
                 },
                 createdBy: daiictId,
-            });
+            })
+                .sort({ createdOn: -1 });
 
             if (news) {
                 const filteredNews = filterResourceData(news, readPermission.attributes);

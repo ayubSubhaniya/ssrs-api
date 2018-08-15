@@ -9,7 +9,7 @@ const dotenv = require('dotenv');
 
 const { error } = dotenv.config();
 if (error) {
-    throw error('add .env file');
+    throw error('Please add .env file');
 }
 
 const DB_HOST = process.env.DB_HOST;
@@ -20,7 +20,8 @@ const DB_PASS = process.env.DB_PASS;
 const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
 //const dbURI = process.env.DB_URI;
 db.connect(dbURI);
-db.set('debug', process.env.NODE_ENV === 'development');
+
+//db.set('debug', process.env.NODE_ENV === 'development');
 
 const app = express();
 
