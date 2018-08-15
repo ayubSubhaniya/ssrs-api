@@ -51,6 +51,15 @@ module.exports = {
                 password: Joi.string()
                     .required(),
             }),
+        changePasswordSchema: Joi.object()
+            .keys({
+                daiictId: Joi.string()
+                    .required(),
+                password: Joi.string()
+                    .required(),
+                newPassword: Joi.string()
+                    .required(),
+            }),
         addUserSchema: Joi.object()
             .keys({
                 daiictId: Joi.string()

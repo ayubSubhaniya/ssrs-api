@@ -44,7 +44,6 @@ module.exports = {
                 'gender',
                 'programme',
                 'requestedServices',
-                'password',
             ],
             canRead: [
                 'name',

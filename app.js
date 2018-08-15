@@ -17,8 +17,8 @@ const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
-//const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
-const dbURI = process.env.DB_URI;
+const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
+//const dbURI = process.env.DB_URI;
 db.connect(dbURI);
 db.set('debug', process.env.NODE_ENV === 'development');
 

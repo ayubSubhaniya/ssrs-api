@@ -27,6 +27,13 @@ router.route('/signin')
         AccountController.signIn
     );
 
+router.route('/changePassword')
+    .post(
+        validateBody(schemas.changePasswordSchema),
+        passport.authenticate('local', { session: false }),
+        AccountController.changePassword
+    );
+
 router.route('/signout')
     .get(
         passport.authenticate('jwt', { session: false }),
