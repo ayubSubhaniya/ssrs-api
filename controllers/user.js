@@ -36,7 +36,7 @@ module.exports = {
             res.status(HttpStatus.CREATED)
                 .json({ user: filteredUser });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -56,7 +56,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -77,7 +77,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -92,7 +92,7 @@ module.exports = {
             res.status(HttpStatus.ACCEPTED)
                 .json({ user: filteredUsers });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -116,7 +116,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 

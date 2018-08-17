@@ -139,7 +139,7 @@ module.exports = {
             res.status(HttpStatus.ACCEPTED)
                 .json(result);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -219,7 +219,7 @@ module.exports = {
             saveAccessRoleInFile();
             res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -234,7 +234,7 @@ module.exports = {
                     adminTypes
                 });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -252,7 +252,7 @@ module.exports = {
             saveAccessRoleInFile();
             res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -270,7 +270,7 @@ module.exports = {
             saveAccessRoleInFile();
             res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 

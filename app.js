@@ -19,7 +19,15 @@ const DB_PASS = process.env.DB_PASS;
 
 const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
 //const dbURI = process.env.DB_URI;
-db.connect(dbURI);
+db.connect(dbURI)
+    .then(
+        ()=>{
+            console.log("MongoDB connection established");
+        },
+        (err)=>{
+            console.log(`Cannot connect to mongoDB\n${err}`);
+        }
+    );
 
 //db.set('debug', process.env.NODE_ENV === 'development');
 

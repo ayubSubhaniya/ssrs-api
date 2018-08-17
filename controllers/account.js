@@ -189,7 +189,7 @@ module.exports = {
             res.status(HttpStatus.ACCEPTED)
                 .json({ user: filteredUser });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
