@@ -12,16 +12,19 @@ if (error) {
     throw error('Please add .env file');
 }
 
+/* CONNECTING TO MongoDB */
 const DB_HOST = process.env.DB_HOST;
 const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
-const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
-//const dbURI = process.env.DB_URI;
-db.connect(dbURI);
+/* Local Database */
+// const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
 
-//db.set('debug', process.env.NODE_ENV === 'development');
+/* Online Database */
+const dbURI = process.env.DB_URI;
+
+db.connect(dbURI);
 
 const app = express();
 

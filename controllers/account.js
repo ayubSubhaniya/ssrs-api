@@ -86,10 +86,7 @@ module.exports = {
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
 
-        res.status(HttpStatus.CREATED)
-            .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
-
-
+        res.status(HttpStatus.CREATED).end('Response: Verification link sent');
     },
 
     resendVerificationLink: async (req, res, next) => {
@@ -127,7 +124,7 @@ module.exports = {
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
-            res.end('<h1>Email ' + user.daiictId + ' is been Successfully verified</h1>');
+            res.end('<h1>Email ' + user.daiictId + ' is been successfully verified</h1>');
         }
         else {
             res.end('<h1>Bad Request</h1>');
