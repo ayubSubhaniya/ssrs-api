@@ -4,6 +4,8 @@ const LocalStrategy = require('passport-local').Strategy;
 const { JWT_SECRET, errors } = require('./configuration');
 const User = require('./models/user');
 
+const INVALID_LOGIN_MSG = 'DAKKHA: Invalid username or password!';
+
 //JSON WEB TOKEN STRATEGY
 passport.use(new JwtStrategy({
     jwtFromRequest: req => req.cookies.jwt,
@@ -24,6 +26,7 @@ passport.use(new JwtStrategy({
             return done(null, false, { message: errors.sessionExpired });
         }
         req['user'] = user;
+
         //Otherwise, return the user
         done(null, user);
     } catch (error) {
@@ -41,7 +44,8 @@ passport.use(new LocalStrategy({
         const user = await User.findOne({ daiictId });
         //if not handle it
         if (!user) {
-            return done(null, false);
+            console.log(INVALID_LOGIN_MSG);
+            return done(null, false, {message: INVALID_LOGIN_MSG});
         }
 
         //check if the password is correct

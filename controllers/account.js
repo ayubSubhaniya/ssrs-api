@@ -54,12 +54,13 @@ module.exports = {
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
 
         const createdOn = new Date();
+
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
         //user already exist
         if (foundUser) {
-            return res.sendStatus(HttpStatus.FORBIDDEN);
+            return res.status(HttpStatus.FORBIDDEN).end('User already exists');
         }
 
         const randomHash = randomstring.generate();
@@ -68,8 +69,8 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Please confirm your Email account',
-            html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
+            subject: 'SSRS - Confirm your Email account',
+            html: 'Hello,<br> Please click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
 
         };
 
@@ -82,33 +83,13 @@ module.exports = {
             createdOn,
             randomHash
         };
+
         const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
-
-        res.status(HttpStatus.CREATED).end('Response: Verification link sent');
+        
+        res.status(HttpStatus.CREATED).end('Verification link sent');
     },
-
-    resendVerificationLink: async (req, res, next) => {
-        const { daiictId } = req.params;
-        const user = await tempUser.findOne({ daiictId });
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
-        const host = req.get('host');
-        const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
-        const mailOptions = {
-            from: mailAccountUserName,
-            to: primaryEmail,
-            subject: 'Please confirm your Email account',
-            html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
-
-        };
-        const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
-        const info = await smtpTransport.sendMail(mailOptions);
-
-        res.status(HttpStatus.CREATED)
-            .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
-    },
-
 
     verifyAccount: async (req, res, next) => {
         const { daiictId } = req.params;
@@ -129,6 +110,26 @@ module.exports = {
         else {
             res.end('<h1>Bad Request</h1>');
         }
+    },
+
+    resendVerificationLink: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const user = await tempUser.findOne({ daiictId });
+        const primaryEmail = daiictId + '@' + daiictMailDomainName;
+        const host = req.get('host');
+        const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
+        const mailOptions = {
+            from: mailAccountUserName,
+            to: primaryEmail,
+            subject: 'SSRS - Confirm your Email account',
+            html: 'Hello,<br> Please click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
+
+        };
+        
+        const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
+        const info = await smtpTransport.sendMail(mailOptions);
+
+        res.status(HttpStatus.CREATED).end('Response-resendverification-OK');
     },
 
     changePassword: async (req, res, next) => {

@@ -20,6 +20,7 @@ const DB_PASS = process.env.DB_PASS;
 
 /* Local Database */
 // const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
+// console.log('>Initiating Local Database...');
 
 /* Online Database */
 const dbURI = process.env.DB_URI;

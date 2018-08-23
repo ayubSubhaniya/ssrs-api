@@ -6,20 +6,22 @@ const { NEWS_EXPIRY_TIME, resources } = require('../configuration');
 const { accessControl } = require('./access');
 
 module.exports = {
-    getAllNews: async (req, res, next) => {
+    getNewsCreatedByMe: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user;
 
         const readPermission = accessControl.can(user.userType)
-            .readAny(resources.news);
+            .readOwn(resources.news);
         if (readPermission.granted) {
-
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - NEWS_EXPIRY_TIME);
+
             const news = await News.find({
                 createdOn: {
-                    $gte: startDate,
-                    $lt: new Date()
-                }
+                    '$gte': startDate,
+                    '$lt': new Date()
+                },
+                createdBy: daiictId,
             })
                 .sort({ createdOn: -1 });
 
@@ -31,6 +33,21 @@ module.exports = {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
 
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+    
+    deleteNewsCreatedByMe: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+
+        const deletePermission = accessControl.can(user.userType)
+            .deleteOwn(resources.news);
+
+        if (deletePermission.granted) {
+            await News.deleteMany({ createdBy: daiictId });
+            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -70,126 +87,6 @@ module.exports = {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
 
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    getNewsCreatedByMe: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-
-        const readPermission = accessControl.can(user.userType)
-            .readOwn(resources.news);
-        if (readPermission.granted) {
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - NEWS_EXPIRY_TIME);
-
-            const news = await News.find({
-                createdOn: {
-                    '$gte': startDate,
-                    '$lt': new Date()
-                },
-                createdBy: daiictId,
-            })
-                .sort({ createdOn: -1 });
-
-            if (news) {
-                const filteredNews = filterResourceData(news, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
-                    .json({ news: filteredNews });
-            } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
-            }
-
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    addNews: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-
-        const createPermission = accessControl.can(user.userType)
-            .createOwn(resources.news);
-        const readPermission = accessControl.can(user.userType)
-            .readOwn(resources.news);
-
-        if (createPermission.granted) {
-            const { message } = req.body;
-            const createdOn = new Date();
-            const newNews = new News({
-                message,
-                createdOn,
-                createdBy: daiictId
-            });
-            const news = await newNews.save();
-
-            const filteredNews = filterResourceData(news, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED)
-                .json({ news: filteredNews });
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    deleteNews: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { newsId } = req.params;
-
-        const deleteAnyPermission = accessControl.can(user.userType)
-            .deleteAny(resources.news);
-        const deleteOwnPermission = accessControl.can(user.userType)
-            .deleteOwn(resources.news);
-
-        if (deleteAnyPermission.granted) {
-            const news = await News.findByIdAndRemove(newsId);
-
-            if (news) {
-                res.sendStatus(HttpStatus.ACCEPTED);
-            } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
-            }
-        } else if (deleteOwnPermission.granted) {
-            const news = await News.findOneAndRemove({
-                _id: newsId,
-                createdBy: daiictId
-            });
-            if (news) {
-                res.sendStatus(HttpStatus.ACCEPTED);
-            } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
-            }
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    deleteAllNews: async (req, res, next) => {
-        const { user } = req;
-
-        const deletePermission = accessControl.can(user.userType)
-            .deleteAny(resources.news);
-        if (deletePermission.granted) {
-            await News.deleteMany({});
-            res.sendStatus(HttpStatus.ACCEPTED);
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    deleteNewsCreatedByMe: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-
-        const deletePermission = accessControl.can(user.userType)
-            .deleteOwn(resources.news);
-
-        if (deletePermission.granted) {
-            await News.deleteMany({ createdBy: daiictId });
-            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -236,6 +133,109 @@ module.exports = {
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
             }
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+
+    deleteNews: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { newsId } = req.params;
+
+        const deleteAnyPermission = accessControl.can(user.userType)
+            .deleteAny(resources.news);
+        const deleteOwnPermission = accessControl.can(user.userType)
+            .deleteOwn(resources.news);
+
+        if (deleteAnyPermission.granted) {
+            const news = await News.findByIdAndRemove(newsId);
+
+            if (news) {
+                res.sendStatus(HttpStatus.ACCEPTED);
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+            }
+        } else if (deleteOwnPermission.granted) {
+            const news = await News.findOneAndRemove({
+                _id: newsId,
+                createdBy: daiictId
+            });
+            if (news) {
+                res.sendStatus(HttpStatus.ACCEPTED);
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+            }
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+
+    getAllNews: async (req, res, next) => {
+        const { user } = req;
+
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.news);
+        if (readPermission.granted) {
+
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - NEWS_EXPIRY_TIME);
+            const news = await News.find({
+                createdOn: {
+                    $gte: startDate,
+                    $lt: new Date()
+                }
+            })
+                .sort({ createdOn: -1 });
+
+            if (news) {
+                const filteredNews = filterResourceData(news, readPermission.attributes);
+                res.status(HttpStatus.ACCEPTED)
+                    .json({ news: filteredNews });
+            } else {
+                res.sendStatus(HttpStatus.NO_CONTENT);
+            }
+
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+
+    addNews: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+
+        const createPermission = accessControl.can(user.userType)
+            .createOwn(resources.news);
+        const readPermission = accessControl.can(user.userType)
+            .readOwn(resources.news);
+
+        if (createPermission.granted) {
+            const { message } = req.body;
+            const createdOn = new Date();
+            const newNews = new News({
+                message,
+                createdOn,
+                createdBy: daiictId
+            });
+            const news = await newNews.save();
+
+            const filteredNews = filterResourceData(news, readPermission.attributes);
+            res.status(HttpStatus.ACCEPTED)
+                .json({ news: filteredNews });
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+
+    deleteAllNews: async (req, res, next) => {
+        const { user } = req;
+
+        const deletePermission = accessControl.can(user.userType)
+            .deleteAny(resources.news);
+        if (deletePermission.granted) {
+            await News.deleteMany({});
+            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
