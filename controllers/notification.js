@@ -40,6 +40,45 @@ module.exports = {
         }
     },
 
+    addNotification: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+
+        const createPermission = accessControl.can(user.userType)
+            .createOwn(resources.notification);
+        const readPermission = accessControl.can(user.userType)
+            .readOwn(resources.notification);
+
+        if (createPermission.granted) {
+            let notificationAtt = req.value.body;
+            notificationAtt.createdOn = new Date();
+            notificationAtt.createdBy = daiictId;
+
+            const newNotification = new Notification(notificationAtt);
+            const notification = await newNotification.save();
+
+            const filteredNotification = filterResourceData(notification, readPermission.attributes);
+            res.status(HttpStatus.CREATED)
+                .json({ notification: filteredNotification });
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+
+    },
+
+    deleteAllNotification: async (req, res, next) => {
+        const { user } = req;
+
+        const deletePermission = accessControl.can(user.userType)
+            .deleteAny(resources.notification);
+        if (deletePermission.granted) {
+            await Notification.deleteMany({});
+            res.sendStatus(HttpStatus.ACCEPTED);
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+
     getNotification: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -71,77 +110,6 @@ module.exports = {
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    addNotification: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-
-        const createPermission = accessControl.can(user.userType)
-            .createOwn(resources.notification);
-        const readPermission = accessControl.can(user.userType)
-            .readOwn(resources.notification);
-
-        if (createPermission.granted) {
-            let notificationAtt = req.value.body;
-            notificationAtt.createdOn = new Date();
-            notificationAtt.createdBy = daiictId;
-
-            const newNotification = new Notification(notificationAtt);
-            const notification = await newNotification.save();
-
-            const filteredNotification = filterResourceData(notification, readPermission.attributes);
-            res.status(HttpStatus.CREATED)
-                .json({ notification: filteredNotification });
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-
-    },
-
-    deleteNotification: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { notificationId } = req.params;
-        const deleteAnyPermission = accessControl.can(user.userType)
-            .deleteAny(resources.notification);
-        const deleteOwnPermission = accessControl.can(user.userType)
-            .deleteOwn(resources.notification);
-
-        if (deleteAnyPermission.granted) {
-            const notification = await Notification.findByIdAndRemove(notificationId);
-
-            if (notification) {
-                res.sendStatus(HttpStatus.ACCEPTED);
-            } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
-            }
-        } else if (deleteOwnPermission.granted) {
-            const notification = await Notification.findOneAndRemove({
-                _id: notificationId,
-                createdBy: daiictId
-            });
-            if (notification) {
-                res.sendStatus(HttpStatus.ACCEPTED);
-            } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
-            }
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    deleteAllNotification: async (req, res, next) => {
-        const { user } = req;
-
-        const deletePermission = accessControl.can(user.userType)
-            .deleteAny(resources.notification);
-        if (deletePermission.granted) {
-            await Notification.deleteMany({});
-            res.sendStatus(HttpStatus.ACCEPTED);
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
@@ -185,6 +153,38 @@ module.exports = {
                     .json({ notification: filteredNotification });
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
+            }
+        } else {
+            res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+    
+    deleteNotification: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { notificationId } = req.params;
+        const deleteAnyPermission = accessControl.can(user.userType)
+            .deleteAny(resources.notification);
+        const deleteOwnPermission = accessControl.can(user.userType)
+            .deleteOwn(resources.notification);
+
+        if (deleteAnyPermission.granted) {
+            const notification = await Notification.findByIdAndRemove(notificationId);
+
+            if (notification) {
+                res.sendStatus(HttpStatus.ACCEPTED);
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+            }
+        } else if (deleteOwnPermission.granted) {
+            const notification = await Notification.findOneAndRemove({
+                _id: notificationId,
+                createdBy: daiictId
+            });
+            if (notification) {
+                res.sendStatus(HttpStatus.ACCEPTED);
+            } else {
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
