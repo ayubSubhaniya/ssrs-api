@@ -4,10 +4,10 @@ controllers/account.js      - line:88 --> Unused parameter?
                             - line:130 --> Improve response
 
 controllers/news.js         - line:74,87 --> NO_CONTENT-204 should be added, right?
-controllers/notification.js - line:99,111,142,      (")
+controllers/notification.js - line:99,111,142      (")
                             - line:155,177,187      (")
 
-passport.js                 - line:46,47 --> LOCAL - is Message sent? - verify from frontend
+passport.js                 - line:21,47 --> is Message sent? - verify from frontend
 
 -------------------- CHANGES MADE -----------------
 /* EHR = Error handling response,

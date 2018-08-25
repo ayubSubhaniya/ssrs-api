@@ -18,7 +18,7 @@ passport.use(new JwtStrategy({
 
         //if user doesn't exist handle it
         if (!user) {
-            return done(null, false, { message: errors.invalidToken });
+            return done(null, false, { message: INVALID_LOGIN_MSG });
         }
 
         //token expired
@@ -44,7 +44,6 @@ passport.use(new LocalStrategy({
         const user = await User.findOne({ daiictId });
         //if not handle it
         if (!user) {
-            console.log(INVALID_LOGIN_MSG);
             return done(null, false, {message: INVALID_LOGIN_MSG});
         }
 
