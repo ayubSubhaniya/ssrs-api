@@ -39,7 +39,6 @@ const generateServiceCreatedMessage = async (service, daiictId) => {
     }
 };
 
-
 const generateServiceUpdatedMessage = async (service, daiictId) => {
     let message = 'Service ' + service.name + ' updated';
 
@@ -553,7 +552,6 @@ module.exports = {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
         }
     },
-
 
     deleteService: async (req, res, next) => {
         const { user } = req;
