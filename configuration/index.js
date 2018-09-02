@@ -1,4 +1,5 @@
 module.exports = {
+    sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
     JWT_SECRET: 'ssrs-daiict-authentication',
