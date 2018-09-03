@@ -91,7 +91,6 @@ module.exports = {
                 gender: Joi.string(),
                 programme: Joi.string(),
                 userType: Joi.string(),
-                isActive: Joi.boolean(),
             }),
         daiictIdSchema: Joi.object()
             .keys({
@@ -200,6 +199,10 @@ module.exports = {
             .keys({
                 message: Joi.string(),
                 userId: Joi.number()
+            }),
+        changeStatusSchema: Joi.object()
+            .keys({
+                isActive: Joi.boolean()
             }),
     },
 };

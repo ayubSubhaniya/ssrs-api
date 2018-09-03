@@ -8,7 +8,7 @@ const filterResourceData = (resourcesData, attributes) => {
             let filteredData = {};
 
             attributes.forEach(attribute => {
-                if (resourceData[attribute]){
+                if (resourceData[attribute]!=undefined){
                     filteredData[attribute] = resourceData[attribute];
                 }
             });
@@ -20,24 +20,13 @@ const filterResourceData = (resourcesData, attributes) => {
         let filteredResourceData = {};
 
         attributes.forEach(attribute => {
-            if (resourcesData[attribute]){
+            if (resourcesData[attribute]!=undefined){
                 filteredResourceData[attribute] = resourcesData[attribute];
             }
         });
 
         return filteredResourceData;
     }
-};
-
-const getDeniedAttributes = (attribute) => {
-
-    let deniedAttribute = [];
-    for (let i = 0; i < attribute.length; i++) {
-        if (attribute[i].startsWith('!')) {
-            deniedAttribute.push(attribute[i].substring(1));
-        }
-    }
-    return deniedAttribute;
 };
 
 module.exports = {

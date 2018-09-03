@@ -172,25 +172,4 @@ module.exports = {
         res.status(HttpStatus.OK)
             .end();
     },
-
-    updateInformation: async (req, res, next) => {
-        //sign token
-        const userInDB = req.user;
-
-        const updateOwnPermission = accessControl.can(userInDB.userType)
-            .readOwn(resources.user);
-        const user = filterResourceData(req.value.body,updateOwnPermission.attributes);
-
-        if (updateOwnPermission.granted) {
-            const savedUser = await User.findByIdAndUpdate(userInDB._id, user,{new:true});
-
-            const filteredUser = filterResourceData(savedUser, updateOwnPermission.attributes);
-
-            res.status(HttpStatus.ACCEPTED)
-                .json({ user: filteredUser });
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
 };

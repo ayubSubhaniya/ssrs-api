@@ -14,12 +14,23 @@ module.exports = {
             .createAny(resources.user);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.user);
+
         if (createPermission.granted) {
-            const { daiictId, password, userType } = req.value.body;
+            const { daiictId, password} = req.value.body;
+
+            //check if user exist
+            const foundUser = await User.findOne({ daiictId });
+
+            //user already exist
+            if (foundUser) {
+                return res.sendStatus(HttpStatus.FORBIDDEN);
+            }
+
+            let { userType } = req.value.body;
             const primaryEmail = daiictId + '@' + daiictMailDomainName;
             const createdOn = new Date();
 
-            if (!userType) {
+            if (!userType){
                 userType = userTypes.student;
             }
 
@@ -31,12 +42,119 @@ module.exports = {
                 createdOn
             });
 
+            /**
+             * Add instruction for sending mail to new user
+             */
+
             const addedUser = await newUser.save();
             const filteredUser = filterResourceData(addedUser, readPermission.attributes);
             res.status(HttpStatus.CREATED)
                 .json({ user: filteredUser });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    getUser: async (req, res, next) => {
+        const { user } = req;
+
+        const readPermission = accessControl.can(user.userType)
+            .readOwn(resources.user);
+
+        if (readPermission.granted) {
+            const filteredUser = filterResourceData(user, readPermission.attributes);
+            res.status(HttpStatus.OK).json({user:filteredUser});
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    getOtherUser: async (req, res, next) => {
+        const { user } = req;
+        const { requestedUserId } = req.params;
+
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.user);
+
+        if (readPermission.granted) {
+            const requestedUser = await User.findOne({ daiictId: requestedUserId });
+
+            if (requestedUser) {
+                const filteredUser = filterResourceData(requestedUser, readPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ user: filteredUser });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    getAllUser: async (req, res, next) => {
+        const { user } = req;
+
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.user);
+
+        if (readPermission.granted) {
+            const requestedUsers = await User.find({});
+            const filteredUsers = filterResourceData(requestedUsers, readPermission.attributes);
+            res.status(HttpStatus.OK)
+                .json({ user: filteredUsers });
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    updateOtherUser: async (req, res, next) => {
+        const { user } = req;
+        const { requestedUserId } = req.params;
+
+        const updatePermission = accessControl.can(user.userType)
+            .updateAny(resources.user);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.user);
+
+        if (updatePermission.granted) {
+            const userUpdateAtt = req.value.body;
+            const updatedUser = await User.findOneAndUpdate({ daiictId: requestedUserId }, userUpdateAtt, { new: true });
+            if (updatedUser) {
+                const filteredUser = filterResourceData(updatedUser, readPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ user: filteredUser });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    updateUser: async (req, res, next) => {
+        const { user } = req;
+        const requestedUserId = user.daiictId;
+
+        const updatePermission = accessControl.can(user.userType)
+            .updateOwn(resources.user);
+        const readPermission = accessControl.can(user.userType)
+            .readOwn(resources.user);
+
+        if (updatePermission.granted) {
+            const userUpdateAtt = req.value.body;
+            const updatedUser = await User.findOneAndUpdate({ daiictId: requestedUserId }, userUpdateAtt, { new: true });
+            if (updatedUser) {
+                const filteredUser = filterResourceData(updatedUser, readPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ user: filteredUser });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -46,77 +164,37 @@ module.exports = {
 
         const deletePermission = accessControl.can(user.userType)
             .deleteAny(resources.user);
+
         if (deletePermission.granted) {
             const deletedUser = await User.findOneAndRemove({ daiictId: requestedUserId });
 
-            if (deletedUser) {
-                res.sendStatus(HttpStatus.ACCEPTED);
-            } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
-            }
-
+            res.sendStatus(HttpStatus.OK);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
-    getUser: async (req, res, next) => {
-        const { user } = req;
-        const { requestedUserId } = req.params;
-
-        const readPermission = accessControl.can(user.userType)
-            .readAny(resources.user);
-        if (readPermission.granted) {
-            const requestedUser = await User.findOne({ daiictId: requestedUserId });
-            if (requestedUser) {
-                const filteredUser = filterResourceData(requestedUser, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
-                    .json({ user: filteredUser });
-            } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
-            }
-
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    getAllUser: async (req, res, next) => {
-        const { user } = req;
-
-        const readPermission = accessControl.can(user.userType)
-            .readAny(resources.user);
-        if (readPermission.granted) {
-            const requestedUsers = await User.find({});
-            const filteredUsers = filterResourceData(requestedUsers, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED)
-                .json({ user: filteredUsers });
-        } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
-        }
-    },
-
-    updateUser: async (req, res, next) => {
+    changeUserStatus: async (req, res, next) => {
         const { user } = req;
         const { requestedUserId } = req.params;
 
         const updatePermission = accessControl.can(user.userType)
-            .updateAny(resources.user);
+            .updateAny(resources.changeResourceStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.user);
+
         if (updatePermission.granted) {
             const userUpdateAtt = req.value.body;
             const updatedUser = await User.findOneAndUpdate({ daiictId: requestedUserId }, userUpdateAtt, { new: true });
             if (updatedUser) {
                 const filteredUser = filterResourceData(updatedUser, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ user: filteredUser });
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
-
         } else {
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 

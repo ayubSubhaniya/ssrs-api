@@ -39,11 +39,4 @@ router.route('/signout')
         passport.authenticate('jwt', { session: false }),
         AccountController.signOut
     );
-
-router.route('/update')
-    .post(
-        passport.authenticate('jwt', { session: false }),
-        validateBody(schemas.updateUserSchema),
-        AccountController.updateInformation
-    );
 module.exports = router;

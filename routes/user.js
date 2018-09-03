@@ -6,6 +6,15 @@ const userController = require('../controllers/user');
 const { validateBody, schemas } = require('../helpers/routeHelpers');
 
 router.route('/')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        userController.getUser
+    )
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.updateUserSchema),
+        userController.updateUser
+    )
     .post(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.addUserSchema),
@@ -18,15 +27,22 @@ router.route('/all')
         userController.getAllUser
     );
 
+router.route('/changeStatus/:requestedUserId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.changeStatusSchema),
+        userController.changeUserStatus
+    );
+
 router.route('/:requestedUserId')
     .get(
         passport.authenticate('jwt', { session: false }),
-        userController.getUser
+        userController.getOtherUser
     )
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.updateUserSchema),
-        userController.updateUser
+        userController.updateOtherUser
     )
     .delete(
         passport.authenticate('jwt', { session: false }),
