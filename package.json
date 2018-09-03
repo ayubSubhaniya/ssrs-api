@@ -4,7 +4,7 @@
   "description": "Student Service Request System",
   "main": "app.js",
   "scripts": {
-    "dev": "nodemon NODE_ENV=development",
+    "dev": "./bin/startServer.sh",
     "start": "node app.js",
     "deploy": "./bin/startServer.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
