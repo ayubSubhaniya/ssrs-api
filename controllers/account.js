@@ -20,7 +20,7 @@ const mailAccountPassword = process.env.MAIL_PASS;
 const smtpTransport = nodemailer.createTransport({
     host: 'webmail.daiict.ac.in',
     port: 465,
-    secureConnection: false,
+    secureConnection: true,
     auth: {
         user: mailAccountUserName,
         pass: mailAccountPassword
