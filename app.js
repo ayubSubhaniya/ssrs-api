@@ -7,10 +7,15 @@ const HttpStatus = require('http-status-codes');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-const { error } = dotenv.config();
-if (error) {
-    throw error('Please add .env file');
+const app = express();
+
+if (app.get('env')==='development'){
+    const { error } = dotenv.config();
+    if (error) {
+        throw error('Please add .env file');
+    }
 }
+
 
 /* CONNECTING TO MongoDB */
 const DB_HOST = process.env.DB_HOST;
@@ -23,10 +28,15 @@ const DB_PASS = process.env.DB_PASS;
 
 /* Online Database */
 const dbURI = process.env.DB_URI;
-
-db.connect(dbURI);
-
-const app = express();
+db.connect(dbURI)
+    .then(
+        ()=>{
+            console.log("MongoDB connection established");
+        },
+        (err)=>{
+            console.log(`Cannot connect to mongoDB\n${err}`);
+        }
+    );
 
 // Routes
 const order = require('./routes/order');
