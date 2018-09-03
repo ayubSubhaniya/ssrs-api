@@ -32,6 +32,7 @@ module.exports = {
         service: 'Service',
         specialService: 'SpecialService',
         inActiveResource: 'InActiveResource',
+        changeResourceStatus: 'changeResourceStatus',
         news: 'News',
         notification: 'Notification',
         courier: 'Courier',

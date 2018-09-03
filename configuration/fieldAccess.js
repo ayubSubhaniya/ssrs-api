@@ -262,6 +262,20 @@ module.exports = {
             canUpdate: []
         },
     },
+    changeResourceStatus: {
+        superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [
+                '*'
+            ],
+        },
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
+        },
+    },
     Collector: {
         superAdmin: {
             canRead: [
