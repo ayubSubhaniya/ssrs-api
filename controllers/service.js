@@ -119,7 +119,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -244,7 +244,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -317,7 +317,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -446,7 +446,7 @@ module.exports = {
                 res.sendStatus(HttpStatus.NO_CONTENT);
             }
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -480,7 +480,7 @@ module.exports = {
                 .json({ service: filteredService });
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -551,7 +551,7 @@ module.exports = {
                 .json({ service: filteredService });
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -614,7 +614,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 };

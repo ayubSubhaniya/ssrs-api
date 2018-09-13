@@ -32,7 +32,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -71,7 +71,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -103,7 +103,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -130,7 +130,7 @@ module.exports = {
             res.status(HttpStatus.ACCEPTED)
                 .json({ news: filteredNews });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -163,7 +163,7 @@ module.exports = {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -176,7 +176,7 @@ module.exports = {
             await News.deleteMany({});
             res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -191,7 +191,7 @@ module.exports = {
             await News.deleteMany({ createdBy: daiictId });
             res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -237,7 +237,7 @@ module.exports = {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 };

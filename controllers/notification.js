@@ -36,7 +36,7 @@ module.exports = {
             }
 
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -72,7 +72,7 @@ module.exports = {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -97,7 +97,7 @@ module.exports = {
             res.status(HttpStatus.CREATED)
                 .json({ notification: filteredNotification });
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
 
     },
@@ -130,7 +130,7 @@ module.exports = {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -143,7 +143,7 @@ module.exports = {
             await Notification.deleteMany({});
             res.sendStatus(HttpStatus.ACCEPTED);
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 
@@ -187,7 +187,7 @@ module.exports = {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
-            res.sendStatus(HttpStatus.UNAUTHORIZED);
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 };

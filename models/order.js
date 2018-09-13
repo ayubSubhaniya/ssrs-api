@@ -2,39 +2,6 @@ const db = require('mongoose');
 
 const { Schema } = db;
 
-const paymentSchema = {
-    paymentType: {
-        type: String,
-        required: true,
-    },
-    isPaymentDone: {
-        type: Boolean,
-        default: false,
-    },
-    paymentId: {
-        type: String,
-    },
-};
-
-const paymentSchemaValidator = (payment) => {
-    return !payment.isPaymentDone || payment.paymentId;
-};
-
-const collectionTypeSchema = {
-    courier: {
-        type: Schema.Types.ObjectId,
-        ref: 'courier'
-    },
-    pickup: {
-        type: Schema.Types.ObjectId,
-        ref: 'collector'
-    },
-};
-
-const collectionTypeSchemaValidator = (collectionType) => {
-    return !collectionType.courier || !collectionType.pickup;
-};
-
 const orderSchema = new Schema({
     requestedBy: {
         type: String,
@@ -61,19 +28,19 @@ const orderSchema = new Schema({
     },
     serviceCost: {
         type: Number,
-        require: true,
+        default:0,
     },
     parameterCost: {
         type: Number,
-        require: true,
+        default:0,
     },
     collectionTypeCost: {
         type: Number,
-        require: true,
+        default:0,
     },
     totalCost: {
         type: Number,
-        require: true,
+        default:0,
     },
     status: {
         type: Number,
@@ -83,19 +50,49 @@ const orderSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'parameter',
     }],
-    payment: {
-        type: paymentSchema,
-        validate: paymentSchemaValidator,
+    paymentType: {
+        type: Number,
     },
+    isPaymentDone: {
+        type: Boolean,
+        default: false,
+    },
+    paymentId: {
+        type: String,
+    },
+
     collectionType: {
-        type: collectionTypeSchema,
-        validate: collectionTypeSchemaValidator,
+        type: String,
+    },
+    courier: {
+        type: Schema.Types.ObjectId,
+        ref: 'courier'
+    },
+    pickup: {
+        type: Schema.Types.ObjectId,
+        ref: 'collector'
     },
 });
 
+const paymentSchemaValidator = (order) => {
+    return !order.isPaymentDone || order.paymentId;
+};
+
+const collectionTypeSchemaValidator = (order) => {
+    return !collectionType || (order.courier == null ^ order.pickup == null);
+};
+
 orderSchema.pre('save', function (next) {
-    this.totalCost = this.serviceCost + this.parameterCost + this.collectionTypeCost;
-    next();
+    if (!paymentSchemaValidator(this)) {
+        const err = new Error('Invalid payment information');
+        next(err);
+    } else if (!collectionTypeSchemaValidator(this)) {
+        const err = new Error('Invalid collectionType information');
+        next(err);
+    } else {
+        this.totalCost = this.serviceCost + this.parameterCost + this.collectionTypeCost;
+        next();
+    }
 });
 
 const Order = db.model('order', orderSchema);

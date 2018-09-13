@@ -1,5 +1,4 @@
 const httpStatusCodes = require('http-status-codes');
-
 const Service = require('../models/service');
 const Courier = require('../models/courier');
 const Collector = require('../models/collector');
@@ -7,15 +6,15 @@ const Order = require('../models/order');
 const CollectionType = require('../models/collectionType');
 const Parameter = require('../models/parameter');
 
-const { filterResourceData } = require('../helpers/controllerHelpers');
+const { filterResourceData, parseSortQuery, parseFilterQuery } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes } = require('../configuration');
+const { resources, collectionTypes, sortQueryName } = require('../configuration');
 
 const orderStatus = {
-    paymentRemaining: 0,
-    pending: 1,
+    incomplete: 0,
+    placed: 1,
     processing: 2,
-    completed: 3,
+    processed: 3,
     processingDelivery: 4,
     readyToDeliver: 5,
     delivered: 6,
@@ -56,8 +55,16 @@ const parameterCost = async (parameters) => {
     return totalCost;
 };
 
+const getOrders = async (query, sortQuery, readableAttributes) => {
+    const orders = await Order.find(query)
+        .sort(sortQuery);
+    const filteredOrders = filterResourceData(orders, readableAttributes);
+    return filteredOrders;
+};
+
 module.exports = {
     getAllOrders: async (req, res, next) => {
+
         const { user } = req;
         const { daiictId } = user;
 
@@ -66,20 +73,20 @@ module.exports = {
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (readAnyPermission.granted) {
-            const orders = await Order.find({});
-            const filteredOrders = filterResourceData(orders, readAnyPermission.attributes);
-            res.status(httpStatusCodes.OK)
-                .json({ order: filteredOrders });
-        } else if (readOwnPermission.granted) {
-            const orders = await Order.find({ requestedBy: daiictId });
+        const query = parseFilterQuery(req.query, readOwnPermission.attributes);
+        const sortQuery = parseSortQuery(req.query[sortQueryName], readOwnPermission.attributes);
 
-            const filteredOrders = filterResourceData(orders, readOwnPermission.attributes);
-            res.status(httpStatusCodes.OK)
-                .json({ order: filteredOrders });
+        if (readAnyPermission.granted) {
+
+        } else if (readOwnPermission.granted) {
+            query.requestedBy = daiictId;
         } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
+            return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
+
+        const filteredOrders = await getOrders(query, sortQuery, readOwnPermission.attributes);
+        res.status(httpStatusCodes.OK)
+            .json({ order: filteredOrders });
     },
 
     getOrder: async (req, res, next) => {
@@ -92,33 +99,21 @@ module.exports = {
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
+        const query = {
+            _id: orderId
+        };
+
         if (readAnyPermission.granted) {
-            const order = await Order.findById(orderId);
 
-            if (order) {
-                const filteredOrder = filterResourceData(order, readAnyPermission.attributes);
-                res.status(httpStatusCodes.OK)
-                    .json({ order: filteredOrder });
-            } else {
-                res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
-            }
         } else if (readOwnPermission.granted) {
-            const order = await Order.find({
-                _id: orderId,
-                requestedBy: daiictId
-            });
-
-            if (order) {
-                const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
-                res.status(httpStatusCodes.OK)
-                    .json({ order: filteredOrder });
-            } else {
-                res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
-            }
-
+            query.requestedBy = daiictId;
         } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
+            return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
+
+        const filteredOrders = await getOrders(query, readOwnPermission.attributes);
+        res.status(httpStatusCodes.OK)
+            .json({ order: filteredOrders });
     },
 
     addOrder: async (req, res, next) => {
@@ -140,7 +135,7 @@ module.exports = {
 
             newOrder.requestedBy = daiictId;
             newOrder.createdOn = timeStamp;
-            newOrder.status = newOrder.payment.isPaymentDone ? orderStatus.paymentRemaining : orderStatus.pending;
+            newOrder.status = newOrder.payment.isPaymentDone ? orderStatus.incomplete : orderStatus.placed;
             newOrder.serviceCost = await serviceCost(newOrder.serviceId);
             newOrder.parameterCost = await parameterCost(newOrder.parameters);
 
@@ -150,9 +145,8 @@ module.exports = {
                 newCourier.createdOn = timeStamp;
                 newCourier.createdBy = daiictId;
 
-                newOrder.collectionType = {
-                    courier: newCourier._id
-                };
+                newOrder.collectionType = collectionTypes.courier;
+                newOrder.courier = newCourier._id;
 
                 newOrder.collectionTypeCost = await collectionTypeCost(collectionTypes.courier);
 
@@ -174,9 +168,8 @@ module.exports = {
                 newCollector.createdOn = timeStamp;
                 newCollector.createdBy = daiictId;
 
-                newOrder.collectionType = {
-                    pickup: newOrder._id
-                };
+                newOrder.collectionType = collectionTypes.pickup;
+                newOrder.pickup = newCollector._id;
 
                 newOrder.collectionTypeCost = await collectionTypeCost(collectionTypes.pickup);
 
@@ -192,7 +185,12 @@ module.exports = {
                         collector: filteredCollector
                     });
             } else {
-                res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                const order = await newOrder.save();
+                const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
+                res.status(httpStatusCodes.CREATED)
+                    .json({
+                        order: filteredOrder
+                    });
             }
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);

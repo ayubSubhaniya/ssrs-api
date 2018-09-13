@@ -89,7 +89,10 @@ module.exports = {
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
 
-        res.status(HttpStatus.CREATED).end('Response: Verification link sent');
+        res.status(HttpStatus.CREATED)
+            .end('Response: Verification link sent');
+
+
     },
 
     resendVerificationLink: async (req, res, next) => {
@@ -172,4 +175,4 @@ module.exports = {
         res.status(HttpStatus.OK)
             .end();
     },
-};
+}
