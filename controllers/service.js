@@ -468,6 +468,7 @@ module.exports = {
             newServiceAtt.createdOn = currentTimestamp;
             newServiceAtt.createdBy = daiictId;
 
+            //populate service with parameters and collection
             const newService = new Service(newServiceAtt);
             const service = await newService.save();
 
@@ -551,6 +552,30 @@ module.exports = {
 
         } else {
             res.sendStatus(HttpStatus.UNAUTHORIZED);
+        }
+    },
+
+    changeStatus: async (req, res, next) => {
+        const { user } = req;
+        const { serviceId } = req.params;
+
+        const changeStatusPermission = accessControl.can(user.userType)
+            .updateAny(resources.changeResourceStatus);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+
+        if (changeStatusPermission.granted) {
+            const serviceUpdateAtt = req.value.body;
+            const updatedService = await Service.findByIdAndUpdate(serviceId, serviceUpdateAtt, { new: true });
+            if (updatedService) {
+                const filteredParameter = filterResourceData(updatedService, readPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ user: filteredParameter });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
 

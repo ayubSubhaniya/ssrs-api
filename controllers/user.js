@@ -174,7 +174,7 @@ module.exports = {
         }
     },
 
-    changeUserStatus: async (req, res, next) => {
+    changeStatus: async (req, res, next) => {
         const { user } = req;
         const { requestedUserId } = req.params;
 

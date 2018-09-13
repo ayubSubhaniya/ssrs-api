@@ -5,6 +5,12 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const HttpStatus = require('http-status-codes');
 const cors = require('cors');
+const dotenv = require('dotenv');
+
+const { error } = dotenv.config();
+if (error) {
+    throw error('Please add .env file');
+}
 
 const app = express();
 
@@ -12,18 +18,18 @@ const app = express();
 /* CONNECTING TO MongoDB */
 
 /* Local Database */
-/*
 const DB_HOST = process.env.DB_HOST;
 const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
 
-const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`
-*/
+const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
+
 
 /* Online Database */
-const dbURI = process.env.DB_URI;
+//const dbURI = process.env.DB_URI;
+
 db.connect(dbURI)
     .then(
         ()=>{

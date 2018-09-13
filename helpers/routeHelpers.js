@@ -140,7 +140,6 @@ module.exports = {
                 isSpecialService: Joi.boolean(),
                 isAvailableForAlumni: Joi.boolean(),
                 isCourierAvailable: Joi.boolean(),
-                isActive: Joi.boolean(),
                 maxUnits: Joi.number(),
                 baseCharge: Joi.number(),
                 availableParameters: Joi.array()
@@ -171,7 +170,6 @@ module.exports = {
                 name: Joi.string(),
                 description: Joi.string(),
                 baseCharge: Joi.number(),
-                isActive: Joi.boolean(),
             }),
         collectionTypeSchema: Joi.object()
             .keys({
@@ -186,7 +184,6 @@ module.exports = {
                 name: Joi.string(),
                 description: Joi.string(),
                 baseCharge: Joi.number(),
-                isActive: Joi.boolean(),
             }),
         notificationSchema: Joi.object()
             .keys({

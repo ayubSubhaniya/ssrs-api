@@ -141,6 +141,30 @@ module.exports = {
         }
     },
 
+    changeStatus: async (req, res, next) => {
+        const { user } = req;
+        const { collectionTypeId } = req.params;
+
+        const changeStatusPermission = accessControl.can(user.userType)
+            .updateAny(resources.changeResourceStatus);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
+
+        if (changeStatusPermission.granted) {
+            const collectionTypeUpdateAtt = req.value.body;
+            const updatedCollectionType = await CollectionType.findByIdAndUpdate(collectionTypeId, collectionTypeUpdateAtt, { new: true });
+            if (updatedCollectionType) {
+                const filteredCollectionType = filterResourceData(updatedCollectionType, readPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ user: filteredCollectionType });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
     /**Add inactive no-update support */
     updateCollectionType: async (req, res, next) => {
         const { user } = req;

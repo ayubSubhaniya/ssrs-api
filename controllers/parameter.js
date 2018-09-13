@@ -141,6 +141,31 @@ module.exports = {
         }
     },
 
+    changeStatus: async (req, res, next) => {
+        const { user } = req;
+        const { parameterId } = req.params;
+
+        const changeStatusPermission = accessControl.can(user.userType)
+            .updateAny(resources.changeResourceStatus);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+
+        if (changeStatusPermission.granted) {
+            const parameterUpdateAtt = req.value.body;
+            const updatedParameter = await Parameter.findByIdAndUpdate(parameterId, parameterUpdateAtt, { new: true });
+
+            if (updatedParameter) {
+                const filteredParameter = filterResourceData(updatedParameter, readPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ user: filteredParameter });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
     /**Add inactive no-update support */
     updateParameter: async (req, res, next) => {
         const { user } = req;

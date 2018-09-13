@@ -29,6 +29,14 @@ router.route('/special/:serviceId')
         serviceController.getSpecialService
     );
 
+router.route('/changeStatus/:serviceId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'serviceId'),
+        validateBody(schemas.changeStatusSchema),
+        serviceController.changeStatus
+    );
+
 router.route('/:serviceId')
     .get(
         passport.authenticate('jwt', { session: false }),

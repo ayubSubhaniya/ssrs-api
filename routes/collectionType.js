@@ -15,6 +15,14 @@ router.route('/')
         collectionTypeController.addCollectionType
     );
 
+router.route('/changeStatus/:collectionTypeId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'collectionTypeId'),
+        validateBody(schemas.changeStatusSchema),
+        collectionTypeController.changeStatus
+    );
+
 
 router.route('/:requestedCollectionTypeId')
     .get(

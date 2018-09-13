@@ -31,7 +31,7 @@ router.route('/changeStatus/:requestedUserId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.changeStatusSchema),
-        userController.changeUserStatus
+        userController.changeStatus
     );
 
 router.route('/:requestedUserId')

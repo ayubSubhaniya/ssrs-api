@@ -15,6 +15,14 @@ router.route('/')
         parameterController.addParameter
     );
 
+router.route('/changeStatus/:parameterId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'parameterId'),
+        validateBody(schemas.changeStatusSchema),
+        parameterController.changeStatus
+    );
+
 
 router.route('/:requestedParameterId')
     .get(
