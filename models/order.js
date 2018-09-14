@@ -16,6 +16,10 @@ const orderSchema = new Schema({
         ref: 'service',
         required: true,
     },
+    unitsRequested: {
+        type: Number,
+        default: 1,
+    },
     createdOn: {
         type: Date,
         required: true,
@@ -60,7 +64,6 @@ const orderSchema = new Schema({
     paymentId: {
         type: String,
     },
-
     collectionType: {
         type: String,
     },
@@ -72,6 +75,9 @@ const orderSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'collector'
     },
+    validityErrors: [{
+       type:String,
+    }],
 });
 
 const paymentSchemaValidator = (order) => {
@@ -79,7 +85,7 @@ const paymentSchemaValidator = (order) => {
 };
 
 const collectionTypeSchemaValidator = (order) => {
-    return !collectionType || (order.courier == null ^ order.pickup == null);
+    return !order.collectionType || (order.courier === undefined ^ order.pickup === undefined)===1;
 };
 
 orderSchema.pre('save', function (next) {

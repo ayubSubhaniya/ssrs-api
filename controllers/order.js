@@ -8,58 +8,154 @@ const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName } = require('../configuration');
+const { resources, collectionTypes, sortQueryName, paymentTypes } = require('../configuration');
+const errorMessages = require('../configuration/errors');
 
 const orderStatus = {
-    incomplete: 0,
-    placed: 1,
-    processing: 2,
-    processed: 3,
-    processingDelivery: 4,
-    readyToDeliver: 5,
-    delivered: 6,
-    onHold: 7,
-    cancelled: 8,
-    failed: 9,
-    refunded: 10,
+    failed: 0,
+    invalidOrder: 10,
+    paymentIncomplete: 20,
+    placed: 30,
+    processingOrder: 40,
+    processingDelivery: 50,
+    readyToDeliver: 60,
+    delivered: 70,
+    readyToPickup: 80,
+    onHold: 90,
+    cancelled: 100,
+    refunded: 110,
 };
 
-const serviceCost = async (serviceId) => {
-    const cost = await Service.findById(serviceId, {
-        baseCharge: 1,
-        _id: 0
-    });
-    return cost.baseCharge;
-};
+/*return -1 when invalid*/
+const calculateServiceCost = async (service, requiredUnits) => {
 
-const collectionTypeCost = async (collectionType) => {
-    const cost = await CollectionType.findOne({ name: collectionType }, {
-        baseCharge: 1,
-        _id: 0
-    });
-    return cost.baseCharge;
-};
-
-const parameterCost = async (parameters) => {
-
-    let totalCost = 0;
-
-    for (let i = 0; i < parameters.length; i++) {
-        const cost = await Parameter.findById(parameters[i], {
-            baseCharge: 1,
-            _id: 0
-        });
-        totalCost += cost.baseCharge;
+    if (!service.isActive || requiredUnits > service.maxUnits) {
+        return -1;
     }
 
-    return totalCost;
+    return requiredUnits * service.baseCharge;
+};
+
+/*return -1 when invalid*/
+const calculateCollectionTypeCost = async (collectionType, requiredUnits) => {
+    const collectionTypeDoc = await CollectionType.findOne({ name: collectionType });
+
+    if (!collectionTypeDoc.isActive) {
+        return -1;
+    }
+
+    return collectionTypeDoc.baseCharge;
+};
+
+/*return -1 when invalid*/
+const calculateParameterCost = async (parameters, requiredUnits, availableParameters) => {
+    let totalCost = 0;
+
+    if (availableParameters){
+        for (let i = 0; i < parameters.length; i++) {
+            let parameterId;
+            if (parameters[i]._id) {
+                parameterId = parameters[i]._id;
+            } else {
+                parameterId = parameters[i];
+            }
+            const parameter = await Parameter.findById(parameterId);
+            if (!parameter.isActive || !availableParameters.includes(parameterId)) {
+                return -1;
+            }
+
+            totalCost += parameter.baseCharge;
+        }
+    } else {
+        for (let i = 0; i < parameters.length; i++) {
+            let parameterId;
+            if (parameters[i]._id) {
+                parameterId = parameters[i]._id;
+            } else {
+                parameterId = parameters[i];
+            }
+            const parameter = await Parameter.findById(parameterId);
+            if (!parameter.isActive) {
+                return -1;
+            }
+
+            totalCost += parameter.baseCharge;
+        }
+    }
+
+    return totalCost * requiredUnits;
+};
+
+const recalculateOrderCost = async (order) => {
+    const service = await Service.findById(order.serviceId);
+
+    order.collectionTypeCost = await calculateCollectionTypeCost(order.collectionType, order.unitsRequested);
+    order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
+    order.serviceCost = await calculateServiceCost(service, order.unitsRequested);
+    order.totalCost = 0;
+
+    if (order.collectionTypeCost === -1) {
+        order.status = orderStatus.invalidOrder;
+        order.validityErrors.push(errorMessages.invalidCollectionType);
+    } else {
+        order.totalCost += order.collectionTypeCost;
+    }
+
+    if (order.parameterCost === -1) {
+        order.status = orderStatus.invalidOrder;
+        order.validityErrors.push(errorMessages.invalidParameter);
+    } else {
+        order.totalCost += order.parameterCost;
+    }
+
+    if (order.serviceCost === -1) {
+        order.status = orderStatus.invalidOrder;
+        order.validityErrors.push(errorMessages.invalidService);
+    } else {
+        order.totalCost += order.serviceCost;
+    }
+    return order;
+};
+
+const validateOrder = async (orders) => {
+
+    if (orders instanceof Array) {
+        let newOrders = [];
+
+        for (let i = 0; i < orders.length; i++) {
+
+            if (orders[i].status <= orderStatus.paymentIncomplete) {
+                newOrders.push(await recalculateOrderCost(orders[i]));
+            } else {
+                newOrders.push(orders[i]);
+            }
+        }
+
+        return newOrders;
+    } else if (orders !== undefined) {
+        let newOrder = {};
+
+        if (orders.status <= orderStatus.paymentIncomplete) {
+            newOrder = await recalculateOrderCost(orders);
+        } else {
+            newOrder = orders;
+        }
+
+        return newOrder;
+    } else {
+        return orders;
+    }
 };
 
 const getOrders = async (query, sortQuery, readableAttributes) => {
     const orders = await Order.find(query)
-        .sort(sortQuery);
-    const filteredOrders = filterResourceData(orders, readableAttributes);
-    return filteredOrders;
+        .sort(sortQuery)
+        .populate({ path: 'parameters' })
+        .populate({ path: 'courier' })
+        .populate({ path: 'pickup' });
+
+    const validatedOrder = await validateOrder(orders);
+    return filterResourceData(validatedOrder, readableAttributes);
 };
 
 module.exports = {
@@ -131,13 +227,38 @@ module.exports = {
             .readOwn(resources.collector);
 
         if (createOwnPermission.granted) {
+            let orderAtt = req.body.order;
+
+            if (orderAtt.paymentType!==undefined){
+                if (paymentTypes[orderAtt.paymentType]===undefined){
+                    res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidPaymentType);
+                    return;
+                } else {
+                    orderAtt.paymentType = paymentTypes[orderAtt.paymentType];
+                }
+            }
             const newOrder = new Order(req.body.order);
 
             newOrder.requestedBy = daiictId;
             newOrder.createdOn = timeStamp;
-            newOrder.status = newOrder.payment.isPaymentDone ? orderStatus.incomplete : orderStatus.placed;
-            newOrder.serviceCost = await serviceCost(newOrder.serviceId);
-            newOrder.parameterCost = await parameterCost(newOrder.parameters);
+            newOrder.status = newOrder.isPaymentDone ? orderStatus.placed : orderStatus.paymentIncomplete;
+
+            const service = await Service.findById(newOrder.serviceId);
+
+            const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested);
+
+            if (serviceCost === -1) {
+                res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidService);
+                return;
+            }
+            newOrder.serviceCost = serviceCost;
+
+            const parameterCost = await calculateParameterCost(newOrder.parameters, newOrder.unitsRequested, service.availableParameters);
+            if (parameterCost === -1) {
+                res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidParameter);
+                return;
+            }
+            newOrder.parameterCost = parameterCost;
 
             if (req.body.courier) {
                 const newCourier = new Courier(req.body.courier);
@@ -148,7 +269,12 @@ module.exports = {
                 newOrder.collectionType = collectionTypes.courier;
                 newOrder.courier = newCourier._id;
 
-                newOrder.collectionTypeCost = await collectionTypeCost(collectionTypes.courier);
+                const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, newOrder.unitsRequested);
+                if (collectionTypeCost === -1) {
+                    res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCollectionType);
+                    return;
+                }
+                newOrder.collectionTypeCost = collectionTypeCost;
 
                 const courier = await newCourier.save();
                 const order = await newOrder.save();
@@ -171,7 +297,12 @@ module.exports = {
                 newOrder.collectionType = collectionTypes.pickup;
                 newOrder.pickup = newCollector._id;
 
-                newOrder.collectionTypeCost = await collectionTypeCost(collectionTypes.pickup);
+                const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.pickup, newOrder.unitsRequested);
+                if (collectionTypeCost === -1) {
+                    res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCollectionType);
+                    return;
+                }
+                newOrder.collectionTypeCost = collectionTypeCost;
 
                 const collector = await newCollector.save();
                 const order = await newOrder.save();
@@ -285,14 +416,21 @@ module.exports = {
 
         if (updateOwnPermission.granted) {
             const parameters = req.body.parameters;
-            const cost = await parameterCost(parameters);
+
             const order = await Order.findOne({
                 _id: orderId,
                 requestedBy: daiictId
             });
 
             if (!order) {
-                return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
+            const cost = await calculateParameterCost(parameters);
+
+            if (cost === -1) {
+                res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
+                return;
             }
 
             order.lastModifiedBy = daiictId;
@@ -328,14 +466,19 @@ module.exports = {
             courier.createdOn = timeStamp;
             courier.createdBy = daiictId;
 
-            const cost = await collectionTypeCost(collectionTypes.courier);
             const order = await Order.findOne({
                 _id: orderId,
                 requestedBy: daiictId
             });
 
             if (!order) {
-                return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
+            const cost = await calculateCollectionTypeCost(collectionTypes.courier);
+            if (cost === -1) {
+                res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
+                return;
             }
 
             order.lastModifiedBy = daiictId;
@@ -382,11 +525,17 @@ module.exports = {
             });
 
             if (!order || !order.collectionType.courier) {
-                return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
             order.lastModifiedBy = daiictId;
             order.lastModified = timeStamp;
+
+            const cost = await calculateCollectionTypeCost(collectionTypes.courier);
+            if (cost === -1) {
+                res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
+                return;
+            }
 
             const newCourier = await Courier.findByIdAndUpdate(order.collectionType.courier, courier);
             const newOrder = await order.save();
@@ -422,14 +571,15 @@ module.exports = {
             pickup.createdOn = timeStamp;
             pickup.createdBy = daiictId;
 
-            const cost = await collectionTypeCost(collectionTypes.pickup);
+            const cost = await calculateCollectionTypeCost(collectionTypes.pickup);
             const order = await Order.findOne({
                 _id: orderId,
                 requestedBy: daiictId
             });
 
             if (!order) {
-                return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+                return;
             }
 
             order.lastModifiedBy = daiictId;
@@ -477,7 +627,7 @@ module.exports = {
 
 
             if (!order || !order.collectionType.pickup) {
-                return res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
             order.lastModifiedBy = daiictId;

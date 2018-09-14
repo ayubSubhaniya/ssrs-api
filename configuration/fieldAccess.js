@@ -134,7 +134,8 @@ module.exports = {
                 'status',
                 'parameters',
                 'payment',
-                'collectionType'
+                'collectionType',
+                'validityErrors',
             ],
             canCreate: [],
             canUpdate: [
@@ -156,6 +157,7 @@ module.exports = {
                 'parameters',
                 'payment',
                 'collectionType',
+                'validityErrors',
             ],
             canCreate: [
                 'serviceId',
