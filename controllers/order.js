@@ -6,7 +6,7 @@ const Order = require('../models/order');
 const CollectionType = require('../models/collectionType');
 const Parameter = require('../models/parameter');
 
-const { filterResourceData, parseSortQuery, parseFilterQuery } = require('../helpers/controllerHelpers');
+const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources, collectionTypes, sortQueryName, paymentTypes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
@@ -49,9 +49,11 @@ const calculateCollectionTypeCost = async (collectionType, requiredUnits) => {
 
 /*return -1 when invalid*/
 const calculateParameterCost = async (parameters, requiredUnits, availableParameters) => {
+
     let totalCost = 0;
 
-    if (availableParameters){
+    if (availableParameters) {
+        availableParameters = convertToStringArray(availableParameters);
         for (let i = 0; i < parameters.length; i++) {
             let parameterId;
             if (parameters[i]._id) {
@@ -59,8 +61,9 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
             } else {
                 parameterId = parameters[i];
             }
+
             const parameter = await Parameter.findById(parameterId);
-            if (!parameter.isActive || !availableParameters.includes(parameterId)) {
+            if (!parameter.isActive || !availableParameters.includes(parameterId.toString())) {
                 return -1;
             }
 
@@ -89,7 +92,14 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 const recalculateOrderCost = async (order) => {
     const service = await Service.findById(order.serviceId);
 
-    order.collectionTypeCost = await calculateCollectionTypeCost(order.collectionType, order.unitsRequested);
+    if (order.collectionType.courier) {
+        order.collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, order.unitsRequested);
+    } else if (order.collectionTypeCost.pickup) {
+        order.collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.pickup, order.unitsRequested);
+    } else {
+        order.collectionTypeCost = 0;
+    }
+
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested);
     order.totalCost = 0;
@@ -124,7 +134,7 @@ const validateOrder = async (orders) => {
 
         for (let i = 0; i < orders.length; i++) {
 
-            if (orders[i].status <= orderStatus.paymentIncomplete) {
+            if (orders[i].status < orderStatus.placed) {
                 newOrders.push(await recalculateOrderCost(orders[i]));
             } else {
                 newOrders.push(orders[i]);
@@ -135,7 +145,7 @@ const validateOrder = async (orders) => {
     } else if (orders !== undefined) {
         let newOrder = {};
 
-        if (orders.status <= orderStatus.paymentIncomplete) {
+        if (orders.status < orderStatus.placed) {
             newOrder = await recalculateOrderCost(orders);
         } else {
             newOrder = orders;
@@ -147,7 +157,7 @@ const validateOrder = async (orders) => {
     }
 };
 
-const getOrders = async (query, sortQuery, readableAttributes) => {
+const getOrders = async (query, readableAttributes, sortQuery) => {
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({ path: 'parameters' })
@@ -180,7 +190,7 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, sortQuery, readOwnPermission.attributes);
+        const filteredOrders = await getOrders(query, readOwnPermission.attributes, sortQuery);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -227,35 +237,30 @@ module.exports = {
             .readOwn(resources.collector);
 
         if (createOwnPermission.granted) {
-            let orderAtt = req.body.order;
-
-            if (orderAtt.paymentType!==undefined){
-                if (paymentTypes[orderAtt.paymentType]===undefined){
-                    res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidPaymentType);
-                    return;
-                } else {
-                    orderAtt.paymentType = paymentTypes[orderAtt.paymentType];
-                }
-            }
-            const newOrder = new Order(req.body.order);
+            let orderAtt = req.value.body.order;
+            /* handle unknown parameter type*/
+            const newOrder = new Order(orderAtt);
 
             newOrder.requestedBy = daiictId;
             newOrder.createdOn = timeStamp;
             newOrder.status = newOrder.isPaymentDone ? orderStatus.placed : orderStatus.paymentIncomplete;
 
             const service = await Service.findById(newOrder.serviceId);
+            newOrder.serviceName = service.name;
 
             const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested);
 
             if (serviceCost === -1) {
-                res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidService);
+                res.status(httpStatusCodes.PRECONDITION_FAILED)
+                    .send(errorMessages.invalidService);
                 return;
             }
             newOrder.serviceCost = serviceCost;
 
             const parameterCost = await calculateParameterCost(newOrder.parameters, newOrder.unitsRequested, service.availableParameters);
             if (parameterCost === -1) {
-                res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidParameter);
+                res.status(httpStatusCodes.PRECONDITION_FAILED)
+                    .send(errorMessages.invalidParameter);
                 return;
             }
             newOrder.parameterCost = parameterCost;
@@ -271,7 +276,8 @@ module.exports = {
 
                 const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, newOrder.unitsRequested);
                 if (collectionTypeCost === -1) {
-                    res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCollectionType);
+                    res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.invalidCollectionType);
                     return;
                 }
                 newOrder.collectionTypeCost = collectionTypeCost;
@@ -299,7 +305,8 @@ module.exports = {
 
                 const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.pickup, newOrder.unitsRequested);
                 if (collectionTypeCost === -1) {
-                    res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCollectionType);
+                    res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.invalidCollectionType);
                     return;
                 }
                 newOrder.collectionTypeCost = collectionTypeCost;
@@ -337,15 +344,13 @@ module.exports = {
             .deleteOwn(resources.order);
 
         if (deleteOwnPermission.granted) {
-            const result = await Order.findOneAndDelete({
-                _id: orderId,
-                requestedBy: daiictId
-            });
+            const order = await Order.findById(orderId);
 
-            if (result) {
-                res.sendStatus(httpStatusCodes.ACCEPTED);
+            if (order.status < orderStatus.placed && order.requestedBy === daiictId) {
+                await Order.findByIdAndRemove(orderId);
+                res.sendStatus(httpStatusCodes.OK);
             } else {
-                res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
@@ -367,36 +372,78 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateAnyPermission.granted) {
-            const updatedOrder = filterResourceData(req.body.order, updateAnyPermission.attributes);
-            updatedOrder.lastModified = new Date();
-            updatedOrder.lastModifiedBy = daiictId;
+            const updatedOrder = req.value.body;
+            const orderInDB = await Order.findById(orderId);
+            if (orderInDB.status < orderStatus.placed) {
 
-            const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
+                if (updatedOrder.unitsRequested!==undefined){
+                    const service = await Service.findById(orderInDB.serviceId);
+                    const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
 
-            if (order) {
-                const filteredOrder = filterResourceData(order, readAnyPermission.attributes);
-                res.status(httpStatusCodes.ACCEPTED)
-                    .json({ order: filteredOrder });
+                    if (serviceCost === -1) {
+                        res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidService);
+                        return;
+                    }
+                    updatedOrder.serviceCost = serviceCost;
+                }
+
+                /* handle unknown payment type*/
+                const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
+
+                if (order) {
+                    const filteredOrder = filterResourceData(order, readAnyPermission.attributes);
+                    res.status(httpStatusCodes.OK)
+                        .json({ order: filteredOrder });
+                } else {
+                    res.sendStatus(httpStatusCodes.NOT_FOUND);
+                }
             } else {
-                res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
 
-        } else if (updateOwnPermission.granted) {
-            const updatedOrder = filterResourceData(req.body.order, updateOwnPermission.attributes);
-            updatedOrder.lastModified = new Date();
-            updatedOrder.lastModifiedBy = daiictId;
 
-            const order = await Order.updateOne({
+        } else if (updateOwnPermission.granted) {
+            const updatedOrder = req.value.body;
+
+            const orderInDB = await Order.findOne({
                 _id: orderId,
                 requestedBy: daiictId
-            }, updatedOrder);
+            });
+            if (orderInDB){
 
-            if (order) {
-                const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
-                res.status(httpStatusCodes.ACCEPTED)
-                    .json({ order: filteredOrder });
+                if (orderInDB.status < orderStatus.placed) {
+
+                    if (updatedOrder.unitsRequested!==undefined){
+                        const service = await Service.findById(orderInDB.serviceId);
+                        const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
+
+                        if (serviceCost === -1) {
+                            res.status(httpStatusCodes.PRECONDITION_FAILED)
+                                .send(errorMessages.invalidService);
+                            return;
+                        }
+                        updatedOrder.serviceCost = serviceCost;
+                    }
+                    /* handle unknown payment type*/
+                    const order = await Order.updateOne({
+                        _id: orderId,
+                        requestedBy: daiictId
+                    }, updatedOrder);
+
+                    if (order) {
+                        const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
+                        res.status(httpStatusCodes.OK)
+                            .json({ order: filteredOrder });
+                    } else {
+                        res.sendStatus(httpStatusCodes.NOT_FOUND);
+                    }
+                } else {
+                    res.sendStatus(httpStatusCodes.FORBIDDEN);
+                }
+
             } else {
-                res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
         } else {
@@ -415,7 +462,7 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateOwnPermission.granted) {
-            const parameters = req.body.parameters;
+            const parameters = req.value.body.parameters;
 
             const order = await Order.findOne({
                 _id: orderId,
@@ -424,25 +471,27 @@ module.exports = {
 
             if (!order) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            } else if (order.status<orderStatus.placed){
+
+                const service = await Service.findById(order.serviceId);
+                const cost = await calculateParameterCost(parameters, order.unitsRequested, service.availableParameters);
+
+                if (cost === -1) {
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidParameter);
+                }
+
+                order.parameterCost = cost;
+                order.parameters = parameters;
+
+                const newOrder = await order.save();
+
+                const filteredOrder = filterResourceData(newOrder, readOwnPermission.attributes);
+                res.status(httpStatusCodes.OK)
+                    .json({ order: filteredOrder });
+
+            } else {
+                return res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
-
-            const cost = await calculateParameterCost(parameters);
-
-            if (cost === -1) {
-                res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
-                return;
-            }
-
-            order.lastModifiedBy = daiictId;
-            order.lastModified = new Date();
-            order.parameterCost = cost;
-            order.parameters = parameters;
-
-            const newOrder = await order.save();
-
-            const filteredOrder = filterResourceData(newOrder, readOwnPermission.attributes);
-            res.status(httpStatusCodes.ACCEPTED)
-                .json({ order: filteredOrder });
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -462,7 +511,7 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateOwnPermission.granted) {
-            const courier = new Courier(req.body.courier);
+            const courier = new Courier(req.value.body);
             courier.createdOn = timeStamp;
             courier.createdBy = daiictId;
 
@@ -473,31 +522,37 @@ module.exports = {
 
             if (!order) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            } else if (order.status<orderStatus.placed){
+
+                const cost = await calculateCollectionTypeCost(collectionTypes.courier);
+                if (cost === -1) {
+                    res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
+                    return;
+                }
+
+                order.collectionTypeCost = cost;
+
+                order.pickup=undefined;
+
+                order.collectionType = collectionTypes.courier;
+                order.courier = courier._id;
+                courier.orderId = order._id;
+                console.log(order);
+                const newCourier = await courier.save();
+                const newOrder = await order.save();
+
+                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
+                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
+                res.status(httpStatusCodes.CREATED)
+                    .json({
+                        order: filteredOrder,
+                        courier: filteredCourier
+                    });
+
+            } else {
+                return res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
 
-            const cost = await calculateCollectionTypeCost(collectionTypes.courier);
-            if (cost === -1) {
-                res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
-                return;
-            }
-
-            order.lastModifiedBy = daiictId;
-            order.lastModified = timeStamp;
-            order.collectionTypeCost = cost;
-            order.collectionType = {
-                courier: courier._id,
-            };
-            courier.orderId = order._id;
-            const newCourier = await courier.save();
-            const newOrder = await order.save();
-
-            const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
-            const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-            res.status(httpStatusCodes.CREATED)
-                .json({
-                    order: filteredOrder,
-                    courier: filteredCourier
-                });
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -507,7 +562,6 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
         const { orderId } = req.params;
-        const timeStamp = new Date();
 
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
@@ -517,36 +571,40 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateOwnPermission.granted) {
-            const courier = req.body.courier;
+            const courier = req.value.body;
 
             const order = await Order.findOne({
                 _id: orderId,
                 requestedBy: daiictId
             });
 
-            if (!order || !order.collectionType.courier) {
+            if (!order || !order.courier) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            } else if (order.status < orderStatus.placed) {
+
+                const cost = await calculateCollectionTypeCost(collectionTypes.courier);
+                if (cost === -1) {
+                    res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
+                    return;
+                }
+                console.log(order.courier);
+                const newCourier = await Courier.findByIdAndUpdate(order.courier, courier,{new:true});
+                /* check if courier is present*/
+                const newOrder = await order.save();
+
+                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
+                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
+                res.status(httpStatusCodes.OK)
+                    .json({
+                        order: filteredOrder,
+                        courier: filteredCourier
+                    });
+
+            } else {
+                res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
 
-            order.lastModifiedBy = daiictId;
-            order.lastModified = timeStamp;
 
-            const cost = await calculateCollectionTypeCost(collectionTypes.courier);
-            if (cost === -1) {
-                res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
-                return;
-            }
-
-            const newCourier = await Courier.findByIdAndUpdate(order.collectionType.courier, courier);
-            const newOrder = await order.save();
-
-            const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
-            const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-            res.status(httpStatusCodes.CREATED)
-                .json({
-                    order: filteredOrder,
-                    courier: filteredCourier
-                });
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -567,7 +625,7 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateOwnPermission.granted) {
-            const pickup = new Collector(req.body.pickup);
+            const pickup = new Collector(req.value.body);
             pickup.createdOn = timeStamp;
             pickup.createdBy = daiictId;
 
@@ -578,27 +636,29 @@ module.exports = {
             });
 
             if (!order) {
-                res.sendStatus(httpStatusCodes.NOT_FOUND);
-                return;
+               return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            } else if (order.status < orderStatus.placed){
+                order.collectionTypeCost = cost;
+                order.courier=undefined;
+
+                order.collectionType=collectionTypes.pickup;
+                order.pickup=pickup._id;
+                pickup.orderId = order._id;
+                const newPickup = await pickup.save();
+                const newOrder = await order.save();
+
+                const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
+                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
+                res.status(httpStatusCodes.CREATED)
+                    .json({
+                        order: filteredOrder,
+                        pickup: filteredPickup
+                    });
+            } else {
+                return res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
 
-            order.lastModifiedBy = daiictId;
-            order.lastModified = timeStamp;
-            order.collectionTypeCost = cost;
-            order.collectionType = {
-                pickup: pickup._id,
-            };
-            pickup.orderId = order._id;
-            const newPickup = await pickup.save();
-            const newOrder = await order.save();
 
-            const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
-            const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-            res.status(httpStatusCodes.CREATED)
-                .json({
-                    order: filteredOrder,
-                    pickup: filteredPickup
-                });
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -608,7 +668,6 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
         const { orderId } = req.params;
-        const timeStamp = new Date();
 
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
@@ -618,7 +677,7 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateOwnPermission.granted) {
-            const pickup = req.body.pickup;
+            const pickup = req.value.body;
 
             const order = await Order.findOne({
                 _id: orderId,
@@ -626,25 +685,33 @@ module.exports = {
             });
 
 
-            if (!order || !order.collectionType.pickup) {
+            if (!order || !order.pickup) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            } else if (order.status < orderStatus.placed) {
+
+                const newPickup = await Collector.findByIdAndUpdate(order.pickup, pickup, {new:true});
+                const newOrder = await order.save();
+
+                const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
+                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
+                res.status(httpStatusCodes.OK)
+                    .json({
+                        order: filteredOrder,
+                        pickup: filteredPickup
+                    });
+
+            } else {
+                return res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
-
-            order.lastModifiedBy = daiictId;
-            order.lastModified = timeStamp;
-
-            const newPickup = await Collector.findByIdAndUpdate(order.collectionType.pickup, pickup);
-            const newOrder = await order.save();
-
-            const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
-            const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-            res.status(httpStatusCodes.CREATED)
-                .json({
-                    order: filteredOrder,
-                    pickup: filteredPickup
-                });
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
+    },
+
+    changeStatus: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { orderId } = req.params;
+
     },
 };

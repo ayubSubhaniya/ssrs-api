@@ -12,7 +12,52 @@ router.route('/')
     )
     .post(
         passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.addOrderSchema),
         orderController.addOrder
+    );
+
+router.route('/parameters/:orderId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.updateOrderParameterSchema),
+        orderController.updateParameter
+    );
+
+router.route('/courier/:orderId')
+    .post(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.addOrderCourierSchema),
+        orderController.addCourier
+    )
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.updateOrderCourierSchema),
+        orderController.updateCourier
+    );
+
+router.route('/pickup/:orderId')
+    .post(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.addOrderPickupSchema),
+        orderController.addPickup
+    )
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.updateOrderPickupSchema),
+        orderController.updatePickup
+    );
+
+router.route('/changeStatus/:orderId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.changeOrderStatusSchema),
+        orderController.updatePickup
     );
 
 router.route('/:orderId')
@@ -29,38 +74,8 @@ router.route('/:orderId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.updateOrderSchema),
         orderController.updateOrder
-    );
-
-router.route('/:orderId/parameters')
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        orderController.updateParameter
-    );
-
-router.route('/:orderId/courier')
-    .post(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        orderController.addCourier
-    )
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        orderController.updateCourier
-    );
-
-router.route('/:orderId/pickup')
-    .post(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        orderController.addPickup
-    )
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        orderController.updatePickup
     );
 
 module.exports = router;
