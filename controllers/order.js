@@ -92,9 +92,9 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 const recalculateOrderCost = async (order) => {
     const service = await Service.findById(order.serviceId);
 
-    if (order.collectionType.courier) {
+    if (order.courier) {
         order.collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, order.unitsRequested);
-    } else if (order.collectionTypeCost.pickup) {
+    } else if (order.pickup) {
         order.collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.pickup, order.unitsRequested);
     } else {
         order.collectionTypeCost = 0;
