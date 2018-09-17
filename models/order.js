@@ -50,6 +50,9 @@ const orderSchema = new Schema({
         type: Number,
         default: 0,
     },
+    comment: {
+        type: String,
+    },
     parameters: [{
         type: Schema.Types.ObjectId,
         ref: 'parameter',
