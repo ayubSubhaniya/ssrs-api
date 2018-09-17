@@ -84,7 +84,7 @@ app.use((req, res, next) => {
 
 // Error handler function
 app.use((err, req, res, next) => {
-    const error = app.get('env') === 'development' ? err : {};
+    const error = err;
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
     // response to client
