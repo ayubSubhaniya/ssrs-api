@@ -156,7 +156,7 @@ module.exports = {
             if (updatedCollectionType) {
                 const filteredCollectionType = filterResourceData(updatedCollectionType, readPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ user: filteredCollectionType });
+                    .json({ collectionType: filteredCollectionType });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

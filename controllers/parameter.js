@@ -40,7 +40,7 @@ module.exports = {
         const deleteAnyPermission = accessControl.can(user.userType)
             .deleteAny(resources.parameter);
         const deleteOwnPermission = accessControl.can(user.userType)
-            .deleteOw(resources.parameter);
+            .deleteOwn(resources.parameter);
 
 
         if (deleteAnyPermission.granted) {
@@ -157,7 +157,7 @@ module.exports = {
             if (updatedParameter) {
                 const filteredParameter = filterResourceData(updatedParameter, readPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ user: filteredParameter });
+                    .json({ parameter: filteredParameter });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

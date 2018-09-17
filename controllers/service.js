@@ -575,7 +575,7 @@ module.exports = {
             if (updatedService) {
                 const filteredParameter = filterResourceData(updatedService, readPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ user: filteredParameter });
+                    .json({ service: filteredParameter });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
