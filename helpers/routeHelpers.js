@@ -222,7 +222,8 @@ module.exports = {
                     paymentType: Joi.number(),
                     isPaymentDone: Joi.boolean(),
                     paymentId: Joi.string(),
-                    collectionType: Joi.string()
+                    collectionType: Joi.string(),
+                    comment: Joi.string(),
                 },
                 courier: {
                     name: Joi.string()
@@ -265,6 +266,7 @@ module.exports = {
                 paymentType: Joi.number(),
                 isPaymentDone: Joi.boolean(),
                 paymentId: Joi.string(),
+                comment: Joi.string(),
             }),
         updateOrderParameterSchema: Joi.object()
             .keys({
