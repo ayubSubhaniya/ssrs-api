@@ -115,7 +115,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ service: filteredServices });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -240,7 +240,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ service: filteredServices });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -313,7 +313,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ service: filteredService });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -443,7 +443,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ service: filteredServices });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -519,10 +519,10 @@ module.exports = {
                 const filteredService = filterResourceData(service, readPermission.attributes);
                 await generateServiceUpdatedMessage(service, daiictId);
 
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ service: filteredService });
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
 
@@ -544,11 +544,16 @@ module.exports = {
                     select: readParameterPermission.attributes
                 })
                 .exec();
-            const filteredService = filterResourceData(service, readPermission.attributes);
-            await generateServiceUpdatedMessage(service, daiictId);
 
-            res.status(HttpStatus.ACCEPTED)
-                .json({ service: filteredService });
+            if (service){
+                const filteredService = filterResourceData(service, readPermission.attributes);
+                await generateServiceUpdatedMessage(service, daiictId);
+
+                res.status(HttpStatus.OK)
+                    .json({ service: filteredService });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
 
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -594,9 +599,9 @@ module.exports = {
             const service = await Service.findByIdAndRemove(serviceId);
 
             if (service) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
 
@@ -608,9 +613,9 @@ module.exports = {
             });
 
             if (service) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
