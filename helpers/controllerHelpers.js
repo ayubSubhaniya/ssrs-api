@@ -90,9 +90,19 @@ const parseSortQuery = (query, allowedAttributes) => {
     return sortQuery;
 };
 
+/* error handling*/
+const convertToStringArray = (array) =>{
+    let ans = [];
+    for (let i=0;i<array.length;i++){
+        ans.push(array[i].toString());
+    }
+    return ans;
+};
+
 
 module.exports = {
     filterResourceData,
     parseSortQuery,
     parseFilterQuery,
+    convertToStringArray,
 };
