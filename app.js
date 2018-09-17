@@ -5,14 +5,17 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const HttpStatus = require('http-status-codes');
 const cors = require('cors');
-const dotenv = require('dotenv');
-
-const { error } = dotenv.config();
-if (error) {
-    throw error('Please add .env file');
-}
 
 const app = express();
+
+if (app.get('env')==='development'){
+    const dotenv = require('dotenv');
+
+    const { error } = dotenv.config();
+    if (error) {
+        throw error('Please add .env file');
+    }
+}
 
 
 /* CONNECTING TO MongoDB */
