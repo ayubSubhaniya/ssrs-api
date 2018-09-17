@@ -74,7 +74,8 @@ const grantDefaultAccess = () => {
             accessControl.grant(userType)
                 .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
                 .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
-                .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate']);
+                .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate'])
+                .deleteOwn(resourceType);
         });
 
     resourceType = resources.collector;
