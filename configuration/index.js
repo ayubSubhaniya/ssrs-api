@@ -11,10 +11,6 @@ module.exports = {
         courier: 'Courier',
         pickup: 'Pickup',
     },
-    paymentTypes:{
-      offline:0,
-      online:1,
-    },
     permissions: {
         readAny: 'readAny',
         readOwn: 'readOwn',
