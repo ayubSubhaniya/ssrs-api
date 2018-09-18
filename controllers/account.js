@@ -71,7 +71,7 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Please confirm your Email account',
+            subject: 'SSRS - Please confirm your Email account',
             html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
 
         };
@@ -87,12 +87,14 @@ module.exports = {
         };
         const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
-        const info = await smtpTransport.sendMail(mailOptions);
-
-        res.status(HttpStatus.CREATED)
-            .end('Response: Verification link sent');
-
-
+        
+        if(process.env.MODE !== 'test'){
+            const info = await smtpTransport.sendMail(mailOptions);
+            res.status(HttpStatus.CREATED)
+                .end('Response: Verification link sent');
+        } else {
+            res.status(HttpStatus.CREATED).end(randomHash);
+        }
     },
 
     resendVerificationLink: async (req, res, next) => {
@@ -142,7 +144,6 @@ module.exports = {
         const { newPassword } = req.value.body;
         const { user } = req;
         const { daiictId } = user;
-        console.log(newPassword);
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
         res.sendStatus(HttpStatus.ACCEPTED);

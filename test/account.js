@@ -92,46 +92,6 @@ describe('Change password', function() {
     })
 });
 
-describe('Update Account Info', function() {
-    
-    var temp = {
-        uri: hostURL + '/signin',
-        method: 'POST',
-        json: {'daiictId': userId.toString(), 'password': userId.toString()}
-    }
-    var options = {
-        uri: hostURL + '/update',
-        method: 'POST',
-        headers:{
-            "Cookie": null
-        },
-        json: {
-            "name": {
-                "firstName": "Chaman",
-                "lastName": "Jingo"
-            },
-            "gender": "Male", 
-            "programme": "B.Tech"
-        }
-    }
-
-    it('signing in...', function(done){
-        request(temp, function(err, res){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
-            options.headers.Cookie = res.headers['set-cookie']
-            done()
-        })
-    })
-
-    it('returns status 202 - update successful', function(done){
-        request(options, function(err, res, body){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
-            expect(body.user).deep.to.include(options.json);
-            done()
-        })
-    })
-})
-
 describe('Signout', function() {
 
     var temp = {
