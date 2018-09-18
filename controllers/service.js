@@ -573,9 +573,9 @@ module.exports = {
             const serviceUpdateAtt = req.value.body;
             const updatedService = await Service.findByIdAndUpdate(serviceId, serviceUpdateAtt, { new: true });
             if (updatedService) {
-                const filteredParameter = filterResourceData(updatedService, readPermission.attributes);
+                const filteredService = filterResourceData(updatedService, readPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ service: filteredParameter });
+                    .json({ service: filteredService });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

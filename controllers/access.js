@@ -25,7 +25,7 @@ const grantDefaultAdminAccess = () => {
         .forEach(resourceType => {
             Object.keys(adminTypes)
                 .forEach(adminType => {
-                    if (adminTypes[adminType] != adminTypes.superAdmin) {
+                    if (adminTypes[adminType] !== adminTypes.superAdmin) {
                         accessControl.grant(adminTypes[adminType])
                             .readOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead'])
                             .createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])

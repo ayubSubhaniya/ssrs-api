@@ -55,7 +55,7 @@ const courierSchema = new Schema({
     trackingId: {
         type: String,
     },
-    speedPostName: {
+    courierServiceName: {
         type: String,
     },
     orderId: {

@@ -357,7 +357,7 @@ module.exports = {
                 'createdBy',
                 'pinCode',
                 'trackingId',
-                'speedPostName',
+                'courierServiceName',
                 'orderId',
             ],
             canCreate: [],
@@ -375,7 +375,7 @@ module.exports = {
                 'country',
                 'pinCode',
                 'trackingId',
-                'speedPostName',
+                'courierServiceName',
                 'orderId',
             ],
             canCreate: [

@@ -52,12 +52,20 @@ router.route('/pickup/:orderId')
         orderController.updatePickup
     );
 
+router.route('/addPayment/:orderId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.addOrderPaymentSchema),
+        orderController.addPayment
+    );
+
 router.route('/changeStatus/:orderId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'orderId'),
         validateBody(schemas.changeOrderStatusSchema),
-        orderController.updatePickup
+        orderController.changeStatus
     );
 
 router.route('/:orderId')

@@ -208,7 +208,7 @@ module.exports = {
                 isPaymentDone: Joi.boolean(),
                 paymentId: Joi.string(),
                 trackingId: Joi.string(),
-                speedPostName: Joi.string(),
+                courierServiceName: Joi.string(),
             }),
         addOrderSchema: Joi.object()
             .keys({
@@ -267,6 +267,11 @@ module.exports = {
                 isPaymentDone: Joi.boolean(),
                 paymentId: Joi.string(),
                 comment: Joi.string(),
+            }),
+        addOrderPaymentSchema: Joi.object()
+            .keys({
+                paymentType: Joi.number().required(),
+                paymentId: Joi.string().required(),
             }),
         updateOrderParameterSchema: Joi.object()
             .keys({

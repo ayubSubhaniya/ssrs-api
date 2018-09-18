@@ -376,7 +376,7 @@ module.exports = {
             const orderInDB = await Order.findById(orderId);
             if (orderInDB.status < orderStatus.placed) {
 
-                if (updatedOrder.unitsRequested!==undefined){
+                if (updatedOrder.unitsRequested !== undefined) {
                     const service = await Service.findById(orderInDB.serviceId);
                     const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
 
@@ -410,11 +410,11 @@ module.exports = {
                 _id: orderId,
                 requestedBy: daiictId
             });
-            if (orderInDB){
+            if (orderInDB) {
 
                 if (orderInDB.status < orderStatus.placed) {
 
-                    if (updatedOrder.unitsRequested!==undefined){
+                    if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.serviceId);
                         const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
 
@@ -471,13 +471,14 @@ module.exports = {
 
             if (!order) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status<orderStatus.placed){
+            } else if (order.status < orderStatus.placed) {
 
                 const service = await Service.findById(order.serviceId);
                 const cost = await calculateParameterCost(parameters, order.unitsRequested, service.availableParameters);
 
                 if (cost === -1) {
-                    return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidParameter);
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.invalidParameter);
                 }
 
                 order.parameterCost = cost;
@@ -522,7 +523,7 @@ module.exports = {
 
             if (!order) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status<orderStatus.placed){
+            } else if (order.status < orderStatus.placed) {
 
                 const cost = await calculateCollectionTypeCost(collectionTypes.courier);
                 if (cost === -1) {
@@ -532,7 +533,7 @@ module.exports = {
 
                 order.collectionTypeCost = cost;
 
-                order.pickup=undefined;
+                order.pickup = undefined;
 
                 order.collectionType = collectionTypes.courier;
                 order.courier = courier._id;
@@ -588,7 +589,7 @@ module.exports = {
                     return;
                 }
                 console.log(order.courier);
-                const newCourier = await Courier.findByIdAndUpdate(order.courier, courier,{new:true});
+                const newCourier = await Courier.findByIdAndUpdate(order.courier, courier, { new: true });
                 /* check if courier is present*/
                 const newOrder = await order.save();
 
@@ -636,13 +637,13 @@ module.exports = {
             });
 
             if (!order) {
-               return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status < orderStatus.placed){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            } else if (order.status < orderStatus.placed) {
                 order.collectionTypeCost = cost;
-                order.courier=undefined;
+                order.courier = undefined;
 
-                order.collectionType=collectionTypes.pickup;
-                order.pickup=pickup._id;
+                order.collectionType = collectionTypes.pickup;
+                order.pickup = pickup._id;
                 pickup.orderId = order._id;
                 const newPickup = await pickup.save();
                 const newOrder = await order.save();
@@ -689,7 +690,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (order.status < orderStatus.placed) {
 
-                const newPickup = await Collector.findByIdAndUpdate(order.pickup, pickup, {new:true});
+                const newPickup = await Collector.findByIdAndUpdate(order.pickup, pickup, { new: true });
                 const newOrder = await order.save();
 
                 const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
@@ -708,10 +709,102 @@ module.exports = {
         }
     },
 
+    addPayment: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { orderId } = req.params;
+        const updateOwnPermission = accessControl.can(user.userType)
+            .updateOwn(resources.order);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.order);
+
+        if (updateOwnPermission.granted) {
+
+            const orderUpdateAtt = req.value.body;
+            orderUpdateAtt.status = orderStatus.placed;
+            orderUpdateAtt.lastModifiedBy = daiictId;
+            orderUpdateAtt.lastModified = new Date();
+            orderUpdateAtt.isPaymentDone = true;
+
+            const orderInDb = await Order.findById(orderId);
+
+            if (orderInDb){
+                if (orderInDb.status===orderStatus.paymentIncomplete){
+                    const updatedOrder = await Order.findByIdAndUpdate(orderId, orderUpdateAtt, { new: true });
+                    const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
+                    res.status(httpStatusCodes.OK)
+                        .json({ order: filteredOrder });
+                } else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
     changeStatus: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
         const { orderId } = req.params;
+        const changeStatusPermission = accessControl.can(user.userType)
+            .updateAny(resources.changeResourceStatus);
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.order);
 
+        if (changeStatusPermission.granted) {
+
+            const orderUpdateAtt = req.value.body;
+
+            const orderInDb = await Order.findById(orderId);
+
+            if (orderUpdateAtt.status - orderInDb.status > 10) {
+                return res.status(httpStatusCodes.BAD_REQUEST)
+                    .send(errorMessages.invalidStatusChange);
+            }
+
+            let updateAtt = {
+                lastModifiedBy: daiictId,
+                lastModified: new Date()
+            };
+            switch (orderUpdateAtt.status) {
+                case orderStatus.processingOrder:
+                    updateAtt.status = orderStatus.processingOrder;
+                    break;
+                case orderStatus.processingDelivery:
+                    updateAtt.status = orderStatus.processingDelivery;
+                    break;
+                case orderStatus.readyToDeliver:
+                    if (orderUpdateAtt.courierServiceName === undefined || orderUpdateAtt.trackingId === undefined) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.courierInformationRequired);
+                    }
+                    updateAtt.status = orderStatus.readyToDeliver;
+                    const updatedCourier = await Courier.findByIdAndUpdate(orderInDb.courier, {
+                        courierServiceName: orderUpdateAtt.courierServiceName,
+                        trackingId: orderUpdateAtt.trackingId
+                    });
+
+                    if (!updatedCourier) {
+                        return res.sendStatus(httpStatusCodes.NOT_FOUND);
+                    }
+                    break;
+                case orderStatus.readyToPickup:
+                    updateAtt.status=orderStatus.readyToPickup;
+                    break;
+            }
+            const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
+            if (updatedOrder) {
+                const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
+                res.status(httpStatusCodes.OK)
+                    .json({ order: filteredOrder });
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
     },
 };
