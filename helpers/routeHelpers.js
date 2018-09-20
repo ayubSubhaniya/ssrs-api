@@ -333,5 +333,12 @@ module.exports = {
                 country: Joi.string(),
                 pinCode: Joi.number(),
             }),
+        courierUpdateSchema: Joi.object()
+            .keys({
+                trackingId: Joi.string()
+                    .required(),
+                speedPostName: Joi.string()
+                    .required(),
+            }),
     },
 };

@@ -53,6 +53,8 @@ const parameter = require('./routes/parameter');
 const access = require('./routes/access');
 const notification = require('./routes/notification');
 const collectionType = require('./routes/collectionType');
+const courier = require('./routes/courier');
+const collector = require('./routes/collector');
 
 // Middlewares
 app.use(logger('dev'));
@@ -75,6 +77,8 @@ app.use('/parameter/', parameter);
 app.use('/notification/', notification);
 app.use('/collectionType/', collectionType);
 app.use('/order/', order);
+app.use('/courier', courier);
+app.use('/collector', collector);
 
 
 // Catch 404 Errors and forward them to error handler function
