@@ -78,6 +78,15 @@ const grantDefaultAccess = () => {
                 .deleteOwn(resourceType);
         });
 
+    resourceType = resources.cart;
+    Object.keys(userTypes)
+        .forEach(userType => {
+            accessControl.grant(userType)
+                .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
+                .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
+                .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate'])
+        });
+
     resourceType = resources.collector;
     Object.keys(userTypes)
         .forEach(userType => {
