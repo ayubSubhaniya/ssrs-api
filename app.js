@@ -45,6 +45,7 @@ db.connect(dbURI)
 
 // Routes
 const order = require('./routes/order');
+const cart = require('./routes/cart');
 const user = require('./routes/user');
 const account = require('./routes/account');
 const service = require('./routes/service');
@@ -75,6 +76,7 @@ app.use('/parameter/', parameter);
 app.use('/notification/', notification);
 app.use('/collectionType/', collectionType);
 app.use('/order/', order);
+app.use('/cart/', cart);
 
 
 // Catch 404 Errors and forward them to error handler function

@@ -31,9 +31,9 @@ const collectorSchema = new Schema({
         type: String,
         required: true
     },
-    orderId: {
+    cartId: {
         type: Schema.Types.ObjectId,
-        ref: 'order',
+        ref: 'cart',
         required: true,
     }
 });

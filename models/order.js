@@ -38,10 +38,6 @@ const orderSchema = new Schema({
         type: Number,
         default:0,
     },
-    collectionTypeCost: {
-        type: Number,
-        default:0,
-    },
     totalCost: {
         type: Number,
         default:0,
@@ -57,27 +53,6 @@ const orderSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'parameter',
     }],
-    paymentType: {
-        type: Number,
-    },
-    isPaymentDone: {
-        type: Boolean,
-        default: false,
-    },
-    paymentId: {
-        type: String,
-    },
-    collectionType: {
-        type: String,
-    },
-    courier: {
-        type: Schema.Types.ObjectId,
-        ref: 'courier'
-    },
-    pickup: {
-        type: Schema.Types.ObjectId,
-        ref: 'collector'
-    },
     validityErrors: [{
        type:String,
     }],

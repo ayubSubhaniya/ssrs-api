@@ -3,6 +3,7 @@ const Service = require('../models/service');
 const Courier = require('../models/courier');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
+const Cart = require('../models/cart');
 const CollectionType = require('../models/collectionType');
 const Parameter = require('../models/parameter');
 
@@ -11,20 +12,21 @@ const { accessControl } = require('./access');
 const { resources, collectionTypes, sortQueryName, paymentTypes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 
+
 const orderStatus = {
     failed: 0,
     invalidOrder: 10,
     paymentIncomplete: 20,
     placed: 30,
     processingOrder: 40,
-    processingDelivery: 50,
-    readyToDeliver: 60,
-    delivered: 70,
-    readyToPickup: 80,
-    onHold: 90,
-    cancelled: 100,
-    refunded: 110,
+    readyToDeliver: 50,
+    delivered: 60,
+    readyToPickup: 70,
+    onHold: 80,
+    cancelled: 90,
+    refunded: 100,
 };
+
 
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits) => {
@@ -34,17 +36,6 @@ const calculateServiceCost = async (service, requiredUnits) => {
     }
 
     return requiredUnits * service.baseCharge;
-};
-
-/*return -1 when invalid*/
-const calculateCollectionTypeCost = async (collectionType, requiredUnits) => {
-    const collectionTypeDoc = await CollectionType.findOne({ name: collectionType });
-
-    if (!collectionTypeDoc.isActive) {
-        return -1;
-    }
-
-    return collectionTypeDoc.baseCharge;
 };
 
 /*return -1 when invalid*/
@@ -92,24 +83,9 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 const recalculateOrderCost = async (order) => {
     const service = await Service.findById(order.serviceId);
 
-    if (order.courier) {
-        order.collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, order.unitsRequested);
-    } else if (order.pickup) {
-        order.collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.pickup, order.unitsRequested);
-    } else {
-        order.collectionTypeCost = 0;
-    }
-
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested);
     order.totalCost = 0;
-
-    if (order.collectionTypeCost === -1) {
-        order.status = orderStatus.invalidOrder;
-        order.validityErrors.push(errorMessages.invalidCollectionType);
-    } else {
-        order.totalCost += order.collectionTypeCost;
-    }
 
     if (order.parameterCost === -1) {
         order.status = orderStatus.invalidOrder;
@@ -169,6 +145,18 @@ const getOrders = async (query, readableAttributes, sortQuery) => {
 };
 
 module.exports = {
+    orderStatus,
+
+    calculateServiceCost,
+
+    calculateParameterCost,
+
+    recalculateOrderCost,
+
+    validateOrder,
+
+    getOrders,
+
     getAllOrders: async (req, res, next) => {
 
         const { user } = req;
@@ -224,17 +212,13 @@ module.exports = {
 
     addOrder: async (req, res, next) => {
         const { user } = req;
-        const { daiictId } = user;
+        const { daiictId, cartId } = user;
         const timeStamp = new Date();
 
         const createOwnPermission = accessControl.can(user.userType)
             .createOwn(resources.order);
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
-        const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
-        const readOwnCollectorPermission = accessControl.can(user.userType)
-            .readOwn(resources.collector);
 
         if (createOwnPermission.granted) {
             let orderAtt = req.value.body.order;
@@ -243,7 +227,7 @@ module.exports = {
 
             newOrder.requestedBy = daiictId;
             newOrder.createdOn = timeStamp;
-            newOrder.status = newOrder.isPaymentDone ? orderStatus.placed : orderStatus.paymentIncomplete;
+            newOrder.status = orderStatus.paymentIncomplete;
 
             const service = await Service.findById(newOrder.serviceId);
             newOrder.serviceName = service.name;
@@ -265,71 +249,18 @@ module.exports = {
             }
             newOrder.parameterCost = parameterCost;
 
-            if (req.body.courier) {
-                const newCourier = new Courier(req.body.courier);
-                newCourier.orderId = newOrder._id;
-                newCourier.createdOn = timeStamp;
-                newCourier.createdBy = daiictId;
+            const order = await newOrder.save();
 
-                newOrder.collectionType = collectionTypes.courier;
-                newOrder.courier = newCourier._id;
-
-                const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, newOrder.unitsRequested);
-                if (collectionTypeCost === -1) {
-                    res.status(httpStatusCodes.PRECONDITION_FAILED)
-                        .send(errorMessages.invalidCollectionType);
-                    return;
+            await Cart.findByIdAndUpdate(cartId, {
+                "$push" : {
+                    "orders":order._id
                 }
-                newOrder.collectionTypeCost = collectionTypeCost;
-
-                const courier = await newCourier.save();
-                const order = await newOrder.save();
-
-                const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
-                const filteredCourier = filterResourceData(courier, readOwnCourierPermission.attributes);
-
-                res.status(httpStatusCodes.CREATED)
-                    .json({
-                        order: filteredOrder,
-                        courier: filteredCourier
-                    });
-
-            } else if (req.body.pickup) {
-                const newCollector = new Collector(req.body.pickup);
-                newCollector.orderId = newOrder._id;
-                newCollector.createdOn = timeStamp;
-                newCollector.createdBy = daiictId;
-
-                newOrder.collectionType = collectionTypes.pickup;
-                newOrder.pickup = newCollector._id;
-
-                const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.pickup, newOrder.unitsRequested);
-                if (collectionTypeCost === -1) {
-                    res.status(httpStatusCodes.PRECONDITION_FAILED)
-                        .send(errorMessages.invalidCollectionType);
-                    return;
-                }
-                newOrder.collectionTypeCost = collectionTypeCost;
-
-                const collector = await newCollector.save();
-                const order = await newOrder.save();
-
-                const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
-                const filteredCollector = filterResourceData(collector, readOwnCollectorPermission.attributes);
-
-                res.status(httpStatusCodes.CREATED)
-                    .json({
-                        order: filteredOrder,
-                        collector: filteredCollector
-                    });
-            } else {
-                const order = await newOrder.save();
-                const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
-                res.status(httpStatusCodes.CREATED)
-                    .json({
-                        order: filteredOrder
-                    });
-            }
+            });
+            const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
+            res.status(httpStatusCodes.CREATED)
+                .json({
+                    order: filteredOrder
+                });
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -337,7 +268,7 @@ module.exports = {
 
     deleteOrder: async (req, res, next) => {
         const { user } = req;
-        const { daiictId } = user;
+        const { daiictId, cartId } = user;
         const { orderId } = req.params;
 
         const deleteOwnPermission = accessControl.can(user.userType)
@@ -348,6 +279,12 @@ module.exports = {
 
             if (order.status < orderStatus.placed && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
+
+                await Cart.findByIdAndUpdate(cartId, {
+                    "pull" : {
+                        "orders":order._id
+                    }
+                });
                 res.sendStatus(httpStatusCodes.OK);
             } else {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
@@ -362,48 +299,12 @@ module.exports = {
         const { daiictId } = user;
         const { orderId } = req.params;
 
-        const readAnyPermission = accessControl.can(user.userType)
-            .readAny(resources.order);
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
-        const updateAnyPermission = accessControl.can(user.userType)
-            .updateAny(resources.order);
         const updateOwnPermission = accessControl.can(user.userType)
             .updateOwn(resources.order);
 
-        if (updateAnyPermission.granted) {
-            const updatedOrder = req.value.body;
-            const orderInDB = await Order.findById(orderId);
-            if (orderInDB.status < orderStatus.placed) {
-
-                if (updatedOrder.unitsRequested !== undefined) {
-                    const service = await Service.findById(orderInDB.serviceId);
-                    const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
-
-                    if (serviceCost === -1) {
-                        res.status(httpStatusCodes.PRECONDITION_FAILED)
-                            .send(errorMessages.invalidService);
-                        return;
-                    }
-                    updatedOrder.serviceCost = serviceCost;
-                }
-
-                /* handle unknown payment type*/
-                const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
-
-                if (order) {
-                    const filteredOrder = filterResourceData(order, readAnyPermission.attributes);
-                    res.status(httpStatusCodes.OK)
-                        .json({ order: filteredOrder });
-                } else {
-                    res.sendStatus(httpStatusCodes.NOT_FOUND);
-                }
-            } else {
-                res.sendStatus(httpStatusCodes.FORBIDDEN);
-            }
-
-
-        } else if (updateOwnPermission.granted) {
+        if (updateOwnPermission.granted) {
             const updatedOrder = req.value.body;
 
             const orderInDB = await Order.findOne({
@@ -498,253 +399,6 @@ module.exports = {
         }
     },
 
-    addCourier: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { orderId } = req.params;
-        const timeStamp = new Date();
-
-        const readOwnOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
-        const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
-        const updateOwnPermission = accessControl.can(user.userType)
-            .updateOwn(resources.order);
-
-        if (updateOwnPermission.granted) {
-            const courier = new Courier(req.value.body);
-            courier.createdOn = timeStamp;
-            courier.createdBy = daiictId;
-
-            const order = await Order.findOne({
-                _id: orderId,
-                requestedBy: daiictId
-            });
-
-            if (!order) {
-                return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status < orderStatus.placed) {
-
-                const cost = await calculateCollectionTypeCost(collectionTypes.courier);
-                if (cost === -1) {
-                    res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
-                    return;
-                }
-
-                order.collectionTypeCost = cost;
-
-                order.pickup = undefined;
-
-                order.collectionType = collectionTypes.courier;
-                order.courier = courier._id;
-                courier.orderId = order._id;
-                console.log(order);
-                const newCourier = await courier.save();
-                const newOrder = await order.save();
-
-                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
-                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-                res.status(httpStatusCodes.CREATED)
-                    .json({
-                        order: filteredOrder,
-                        courier: filteredCourier
-                    });
-
-            } else {
-                return res.sendStatus(httpStatusCodes.FORBIDDEN);
-            }
-
-        } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
-        }
-    },
-
-    updateCourier: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { orderId } = req.params;
-
-        const readOwnOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
-        const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
-        const updateOwnPermission = accessControl.can(user.userType)
-            .updateOwn(resources.order);
-
-        if (updateOwnPermission.granted) {
-            const courier = req.value.body;
-
-            const order = await Order.findOne({
-                _id: orderId,
-                requestedBy: daiictId
-            });
-
-            if (!order || !order.courier) {
-                return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status < orderStatus.placed) {
-
-                const cost = await calculateCollectionTypeCost(collectionTypes.courier);
-                if (cost === -1) {
-                    res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
-                    return;
-                }
-                console.log(order.courier);
-                const newCourier = await Courier.findByIdAndUpdate(order.courier, courier, { new: true });
-                /* check if courier is present*/
-                const newOrder = await order.save();
-
-                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
-                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-                res.status(httpStatusCodes.OK)
-                    .json({
-                        order: filteredOrder,
-                        courier: filteredCourier
-                    });
-
-            } else {
-                res.sendStatus(httpStatusCodes.FORBIDDEN);
-            }
-
-
-        } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
-        }
-    },
-
-    addPickup: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { orderId } = req.params;
-
-        const timeStamp = new Date();
-
-        const readOwnOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
-        const readOwnPickupPermission = accessControl.can(user.userType)
-            .readOwn(resources.collector);
-        const updateOwnPermission = accessControl.can(user.userType)
-            .updateOwn(resources.order);
-
-        if (updateOwnPermission.granted) {
-            const pickup = new Collector(req.value.body);
-            pickup.createdOn = timeStamp;
-            pickup.createdBy = daiictId;
-
-            const cost = await calculateCollectionTypeCost(collectionTypes.pickup);
-            const order = await Order.findOne({
-                _id: orderId,
-                requestedBy: daiictId
-            });
-
-            if (!order) {
-                return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status < orderStatus.placed) {
-                order.collectionTypeCost = cost;
-                order.courier = undefined;
-
-                order.collectionType = collectionTypes.pickup;
-                order.pickup = pickup._id;
-                pickup.orderId = order._id;
-                const newPickup = await pickup.save();
-                const newOrder = await order.save();
-
-                const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
-                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-                res.status(httpStatusCodes.CREATED)
-                    .json({
-                        order: filteredOrder,
-                        pickup: filteredPickup
-                    });
-            } else {
-                return res.sendStatus(httpStatusCodes.FORBIDDEN);
-            }
-
-
-        } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
-        }
-    },
-
-    updatePickup: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { orderId } = req.params;
-
-        const readOwnOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
-        const readOwnPickupPermission = accessControl.can(user.userType)
-            .readOwn(resources.collector);
-        const updateOwnPermission = accessControl.can(user.userType)
-            .updateOwn(resources.order);
-
-        if (updateOwnPermission.granted) {
-            const pickup = req.value.body;
-
-            const order = await Order.findOne({
-                _id: orderId,
-                requestedBy: daiictId
-            });
-
-
-            if (!order || !order.pickup) {
-                return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status < orderStatus.placed) {
-
-                const newPickup = await Collector.findByIdAndUpdate(order.pickup, pickup, { new: true });
-                const newOrder = await order.save();
-
-                const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
-                const filteredOrder = filterResourceData(newOrder, readOwnOrderPermission.attributes);
-                res.status(httpStatusCodes.OK)
-                    .json({
-                        order: filteredOrder,
-                        pickup: filteredPickup
-                    });
-
-            } else {
-                return res.sendStatus(httpStatusCodes.FORBIDDEN);
-            }
-        } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
-        }
-    },
-
-    addPayment: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { orderId } = req.params;
-        const updateOwnPermission = accessControl.can(user.userType)
-            .updateOwn(resources.order);
-        const readPermission = accessControl.can(user.userType)
-            .readAny(resources.order);
-
-        if (updateOwnPermission.granted) {
-
-            const orderUpdateAtt = req.value.body;
-            orderUpdateAtt.status = orderStatus.placed;
-            orderUpdateAtt.lastModifiedBy = daiictId;
-            orderUpdateAtt.lastModified = new Date();
-            orderUpdateAtt.isPaymentDone = true;
-
-            const orderInDb = await Order.findById(orderId);
-
-            if (orderInDb){
-                if (orderInDb.status===orderStatus.paymentIncomplete){
-                    const updatedOrder = await Order.findByIdAndUpdate(orderId, orderUpdateAtt, { new: true });
-                    const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
-                    res.status(httpStatusCodes.OK)
-                        .json({ order: filteredOrder });
-                } else {
-                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
-                }
-            } else {
-                res.sendStatus(httpStatusCodes.NOT_FOUND);
-            }
-        } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
-        }
-    },
-
     changeStatus: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -773,26 +427,8 @@ module.exports = {
                 case orderStatus.processingOrder:
                     updateAtt.status = orderStatus.processingOrder;
                     break;
-                case orderStatus.processingDelivery:
-                    updateAtt.status = orderStatus.processingDelivery;
-                    break;
                 case orderStatus.readyToDeliver:
-                    if (orderUpdateAtt.courierServiceName === undefined || orderUpdateAtt.trackingId === undefined) {
-                        return res.status(httpStatusCodes.BAD_REQUEST)
-                            .send(errorMessages.courierInformationRequired);
-                    }
                     updateAtt.status = orderStatus.readyToDeliver;
-                    const updatedCourier = await Courier.findByIdAndUpdate(orderInDb.courier, {
-                        courierServiceName: orderUpdateAtt.courierServiceName,
-                        trackingId: orderUpdateAtt.trackingId
-                    });
-
-                    if (!updatedCourier) {
-                        return res.sendStatus(httpStatusCodes.NOT_FOUND);
-                    }
-                    break;
-                case orderStatus.readyToPickup:
-                    updateAtt.status=orderStatus.readyToPickup;
                     break;
             }
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
