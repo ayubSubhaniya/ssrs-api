@@ -12,10 +12,10 @@ module.exports = {
         pickup: 'Pickup',
     },
     paymentTypes: {
-      offline:0,
-      payTm:1,
-      creditCard:2,
-      debitCard:3
+        offline: 0,
+        payTm: 1,
+        creditCard: 2,
+        debitCard: 3
     },
     permissions: {
         readAny: 'readAny',
@@ -48,7 +48,7 @@ module.exports = {
         role: 'Role',
         parameter: 'Parameter',
         collectionType: 'CollectionType',
-        cart:'Cart',
+        cart: 'Cart',
     },
     validityErrors: {
         permissionDenied: 'Permission Denied',
@@ -72,6 +72,20 @@ module.exports = {
         cancelled: 90,
         refunded: 100,
     },
-};
+    orderStatus: {
+        failed: 0,
+        invalidOrder: 10,
+        paymentIncomplete: 20,
+        placed: 30,
+        processingOrder: 40,
+        readyToDeliver: 50,
+        delivered: 60,
+        readyToPickup: 70,
+        onHold: 80,
+        cancelled: 90,
+        refunded: 100,
+    },
+}
+;
 
 
