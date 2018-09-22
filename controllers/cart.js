@@ -5,16 +5,15 @@ const Courier = require('../models/courier');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
 const Cart = require('../models/cart');
-const User = require('../models/user');
 
 const CollectionType = require('../models/collectionType');
 const paymentCodeGenerator = require('shortid');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus } = require('../configuration');
+const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { calculateServiceCost, calculateParameterCost, recalculateOrderCost, validateOrder, orderStatus } = require('./order');
+const { validateOrder } = require('./order');
 
 
 const calculateCollectionTypeCost = async (collectionType, orders) => {
@@ -131,13 +130,17 @@ module.exports = {
         const { user } = req;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
+            .readAny(resources.order);
 
         const readAnyCartPermission = accessControl.can(user.userType)
-            .readOwn(resources.cart);
+            .readAny(resources.cart);
 
         if (readAnyCartPermission.granted) {
-            const cart = await Cart.find({})
+            const query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
+            const sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
+
+            const cart = await Cart.find(query)
+                .sort(sortQuery)
                 .populate({
                     path: 'orders',
                     select: readAnyOrderPermission.attributes

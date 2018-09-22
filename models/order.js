@@ -58,25 +58,10 @@ const orderSchema = new Schema({
     }],
 });
 
-const paymentSchemaValidator = (order) => {
-    return !order.isPaymentDone || order.paymentId;
-};
-
-const collectionTypeSchemaValidator = (order) => {
-    return !order.collectionType || (order.courier === undefined ^ order.pickup === undefined)===1;
-};
 
 orderSchema.pre('save', function (next) {
-    if (!paymentSchemaValidator(this)) {
-        const err = new Error('Invalid payment information');
-        next(err);
-    } else if (!collectionTypeSchemaValidator(this)) {
-        const err = new Error('Invalid collectionType information');
-        next(err);
-    } else {
-        this.totalCost = this.serviceCost + this.parameterCost + this.collectionTypeCost;
-        next();
-    }
+    this.totalCost = this.serviceCost + this.parameterCost;
+    next();
 });
 
 const Order = db.model('order', orderSchema);

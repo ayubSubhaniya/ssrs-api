@@ -9,23 +9,8 @@ const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes } = require('../configuration');
+const { resources, sortQueryName, orderStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-
-
-const orderStatus = {
-    failed: 0,
-    invalidOrder: 10,
-    paymentIncomplete: 20,
-    placed: 30,
-    processingOrder: 40,
-    readyToDeliver: 50,
-    delivered: 60,
-    readyToPickup: 70,
-    onHold: 80,
-    cancelled: 90,
-    refunded: 100,
-};
 
 
 /*return -1 when invalid*/
@@ -155,8 +140,6 @@ module.exports = {
 
     validateOrder,
 
-    getOrders,
-
     getAllOrders: async (req, res, next) => {
 
         const { user } = req;
@@ -222,7 +205,6 @@ module.exports = {
 
         if (createOwnPermission.granted) {
             let orderAtt = req.value.body.order;
-            /* handle unknown parameter type*/
             const newOrder = new Order(orderAtt);
 
             newOrder.requestedBy = daiictId;
@@ -252,8 +234,8 @@ module.exports = {
             const order = await newOrder.save();
 
             await Cart.findByIdAndUpdate(cartId, {
-                "$push" : {
-                    "orders":order._id
+                '$push': {
+                    'orders': order._id
                 }
             });
             const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
@@ -281,8 +263,8 @@ module.exports = {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
-                    "pull" : {
-                        "orders":order._id
+                    'pull': {
+                        'orders': order._id
                     }
                 });
                 res.sendStatus(httpStatusCodes.OK);
@@ -326,7 +308,7 @@ module.exports = {
                         }
                         updatedOrder.serviceCost = serviceCost;
                     }
-                    /* handle unknown payment type*/
+
                     const order = await Order.updateOne({
                         _id: orderId,
                         requestedBy: daiictId
