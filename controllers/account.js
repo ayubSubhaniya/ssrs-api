@@ -150,7 +150,7 @@ module.exports = {
         const { newPassword } = req.value.body;
         const { user } = req;
         const { daiictId } = user;
-        console.log(newPassword);
+
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
         res.sendStatus(HttpStatus.OK);
