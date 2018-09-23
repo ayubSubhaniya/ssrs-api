@@ -116,12 +116,13 @@ const validateOrder = async (orders) => {
     }
 };
 
-const getOrders = async (query, readableAttributes, sortQuery) => {
+const getOrders = async (query, readableAttributes,parameterReadableAtt, sortQuery) => {
     const orders = await Order.find(query)
         .sort(sortQuery)
-        .populate({ path: 'parameters' })
-        .populate({ path: 'courier' })
-        .populate({ path: 'pickup' });
+        .populate({
+            path: 'parameters',
+            select: parameterReadableAtt
+        });
 
     const validatedOrder = await validateOrder(orders);
     return filterResourceData(validatedOrder, readableAttributes);
@@ -141,6 +142,8 @@ module.exports = {
             .readAny(resources.order);
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
+        const readAnyParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
 
         const query = parseFilterQuery(req.query, readOwnPermission.attributes);
         const sortQuery = parseSortQuery(req.query[sortQueryName], readOwnPermission.attributes);
@@ -153,7 +156,7 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, readOwnPermission.attributes, sortQuery);
+        const filteredOrders = await getOrders(query, readOwnPermission.attributes, readAnyParameterPermission.attributes, sortQuery);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -167,6 +170,8 @@ module.exports = {
             .readAny(resources.order);
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
+        const readAnyParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
 
         const query = {
             _id: orderId
@@ -180,7 +185,7 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, readOwnPermission.attributes);
+        const filteredOrders = await getOrders(query, readOwnPermission.attributes,readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -275,6 +280,8 @@ module.exports = {
 
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
+        const readAnyParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
         const updateOwnPermission = accessControl.can(user.userType)
             .updateOwn(resources.order);
 
@@ -316,7 +323,11 @@ module.exports = {
                     const order = await Order.findOneAndUpdate({
                         _id: orderId,
                         requestedBy: daiictId
-                    }, updatedOrder,{new:true});
+                    }, updatedOrder, { new: true })
+                        .populate({
+                            path: 'parameters',
+                            select: readAnyParameterPermission.attributes
+                        });
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
