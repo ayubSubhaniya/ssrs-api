@@ -4,7 +4,7 @@ var request = require('request')
 // request.debug = true
 
 const mainURL = 'http://localhost:3001' + '/collectionType'
-const userId = 201501405
+const userId = 201501433
 
 describe('Get all collections', function(){
 

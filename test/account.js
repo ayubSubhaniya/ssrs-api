@@ -4,7 +4,7 @@ const HttpStatus = require('http-status-codes')
 const request = require('request')
 // request.debug = true
 
-const hostURL = process.env.HOST_URL + '/account'
+const hostURL = `http://localhost:3001/account`
 
 const userId = rand({
     min: 201501001,

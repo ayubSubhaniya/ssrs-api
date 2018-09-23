@@ -4,7 +4,7 @@ var request = require('request')
 // request.debug = true
 
 const mainURL = 'http://localhost:3001' + '/parameter'
-const userId = 201501405
+const userId = 201501433
 
 describe('Get all parameters', function(){
 
@@ -70,7 +70,7 @@ describe('Add and Delete a parameter', () => {
     var param_id;
     it('Add parameterType - Signed by Director', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.OK)
+            expect(res.statusCode).to.equal(HttpStatus.CREATED)
             param_id = body.parameter._id
             expect(body.parameter.name).to.equal('Signed by Director')
             done()

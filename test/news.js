@@ -27,9 +27,9 @@ describe('route /', function() {
 
     it('DeleteAllNews', function(done){
         options.method = 'DELETE'
-        request(options, function(err, res){
-            expect(res.statusCode).to.equal(HttpStatus.OK)
-            done()
-        })
+        // request(options, function(err, res){
+        //     expect(res.statusCode).to.equal(HttpStatus.OK)
+        //     done()
+        // })
     })
 })
