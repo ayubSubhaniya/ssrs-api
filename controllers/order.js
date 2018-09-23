@@ -1,10 +1,8 @@
 const httpStatusCodes = require('http-status-codes');
+
 const Service = require('../models/service');
-const Courier = require('../models/courier');
-const Collector = require('../models/collector');
 const Order = require('../models/order');
 const Cart = require('../models/cart');
-const CollectionType = require('../models/collectionType');
 const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
@@ -66,7 +64,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 };
 
 const recalculateOrderCost = async (order) => {
-    const service = await Service.findById(order.serviceId);
+    const service = await Service.findById(order.service);
 
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested);
@@ -131,12 +129,6 @@ const getOrders = async (query, readableAttributes, sortQuery) => {
 
 module.exports = {
     orderStatus,
-
-    calculateServiceCost,
-
-    calculateParameterCost,
-
-    recalculateOrderCost,
 
     validateOrder,
 
@@ -209,9 +201,9 @@ module.exports = {
 
             newOrder.requestedBy = daiictId;
             newOrder.createdOn = timeStamp;
-            newOrder.status = orderStatus.paymentIncomplete;
+            newOrder.status = orderStatus.unplaced;
 
-            const service = await Service.findById(newOrder.serviceId);
+            const service = await Service.findById(newOrder.service);
             newOrder.serviceName = service.name;
 
             const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested);
@@ -298,7 +290,7 @@ module.exports = {
                 if (orderInDB.status < orderStatus.placed) {
 
                     if (updatedOrder.unitsRequested !== undefined) {
-                        const service = await Service.findById(orderInDB.serviceId);
+                        const service = await Service.findById(orderInDB.service);
                         const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
 
                         if (serviceCost === -1) {
@@ -309,10 +301,22 @@ module.exports = {
                         updatedOrder.serviceCost = serviceCost;
                     }
 
-                    const order = await Order.updateOne({
+                    if (updatedOrder.parameters !== undefined) {
+                        const service = await Service.findById(orderInDB.service);
+                        const parameterCost = await calculateParameterCost(updatedOrder.parameters, orderInDB.unitsRequested, service.availableParameters);
+
+                        if (parameterCost === -1) {
+                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                                .send(errorMessages.invalidParameter);
+                        }
+
+                        updatedOrder.parameterCost = parameterCost;
+                    }
+
+                    const order = await Order.findOneAndUpdate({
                         _id: orderId,
                         requestedBy: daiictId
-                    }, updatedOrder);
+                    }, updatedOrder,{new:true});
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
@@ -329,53 +333,6 @@ module.exports = {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
-        } else {
-            res.sendStatus(httpStatusCodes.FORBIDDEN);
-        }
-    },
-
-    updateParameter: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { orderId } = req.params;
-
-        const readOwnPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
-        const updateOwnPermission = accessControl.can(user.userType)
-            .updateOwn(resources.order);
-
-        if (updateOwnPermission.granted) {
-            const parameters = req.value.body.parameters;
-
-            const order = await Order.findOne({
-                _id: orderId,
-                requestedBy: daiictId
-            });
-
-            if (!order) {
-                return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (order.status < orderStatus.placed) {
-
-                const service = await Service.findById(order.serviceId);
-                const cost = await calculateParameterCost(parameters, order.unitsRequested, service.availableParameters);
-
-                if (cost === -1) {
-                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                        .send(errorMessages.invalidParameter);
-                }
-
-                order.parameterCost = cost;
-                order.parameters = parameters;
-
-                const newOrder = await order.save();
-
-                const filteredOrder = filterResourceData(newOrder, readOwnPermission.attributes);
-                res.status(httpStatusCodes.OK)
-                    .json({ order: filteredOrder });
-
-            } else {
-                return res.sendStatus(httpStatusCodes.FORBIDDEN);
-            }
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -406,12 +363,14 @@ module.exports = {
                 lastModified: new Date()
             };
             switch (orderUpdateAtt.status) {
-                case orderStatus.processingOrder:
-                    updateAtt.status = orderStatus.processingOrder;
+                case orderStatus.processing:
+                    updateAtt.status = orderStatus.processing;
                     break;
-                case orderStatus.readyToDeliver:
-                    updateAtt.status = orderStatus.readyToDeliver;
+                case orderStatus.ready:
+                    updateAtt.status = orderStatus.ready;
                     break;
+                default :
+                    return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
             if (updatedOrder) {

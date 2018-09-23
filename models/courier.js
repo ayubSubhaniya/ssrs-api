@@ -1,6 +1,8 @@
 const moongose = require('mongoose');
 const Schema = moongose.Schema;
 
+const {collectionStatus} = require('../configuration');
+
 const courierSchema = new Schema({
     name: {
         type: String,
@@ -60,6 +62,10 @@ const courierSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'cart',
         required: true,
+    },
+    status: {
+        type: Number,
+        default: collectionStatus.pendingPayment,
     }
 });
 

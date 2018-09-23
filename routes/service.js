@@ -22,36 +22,36 @@ router.route('/special')
         serviceController.getAllSpecialServices
     );
 
-router.route('/special/:serviceId')
+router.route('/special/:service')
     .get(
         passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'serviceId'),
+        validateParam(schemas.idSchema, 'service'),
         serviceController.getSpecialService
     );
 
-router.route('/changeStatus/:serviceId')
+router.route('/changeStatus/:service')
     .patch(
         passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'serviceId'),
+        validateParam(schemas.idSchema, 'service'),
         validateBody(schemas.changeStatusSchema),
         serviceController.changeStatus
     );
 
-router.route('/:serviceId')
+router.route('/:service')
     .get(
         passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'serviceId'),
+        validateParam(schemas.idSchema, 'service'),
         serviceController.getService
     )
     .patch(
         passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'serviceId'),
+        validateParam(schemas.idSchema, 'service'),
         validateBody(schemas.serviceUpdateSchema),
         serviceController.updateService
     )
     .delete(
         passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'serviceId'),
+        validateParam(schemas.idSchema, 'service'),
         serviceController.deleteService
     );
 

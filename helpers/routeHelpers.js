@@ -205,10 +205,16 @@ module.exports = {
             .keys({
                 status: Joi.number().required()
             }),
+        changeCartStatusSchema: Joi.object()
+            .keys({
+                status: Joi.number().required(),
+                courierServiceName: Joi.string(),
+                trackingId: Joi.string(),
+            }),
         addOrderSchema: Joi.object()
             .keys({
                 order: {
-                    serviceId: Joi.string()
+                    service: Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)
                         .required(),
                     unitsRequested: Joi.number(),
@@ -225,16 +231,13 @@ module.exports = {
             .keys({
                 unitsRequested: Joi.number(),
                 comment: Joi.string(),
+                parameters: Joi.array().items(Joi.string()
+                    .regex(/^[0-9a-fA-F]{24}$/)),
             }),
         addPaymentSchema: Joi.object()
             .keys({
                 paymentType: Joi.number().required(),
                 paymentId: Joi.string(),
-            }),
-        updateOrderParameterSchema: Joi.object()
-            .keys({
-                parameters: Joi.array().items(Joi.string()
-                    .regex(/^[0-9a-fA-F]{24}$/)),
             }),
         addPickupSchema: Joi.object()
             .keys({
@@ -292,6 +295,13 @@ module.exports = {
                 state: Joi.string(),
                 country: Joi.string(),
                 pinCode: Joi.number(),
+            }),
+        courierUpdateSchema: Joi.object()
+            .keys({
+                trackingId: Joi.string()
+                    .required(),
+                speedPostName: Joi.string()
+                    .required(),
             }),
     },
 };

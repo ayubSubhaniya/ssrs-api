@@ -58,7 +58,7 @@ router.route('/changeStatus/:cartId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'cartId'),
-        validateBody(schemas.changeOrderStatusSchema),
+        validateBody(schemas.changeCartStatusSchema),
         cartController.changeStatus
     );
 

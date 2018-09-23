@@ -123,7 +123,7 @@ module.exports = {
             canRead: [
                 '_id',
                 'requestedBy',
-                'serviceId',
+                'service',
                 'serviceName',
                 'createdOn',
                 'lastModified',
@@ -153,7 +153,7 @@ module.exports = {
             canRead: [
                 '_id',
                 'requestedBy',
-                'serviceId',
+                'service',
                 'serviceName',
                 'createdOn',
                 'lastModified',
@@ -174,7 +174,7 @@ module.exports = {
                 'unitsRequested',
             ],
             canCreate: [
-                'serviceId',
+                'service',
                 'parameters',
                 'paymentType',
                 'isPaymentDone',
@@ -382,6 +382,7 @@ module.exports = {
                 'createdOn',
                 'createdBy',
                 'orderId',
+                'status',
             ],
             canCreate: [],
             canUpdate: [],
@@ -395,6 +396,7 @@ module.exports = {
                 'email',
                 'collectionCode',
                 'orderId',
+                'status',
             ],
             canCreate: [
                 'name',
@@ -427,6 +429,7 @@ module.exports = {
                 'trackingId',
                 'courierServiceName',
                 'orderId',
+                'status',
             ],
             canCreate: [],
             canUpdate: [],
@@ -445,6 +448,7 @@ module.exports = {
                 'trackingId',
                 'courierServiceName',
                 'orderId',
+                'status',
             ],
             canCreate: [
                 'name',

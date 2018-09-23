@@ -1,4 +1,5 @@
 const db = require('mongoose');
+const deepPopulate = require('mongoose-deep-populate')(db);
 
 const { Schema } = db;
 const { cartStatus } = require('../configuration');
@@ -62,6 +63,9 @@ const cartSchema = new Schema({
         type: String,
     }],
 });
+
+
+cartSchema.plugin(deepPopulate);
 
 const Cart = db.model('cart', cartSchema);
 module.exports = Cart;
