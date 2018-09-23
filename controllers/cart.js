@@ -454,6 +454,9 @@ module.exports = {
 
             const cartInDb = await Cart.findById(cartId);
 
+            if (cartInDb.orders.length===0){
+                return res.status(httpStatusCodes.BAD_REQUEST).send(errorMessages.noOrdersInCart);
+            }
             if (!calculateOrdersCost(cartInDb)) {
                 cartInDb.status = cartStatus.invalidOrders;
                 return res.status(httpStatusCodes.PRECONDITION_FAILED)
