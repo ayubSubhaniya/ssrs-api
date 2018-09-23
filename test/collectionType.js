@@ -19,7 +19,7 @@ describe('Get all collections', function(){
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -27,7 +27,7 @@ describe('Get all collections', function(){
 
     it('Get collectionType - courier', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             body = JSON.parse(body)
             expect(body.collectionType[0].name).to.equal('Courier')
             done()
@@ -36,7 +36,7 @@ describe('Get all collections', function(){
     
     it('Get collectionType - pickup', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             body = JSON.parse(body)
             expect(body.collectionType[1].name).to.equal('Pickup')
             done()
@@ -61,7 +61,7 @@ describe('Get collectionType with ID', () => {
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -69,7 +69,7 @@ describe('Get collectionType with ID', () => {
 
     it('get collectionType - pickup', function(done) {
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             expect(JSON.parse(body).collectionType.name).to.eq('Pickup')
             done()
         })
@@ -94,7 +94,7 @@ describe('Update a collectionType - courier', () => {
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -102,7 +102,7 @@ describe('Update a collectionType - courier', () => {
 
     it('update base charge', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.eq(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.eq(HttpStatus.OK)
             expect(body.collectionType.baseCharge).to.eq(100)
             done()
         })

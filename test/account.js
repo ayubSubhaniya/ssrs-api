@@ -59,11 +59,11 @@ describe('Signin', function() {
         });
     });
 
-    it('returns status 202 - Correct credentials', function(done) {
+    it('returns status 200 - Correct credentials', function(done) {
         options.json.password = "abcdefgh";
         
         request(options, function(err, res, body){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED);
+            expect(res.statusCode).to.equal(HttpStatus.OK);
             
             var user = body.user;
             expect(user).to.include({"daiictId": userId.toString(), "isActive": true});
@@ -84,9 +84,9 @@ describe('Change password', function() {
         }
     }
 
-    it('returns status 202', function(done){
+    it('returns status 200', function(done){
         request(options, function(err, res){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED);
+            expect(res.statusCode).to.equal(HttpStatus.OK);
             done();
         })
     })
@@ -109,7 +109,7 @@ describe('Signout', function() {
 
     it('signing in...', function(done){
         request(temp, function(err, res){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })

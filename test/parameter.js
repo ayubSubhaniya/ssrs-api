@@ -19,7 +19,7 @@ describe('Get all parameters', function(){
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -27,7 +27,7 @@ describe('Get all parameters', function(){
 
     it('Get parameterType - Sealed envelope', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             body = JSON.parse(body)
             expect(body.parameter[0].name).to.equal('Sealed Envelope')
             done()
@@ -36,7 +36,7 @@ describe('Get all parameters', function(){
     
     it('Get parameterType - Stamp', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             body = JSON.parse(body)
             expect(body.parameter[1].name).to.equal('Stamp')
             done()
@@ -61,7 +61,7 @@ describe('Add and Delete a parameter', () => {
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -70,7 +70,7 @@ describe('Add and Delete a parameter', () => {
     var param_id;
     it('Add parameterType - Signed by Director', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.CREATED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             param_id = body.parameter._id
             expect(body.parameter.name).to.equal('Signed by Director')
             done()
@@ -84,7 +84,7 @@ describe('Add and Delete a parameter', () => {
         options.json = {}
 
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             done()
         })
     })
@@ -105,7 +105,7 @@ describe('Get parameter with ID', () => {
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -113,7 +113,7 @@ describe('Get parameter with ID', () => {
 
     it('get parameterType - Sealed envelope', function(done) {
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             expect(JSON.parse(body).parameter.name).to.eq('Sealed Envelope')
             done()
         })
@@ -136,7 +136,7 @@ describe('Update a parameter', () => {
                     method: 'POST', 
                     json: {'daiictId': userId.toString(), 'password': userId.toString()}}
         request(temp, (err, res) => {
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             options.headers.Cookie = res.headers['set-cookie']
             done()
         })
@@ -144,7 +144,7 @@ describe('Update a parameter', () => {
 
     it('update base charge - sealed envelope', function(done){
         request(options, (err,res,body) => {
-            expect(res.statusCode).to.eq(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.eq(HttpStatus.OK)
             expect(body.parameter.baseCharge).to.eq(100)
             done()
         })

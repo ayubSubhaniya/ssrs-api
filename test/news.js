@@ -13,7 +13,7 @@ describe('route /', function() {
 
     it('GetAllNews', function(done){
         request(options, function(err, res){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED || HttpStatus.NO_CONTENT)
+            expect(res.statusCode).to.equal(HttpStatus.OK || HttpStatus.NOT_FOUND)
             done()
         })
     })
@@ -28,7 +28,7 @@ describe('route /', function() {
     it('DeleteAllNews', function(done){
         options.method = 'DELETE'
         request(options, function(err, res){
-            expect(res.statusCode).to.equal(HttpStatus.ACCEPTED)
+            expect(res.statusCode).to.equal(HttpStatus.OK)
             done()
         })
     })
