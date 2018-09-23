@@ -11,7 +11,7 @@ const paymentCodeGenerator = require('shortid');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus } = require('../configuration');
+const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
@@ -27,8 +27,8 @@ const calculateCollectionTypeCost = async (collectionType, orders) => {
     }
 
     for (let i = 0; i < orders.length; i++) {
-        const service = await Service.findById(orders[i].serviceId);
-        const collectionTypes = convertToStringArray(service.collectionType);
+        const service = await Service.findById(orders[i].service);
+        const collectionTypes = convertToStringArray(service.collectionTypes);
 
         if (!collectionTypes.includes(collectionTypeDoc._id.toString())) {
             return -1;
@@ -55,21 +55,34 @@ module.exports = {
     getMyCart: async (req, res, next) => {
 
         const { user } = req;
-        const {cartId} = user;
+        const { cartId } = user;
+
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
-
+        const readAnyServicePermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readAnyParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
 
         if (readOwnCartPermission.granted) {
 
             const cart = await Cart.findById(cartId)
-                .populate({
-                    path: 'orders',
-                    select: readOwnOrderPermission.attributes
-                })
-                .exec();
+                .deepPopulate(['orders.service', 'orders.parameters'], {
+                    populate: {
+                        'orders': {
+                            select: readOwnOrderPermission.attributes
+                        },
+                        'orders.service': {
+                            select: readAnyServicePermission.attributes
+                        },
+                        'orders.parameters': {
+                            select: readAnyParameterPermission.attributes
+                        }
+                    }
+                });
+
             cart.orders = await validateOrder(cart.orders);
 
             const ordersCost = await calculateOrdersCost(cart);
@@ -105,16 +118,28 @@ module.exports = {
         const { cartId } = req.params;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
-
+            .readAny(resources.order);
         const readAnyCartPermission = accessControl.can(user.userType)
-            .readOwn(resources.cart);
+            .readAny(resources.cart);
+        const readAnyServicePermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readAnyParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
 
         if (readAnyCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .populate({
-                    path: 'orders',
-                    select: readAnyOrderPermission.attributes
+                .deepPopulate(['orders.service', 'orders.parameters'], {
+                    populate: {
+                        'orders': {
+                            select: readAnyOrderPermission.attributes
+                        },
+                        'orders.service': {
+                            select: readAnyServicePermission.attributes
+                        },
+                        'orders.parameters': {
+                            select: readAnyParameterPermission.attributes
+                        }
+                    }
                 });
 
             const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
@@ -131,9 +156,12 @@ module.exports = {
 
         const readAnyOrderPermission = accessControl.can(user.userType)
             .readAny(resources.order);
-
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
+        const readAnyServicePermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readAnyParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
 
         if (readAnyCartPermission.granted) {
             const query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
@@ -141,9 +169,18 @@ module.exports = {
 
             const cart = await Cart.find(query)
                 .sort(sortQuery)
-                .populate({
-                    path: 'orders',
-                    select: readAnyOrderPermission.attributes
+                .deepPopulate(['orders.service', 'orders.parameters'], {
+                    populate: {
+                        'orders': {
+                            select: readAnyOrderPermission.attributes
+                        },
+                        'orders.service': {
+                            select: readAnyServicePermission.attributes
+                        },
+                        'orders.parameters': {
+                            select: readAnyParameterPermission.attributes
+                        }
+                    }
                 });
 
             const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
@@ -165,13 +202,19 @@ module.exports = {
             .readOwn(resources.courier);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
             const courier = new Courier(req.value.body);
             courier.createdOn = timeStamp;
             courier.createdBy = daiictId;
 
-            const cart = await Cart.findById(cartId);
+            const cart = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
 
             if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -222,11 +265,17 @@ module.exports = {
             .readOwn(resources.courier);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
             const courier = req.value.body;
 
-            const cart = await Cart.findById(cartId);
+            const cart = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
 
             if (!cart || !cart.courier) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -275,13 +324,19 @@ module.exports = {
             .readOwn(resources.collector);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
             const pickup = new Collector(req.value.body);
             pickup.createdOn = timeStamp;
             pickup.createdBy = daiictId;
 
-            const cart = await Cart.findById(cartId);
+            const cart = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
 
             if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -330,11 +385,17 @@ module.exports = {
             .readOwn(resources.collector);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
             const pickup = req.value.body;
 
-            const cart = await Cart.findById(cartId);
+            const cart = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
 
 
             if (!cart || !cart.pickup) {
@@ -395,14 +456,34 @@ module.exports = {
 
             if (!calculateOrdersCost(cartInDb)) {
                 cartInDb.status = cartStatus.invalidOrders;
+                return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                    .send(errorMessages.invalidOrders);
+            }
+
+            if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
+                return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                    .send(errorMessages.noCollectionType);
             }
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced) {
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    if (cartUpdateAtt.status === cartStatus.paymentComplete) {
+
+                        if (cartInDb.collectionType === collectionTypes.pickup) {
+                            await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
+                        } else if (cartInDb.collectionType === collectionTypes.courier) {
+                            await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
+                        }
+
+                        for (let i=0;i<cartInDb.orders.length;i++){
+                            await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
+                        }
+                    }
 
                     const cart = new Cart({
-                        requestedBy:daiictId,
+                        requestedBy: daiictId,
                         createdOn: user.createdOn,
                     });
                     await cart.save();
@@ -447,7 +528,18 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
-                    const updatedCart = await Cart.findOneAndUpdate({paymentCode}, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
+
+                    if (cartInDb.collectionType === collectionTypes.pickup) {
+                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
+                    } else if (cartInDb.collectionType === collectionTypes.courier) {
+                        await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
+                    }
+
+                    for (let i=0;i<cartInDb.orders.length;i++){
+                        await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
+                    }
+
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
 
                     res.status(httpStatusCodes.OK)
@@ -472,14 +564,20 @@ module.exports = {
             .updateAny(resources.changeResourceStatus);
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
+        const readAnyOrderPermission = accessControl.can(user.userType)
+            .readAny(resources.order);
 
         if (changeStatusPermission.granted) {
 
             const cartUpdateAtt = req.value.body;
 
-            const cartInDb = await Cart.findById(orderId);
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readAnyOrderPermission.attributes
+                });
 
-            if (cartUpdateAtt.status - cartInDb.status > 10) {
+            if (!(cartUpdateAtt.status===cartStatus.completed&&cartInDb.status===cartStatus.readyToDeliver)&&!(cartUpdateAtt.status===cartStatus.readyToPickup&&cartInDb.status===cartStatus.processing)&&(cartUpdateAtt.status - cartInDb.status > 10)) {
                 return res.status(httpStatusCodes.BAD_REQUEST)
                     .send(errorMessages.invalidStatusChange);
             }
@@ -491,34 +589,74 @@ module.exports = {
             switch (cartUpdateAtt.status) {
                 case cartStatus.processing:
                     updateAtt.status = cartStatus.processing;
+                    console.log(cartInDb.orders);
+                    for (let i=0;i<cartInDb.orders.length;i++){
+                        await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.processing});
+                    }
+
                     break;
-                case cartStatus.delivered:
-                    if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
-                        return res.status(httpStatusCodes.BAD_REQUEST)
-                            .send(errorMessages.courierInformationRequired);
+                case cartStatus.readyToDeliver:
+                    if (cartInDb.collectionType !== collectionTypes.courier) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.noCourierInOrder);
                     }
-                    updateAtt.status = cartStatus.delivered;
-                    const updatedCourier = await Courier.findByIdAndUpdate(cartInDb.courier, {
-                        courierServiceName: cartUpdateAtt.courierServiceName,
-                        trackingId: cartUpdateAtt.trackingId
-                    });
-
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.delivered });
+                        if (cartInDb.orders[i].status !== orderStatus.ready) {
+                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                                .send(errorMessages.allOrdersNotReady);
+                        }
                     }
 
-                    if (!updatedCourier) {
-                        return res.sendStatus(httpStatusCodes.NOT_FOUND);
-                    }
+                    await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.ready });
+                    updateAtt.status = cartStatus.readyToDeliver;
                     break;
                 case cartStatus.readyToPickup:
                     updateAtt.status = cartStatus.readyToPickup;
 
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.readyToPickup });
+                    if (cartInDb.collectionType !== collectionTypes.pickup) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.noPickupInOrder);
                     }
 
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        if (cartInDb.orders[i].status !== orderStatus.ready) {
+                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                                .send(errorMessages.allOrdersNotReady);
+                        }
+                    }
+                    await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.ready });
+
                     break;
+
+                case cartStatus.completed:
+                    updateAtt.status = cartStatus.completed;
+                    if (cartInDb.collectionType === collectionTypes.courier) {
+                        if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
+                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                                .send(errorMessages.courierInformationRequired);
+                        }
+
+                        await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.completed });
+
+                        const updatedCourier = await Courier.findByIdAndUpdate(cartInDb.courier, {
+                            courierServiceName: cartUpdateAtt.courierServiceName,
+                            trackingId: cartUpdateAtt.trackingId
+                        });
+
+                        if (!updatedCourier) {
+                            return res.sendStatus(httpStatusCodes.NOT_FOUND);
+                        }
+
+
+                    } else {
+                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.completed });
+                    }
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
+                    }
+                    break;
+                default :
+                    return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
             const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
             if (updatedCart) {

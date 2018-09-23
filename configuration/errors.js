@@ -6,4 +6,8 @@ module.exports = {
     invalidPaymentType: "Invalid payment type. Please check validity",
     invalidStatusChange: "Invalid status change. Please check again",
     courierInformationRequired: "Courier Information required",
+    noCourierInOrder: "Courier is not collection type in order",
+    noPickupInOrder: "Pickup is not collection type in order",
+    noCollectionType: "No Collection type",
+    allOrdersNotReady: "All orders not ready",
 };

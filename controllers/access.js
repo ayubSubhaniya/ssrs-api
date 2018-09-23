@@ -100,7 +100,8 @@ const grantDefaultAccess = () => {
         .forEach(userType => {
             accessControl.grant(userType)
                 .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
-                .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate']);
+                .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
+                .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate']);
         });
 
     resourceType = resources.notification;

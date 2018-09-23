@@ -16,14 +16,6 @@ router.route('/')
         orderController.addOrder
     );
 
-router.route('/parameters/:orderId')
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        validateBody(schemas.updateOrderParameterSchema),
-        orderController.updateParameter
-    );
-
 router.route('/changeStatus/:orderId')
     .patch(
         passport.authenticate('jwt', { session: false }),
