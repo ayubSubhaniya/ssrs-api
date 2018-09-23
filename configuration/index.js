@@ -11,6 +11,12 @@ module.exports = {
         courier: 'Courier',
         pickup: 'Pickup',
     },
+    paymentTypes: {
+        offline: 0,
+        payTm: 1,
+        creditCard: 2,
+        debitCard: 3
+    },
     permissions: {
         readAny: 'readAny',
         readOwn: 'readOwn',
@@ -41,7 +47,8 @@ module.exports = {
         accessLevel: 'AccessLevel',
         role: 'Role',
         parameter: 'Parameter',
-        collectionType: 'CollectionType'
+        collectionType: 'CollectionType',
+        cart: 'Cart',
     },
     validityErrors: {
         permissionDenied: 'Permission Denied',
@@ -52,6 +59,40 @@ module.exports = {
     cookiesName: {
         jwt: 'jwt',
     },
-};
+    cartStatus: {
+        failed: 0,
+        invalidOrders: 10,
+        unplaced: 20,
+        placed: 30,
+        paymentComplete: 40,
+        processing: 50,
+        readyToDeliver: 60,
+        readyToPickup: 70,
+        completed: 80,
+        onHold: 90,
+        cancelled: 100,
+        refunded: 110,
+    },
+    orderStatus: {
+        failed: 0,
+        invalidOrder: 10,
+        unplaced: 20,
+        placed: 30,
+        processing: 40,
+        ready: 50,
+        completed:60,
+        onHold: 70,
+        cancelled: 80,
+        refunded: 90,
+    },
+    collectionStatus: {
+        failed: 0,
+        pendingPayment: 10,
+        processing: 20,
+        ready: 30,
+        completed: 40
+    },
+}
+;
 
 

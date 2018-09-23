@@ -15,14 +15,14 @@ module.exports = {
 
         if(readPermission.granted) {
             const query = parseFilterQuery(req.query, readPermission.attributes);
-            let requestedCollectors = await collectorModel.find(query);
+            const requestedCollectors = await collectorModel.find(query);
 
             if(requestedCollectors) {
                 const filteredCollectors = filterResourceData(requestedCollectors, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ collector: filteredCollectors });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -31,41 +31,37 @@ module.exports = {
 
     getCollector: async(req, res, next) => {
         const { user } = req;
+        const {daiictId} = user;
         const { requestedCollectorId } = req.params;
 
-        const readPermission = accessControl.can(user.userType)
+        const readAnyPermission = accessControl.can(user.userType)
             .readAny(resources.collector);
+        const readOwnPermission = accessControl.can(user.userType)
+            .readOwn(resources.collector);
 
-        if(readPermission.granted) {
-            let requestedCollectors = await collectorModel.findById(requestedCollectorId);
+        if(readAnyPermission.granted) {
+            const requestedCollector = await collectorModel.findById(requestedCollectorId);
 
-            if(requestedCollectors) {
-                const filteredCollectors = filterResourceData(requestedCollectors, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
-                    .json({ collector: filteredCollectors });
+            if(requestedCollector) {
+                const filteredCollector = filterResourceData(requestedCollector, readAnyPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ collector: filteredCollector });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
-        } else {
-            res.sendStatus(HttpStatus.FORBIDDEN);
-        }
-    },
+        } else if(readOwnPermission.granted) {
+            const requestedCollector = await collectorModel.findOne({
+                _id:requestedCollectorId,
+                createdBy:daiictId
+            });
 
-    updateCollector: async(req, res, next) => {
-        const { user } = req;
-        const { requestedCollectorId } = req.params;
-
-        const readPermission = accessControl.can(user.userType)
-            .readAny(resources.collector);
-        const updatePermission = accessControl.can(user.userType)
-            .updateAny(resources.collector);
-
-        if (updatePermission.granted) {
-            const updatedCollectorInfo = req.value.body;
-            const modifiedCollectorInfo = await collectorModel.findByIdAndUpdate(requestedCollectorId, updatedCollectorInfo, { new: true });
-            const filteredCollector = filterResourceData(modifiedCollectorInfo, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED)
-                .json({ collector: filteredCollector });
+            if(requestedCollector) {
+                const filteredCollector = filterResourceData(requestedCollector, readOwnPermission.attributes);
+                res.status(HttpStatus.OK)
+                    .json({ collector: filteredCollector });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }

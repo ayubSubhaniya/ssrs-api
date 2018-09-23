@@ -16,48 +16,12 @@ router.route('/')
         orderController.addOrder
     );
 
-router.route('/parameters/:orderId')
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        validateBody(schemas.updateOrderParameterSchema),
-        orderController.updateParameter
-    );
-
-router.route('/courier/:orderId')
-    .post(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        validateBody(schemas.addOrderCourierSchema),
-        orderController.addCourier
-    )
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        validateBody(schemas.updateOrderCourierSchema),
-        orderController.updateCourier
-    );
-
-router.route('/pickup/:orderId')
-    .post(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        validateBody(schemas.addOrderPickupSchema),
-        orderController.addPickup
-    )
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'orderId'),
-        validateBody(schemas.updateOrderPickupSchema),
-        orderController.updatePickup
-    );
-
 router.route('/changeStatus/:orderId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'orderId'),
         validateBody(schemas.changeOrderStatusSchema),
-        orderController.updatePickup
+        orderController.changeStatus
     );
 
 router.route('/:orderId')

@@ -203,17 +203,18 @@ module.exports = {
             }),
         changeOrderStatusSchema: Joi.object()
             .keys({
+                status: Joi.number().required()
+            }),
+        changeCartStatusSchema: Joi.object()
+            .keys({
                 status: Joi.number().required(),
-                paymentType: Joi.number(),
-                isPaymentDone: Joi.boolean(),
-                paymentId: Joi.string(),
+                courierServiceName: Joi.string(),
                 trackingId: Joi.string(),
-                speedPostName: Joi.string(),
             }),
         addOrderSchema: Joi.object()
             .keys({
                 order: {
-                    serviceId: Joi.string()
+                    service: Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)
                         .required(),
                     unitsRequested: Joi.number(),
@@ -225,55 +226,20 @@ module.exports = {
                     collectionType: Joi.string(),
                     comment: Joi.string(),
                 },
-                courier: {
-                    name: Joi.string()
-                        .required(),
-                    contactNo: Joi.number()
-                        .required(),
-                    email: Joi.string()
-                        .email()
-                        .required(),
-                    address: {
-                        line1: Joi.string()
-                            .required(),
-                        line2: Joi.string()
-                            .required(),
-                        line3: Joi.string()
-                            .required()
-                    },
-                    city: Joi.string()
-                        .required(),
-                    state: Joi.string()
-                        .required(),
-                    country: Joi.string(),
-                    pinCode: Joi.number()
-                        .required(),
-                },
-                pickup: {
-                    name: Joi.string()
-                        .required(),
-                    contactNo: Joi.number()
-                        .required(),
-                    daiictId: Joi.string(),
-                    email: Joi.string()
-                        .email()
-                        .required(),
-                }
             }),
         updateOrderSchema: Joi.object()
             .keys({
                 unitsRequested: Joi.number(),
-                paymentType: Joi.number(),
-                isPaymentDone: Joi.boolean(),
-                paymentId: Joi.string(),
                 comment: Joi.string(),
-            }),
-        updateOrderParameterSchema: Joi.object()
-            .keys({
                 parameters: Joi.array().items(Joi.string()
                     .regex(/^[0-9a-fA-F]{24}$/)),
             }),
-        addOrderPickupSchema: Joi.object()
+        addPaymentSchema: Joi.object()
+            .keys({
+                paymentType: Joi.number().required(),
+                paymentId: Joi.string(),
+            }),
+        addPickupSchema: Joi.object()
             .keys({
                 name: Joi.string()
                     .required(),
@@ -284,7 +250,7 @@ module.exports = {
                     .email()
                     .required(),
             }),
-        updateOrderPickupSchema: Joi.object()
+        updatePickupSchema: Joi.object()
             .keys({
                 name: Joi.string(),
                 contactNo: Joi.number(),
@@ -292,7 +258,7 @@ module.exports = {
                 email: Joi.string()
                     .email(),
             }),
-        addOrderCourierSchema: Joi.object()
+        addCourierSchema: Joi.object()
             .keys({
                 name: Joi.string()
                     .required(),
@@ -302,12 +268,9 @@ module.exports = {
                     .email()
                     .required(),
                 address: {
-                    line1: Joi.string()
-                        .required(),
-                    line2: Joi.string()
-                        .required(),
+                    line1: Joi.string(),
+                    line2: Joi.string(),
                     line3: Joi.string()
-                        .required()
                 },
                 city: Joi.string()
                     .required(),
@@ -317,7 +280,7 @@ module.exports = {
                 pinCode: Joi.number()
                     .required(),
             }),
-        updateOrderCourierSchema: Joi.object()
+        updateCourierSchema: Joi.object()
             .keys({
                 name: Joi.string(),
                 contactNo: Joi.number(),

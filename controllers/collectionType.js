@@ -40,7 +40,7 @@ module.exports = {
         const deleteAnyPermission = accessControl.can(user.userType)
             .deleteAny(resources.collectionType);
         const deleteOwnPermission = accessControl.can(user.userType)
-            .deleteOw(resources.collectionType);
+            .deleteOwn(resources.collectionType);
 
 
         if (deleteAnyPermission.granted) {

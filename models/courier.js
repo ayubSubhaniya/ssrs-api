@@ -1,6 +1,8 @@
 const moongose = require('mongoose');
 const Schema = moongose.Schema;
 
+const {collectionStatus} = require('../configuration');
+
 const courierSchema = new Schema({
     name: {
         type: String,
@@ -29,11 +31,9 @@ const courierSchema = new Schema({
         },
         line2: {
             type: String,
-            required: true,
         },
         line3: {
             type: String,
-            required: true,
         },
     },
     city: {
@@ -55,13 +55,17 @@ const courierSchema = new Schema({
     trackingId: {
         type: String,
     },
-    speedPostName: {
+    courierServiceName: {
         type: String,
     },
-    orderId: {
+    cartId: {
         type: Schema.Types.ObjectId,
-        ref: 'order',
+        ref: 'cart',
         required: true,
+    },
+    status: {
+        type: Number,
+        default: collectionStatus.pendingPayment,
     }
 });
 

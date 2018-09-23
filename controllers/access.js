@@ -25,7 +25,7 @@ const grantDefaultAdminAccess = () => {
         .forEach(resourceType => {
             Object.keys(adminTypes)
                 .forEach(adminType => {
-                    if (adminTypes[adminType] != adminTypes.superAdmin) {
+                    if (adminTypes[adminType] !== adminTypes.superAdmin) {
                         accessControl.grant(adminTypes[adminType])
                             .readOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead'])
                             .createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
@@ -76,6 +76,15 @@ const grantDefaultAccess = () => {
                 .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
                 .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate'])
                 .deleteOwn(resourceType);
+        });
+
+    resourceType = resources.cart;
+    Object.keys(userTypes)
+        .forEach(userType => {
+            accessControl.grant(userType)
+                .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead'])
+                .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate'])
+                .updateOwn(resourceType, fieldAccess[resourceType][userType]['canUpdate'])
         });
 
     resourceType = resources.collector;

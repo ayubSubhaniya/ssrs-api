@@ -2,6 +2,8 @@ const db = require('mongoose');
 const Schema = db.Schema;
 const collectorIdGenerator = require('shortid');
 
+const {collectionStatus} = require('../configuration');
+
 const collectorSchema = new Schema({
     name: {
         type: String,
@@ -31,10 +33,14 @@ const collectorSchema = new Schema({
         type: String,
         required: true
     },
-    orderId: {
+    cartId: {
         type: Schema.Types.ObjectId,
-        ref: 'order',
+        ref: 'cart',
         required: true,
+    },
+    status: {
+        type: Number,
+        default: collectionStatus.pendingPayment,
     }
 });
 

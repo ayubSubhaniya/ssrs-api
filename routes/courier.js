@@ -14,12 +14,6 @@ router.route('/:requestedCourierId')
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'requestedCourierId'),
         courierController.getCourier
-    ) 
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'requestedCourierId'),
-        validateBody(schemas.courierUpdateSchema),
-        courierController.updateCourier
     );
 
 module.exports = router;
