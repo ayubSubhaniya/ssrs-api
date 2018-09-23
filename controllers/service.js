@@ -531,7 +531,7 @@ module.exports = {
             let newService = req.value.body;
             newService.createdOn = new Date();
 
-            const service = await Service.updateOne({
+            const service = await Service.findOneAndUpdate({
                 _id: serviceId,
                 createdBy: daiictId
             }, newService, { new: true })
