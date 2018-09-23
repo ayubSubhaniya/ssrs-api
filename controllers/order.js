@@ -313,10 +313,10 @@ module.exports = {
                         updatedOrder.parameterCost = parameterCost;
                     }
 
-                    const order = await Order.updateOne({
+                    const order = await Order.findOneAndUpdate({
                         _id: orderId,
                         requestedBy: daiictId
-                    }, updatedOrder);
+                    }, updatedOrder,{new:true});
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
