@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
 const tempUser = require('../models/tempUser');
+const Cart = require('../models/cart');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -123,12 +124,19 @@ module.exports = {
         const user = await tempUser.findOne({ daiictId });
 
         if (req.query.id === user.randomHash) {
+            //crete new Cart
+            const cart = new Cart({
+                requestedBy:daiictId,
+                createdOn: user.createdOn,
+            });
+            await cart.save();
             //create new user
             const newUser = new User({
                 daiictId: user.daiictId,
                 primaryEmail: user.primaryEmail,
                 password: user.password,
-                createdOn: user.createdOn
+                createdOn: user.createdOn,
+                cartId: cart._id
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
@@ -146,7 +154,7 @@ module.exports = {
         const { daiictId } = user;
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
-        res.sendStatus(HttpStatus.ACCEPTED);
+        res.sendStatus(HttpStatus.OK);
     }
     ,
 
@@ -167,7 +175,7 @@ module.exports = {
             httpOnly: false,
             expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         })
-            .status(HttpStatus.ACCEPTED)
+            .status(HttpStatus.OK)
             .json({ user: filteredUser });
     },
 

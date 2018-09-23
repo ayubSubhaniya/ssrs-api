@@ -40,13 +40,13 @@ module.exports = {
         const deleteAnyPermission = accessControl.can(user.userType)
             .deleteAny(resources.collectionType);
         const deleteOwnPermission = accessControl.can(user.userType)
-            .deleteOw(resources.collectionType);
+            .deleteOwn(resources.collectionType);
 
 
         if (deleteAnyPermission.granted) {
 
             await CollectionType.findByIdAndRemove(requestedCollectionTypeId);
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.OK);
         } else if (deleteOwnPermission.granted) {
 
             const deletedCollectionType = await CollectionType.findOneAndRemove({
@@ -55,7 +55,7 @@ module.exports = {
             });
 
             if (deletedCollectionType) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -95,10 +95,10 @@ module.exports = {
 
             if (requestedCollectionType) {
                 const filteredCollectionType = filterResourceData(requestedCollectionType, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ collectionType: filteredCollectionType });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -130,10 +130,10 @@ module.exports = {
 
             if (requestedCollectionTypes) {
                 const filteredCollectionTypes = filterResourceData(requestedCollectionTypes, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ collectionType: filteredCollectionTypes });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -179,7 +179,7 @@ module.exports = {
             const updatedCollectionType = req.value.body;
             const modifiedCollectionType = await CollectionType.findByIdAndUpdate(requestedCollectionTypeId, updatedCollectionType, { new: true });
             const filteredCollectionType = filterResourceData(modifiedCollectionType, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED)
+            res.status(HttpStatus.OK)
                 .json({ collectionType: filteredCollectionType });
 
         } else {

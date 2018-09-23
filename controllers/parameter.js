@@ -46,7 +46,7 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             await Parameter.findByIdAndRemove(requestedParameterId);
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.OK);
         } else if (deleteOwnPermission.granted) {
 
             const deletedParameter = await Parameter.findOneAndRemove({
@@ -55,7 +55,7 @@ module.exports = {
             });
 
             if (deletedParameter) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -95,10 +95,10 @@ module.exports = {
 
             if (requestedParameter) {
                 const filteredParameter = filterResourceData(requestedParameter, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ parameter: filteredParameter });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -130,10 +130,10 @@ module.exports = {
 
             if (requestedParameters) {
                 const filteredParameters = filterResourceData(requestedParameters, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ parameter: filteredParameters });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -180,7 +180,7 @@ module.exports = {
             const updatedParameter = req.value.body;
             const result = await Parameter.findByIdAndUpdate(requestedParameterId, updatedParameter, { new: true });
             const filteredParameter = filterResourceData(result, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED)
+            res.status(HttpStatus.OK)
                 .json({ parameter: filteredParameter });
 
         } else {

@@ -57,6 +57,12 @@ const userSchema = new Schema({
         default: true
     },
 
+    cartId: {
+      type: Schema.Types.ObjectId,
+      ref:'cart',
+      required:true,
+    },
+
     requestedServices: [{
         type: Schema.Types.ObjectId,
         ref: 'order',
