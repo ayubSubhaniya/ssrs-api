@@ -110,6 +110,7 @@ module.exports = {
 
     updateOtherUser: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user;
         const { requestedUserId } = req.params;
 
         const updatePermission = accessControl.can(user.userType)
@@ -117,6 +118,10 @@ module.exports = {
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.user);
 
+        /* A user cannot change its own user-type */
+        if(daiictId === requestedUserId)
+            return res.sendStatus(HttpStatus.BAD_REQUEST);
+        
         if (updatePermission.granted) {
             const userUpdateAtt = req.value.body;
             const updatedUser = await User.findOneAndUpdate({ daiictId: requestedUserId }, userUpdateAtt, { new: true });
