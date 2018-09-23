@@ -29,10 +29,10 @@ module.exports = {
 
             if (notification) {
                 const filteredNotification = filterResourceData(notification, readOwnPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -115,7 +115,7 @@ module.exports = {
             const notification = await Notification.findByIdAndRemove(notificationId);
 
             if (notification) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -125,7 +125,7 @@ module.exports = {
                 createdBy: daiictId
             });
             if (notification) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -141,7 +141,7 @@ module.exports = {
             .deleteAny(resources.notification);
         if (deletePermission.granted) {
             await Notification.deleteMany({});
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.OK);
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -168,7 +168,7 @@ module.exports = {
 
             if (notification) {
                 const filteredNotification = filterResourceData(notification, readAnyPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
@@ -181,7 +181,7 @@ module.exports = {
 
             if (notification) {
                 const filteredNotification = filterResourceData(notification, readOwnPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);

@@ -153,7 +153,7 @@ module.exports = {
         console.log(newPassword);
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
-        res.sendStatus(HttpStatus.ACCEPTED);
+        res.sendStatus(HttpStatus.OK);
     }
     ,
 
@@ -174,7 +174,7 @@ module.exports = {
             httpOnly: false,
             expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         })
-            .status(HttpStatus.ACCEPTED)
+            .status(HttpStatus.OK)
             .json({ user: filteredUser });
     },
 

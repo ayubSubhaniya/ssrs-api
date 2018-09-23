@@ -25,10 +25,10 @@ module.exports = {
 
             if (news) {
                 const filteredNews = filterResourceData(news, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -51,7 +51,7 @@ module.exports = {
             const news = await News.findById(newsId);
             if (news) {
                 const filteredNews = filterResourceData(news, readAnyPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
@@ -64,7 +64,7 @@ module.exports = {
             });
             if (news) {
                 const filteredNews = filterResourceData(news, readOwnPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
@@ -96,10 +96,10 @@ module.exports = {
 
             if (news) {
                 const filteredNews = filterResourceData(news, readPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
-                res.sendStatus(HttpStatus.NO_CONTENT);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
 
         } else {
@@ -127,7 +127,7 @@ module.exports = {
             const news = await newNews.save();
 
             const filteredNews = filterResourceData(news, readPermission.attributes);
-            res.status(HttpStatus.ACCEPTED)
+            res.status(HttpStatus.OK)
                 .json({ news: filteredNews });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -148,7 +148,7 @@ module.exports = {
             const news = await News.findByIdAndRemove(newsId);
 
             if (news) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -158,7 +158,7 @@ module.exports = {
                 createdBy: daiictId
             });
             if (news) {
-                res.sendStatus(HttpStatus.ACCEPTED);
+                res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -174,7 +174,7 @@ module.exports = {
             .deleteAny(resources.news);
         if (deletePermission.granted) {
             await News.deleteMany({});
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.OK);
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -189,7 +189,7 @@ module.exports = {
 
         if (deletePermission.granted) {
             await News.deleteMany({ createdBy: daiictId });
-            res.sendStatus(HttpStatus.ACCEPTED);
+            res.sendStatus(HttpStatus.OK);
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -218,7 +218,7 @@ module.exports = {
 
             if (news) {
                 const filteredNews = filterResourceData(news, readAnyPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
@@ -231,7 +231,7 @@ module.exports = {
 
             if (news) {
                 const filteredNews = filterResourceData(news, readOwnPermission.attributes);
-                res.status(HttpStatus.ACCEPTED)
+                res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
