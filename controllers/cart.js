@@ -65,14 +65,24 @@ module.exports = {
             .readAny(resources.parameter);
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
+        const readOwnCourierPermission = accessControl.can(user.userType)
+            .readOwn(resources.courier);
+        const readOwnPickupPermission = accessControl.can(user.userType)
+            .readOwn(resources.collector);
 
         if (readOwnCartPermission.granted) {
 
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
+                        },
+                        'courier': {
+                            select: readOwnCourierPermission.attributes
+                        },
+                        'pickup': {
+                            select: readOwnPickupPermission.attributes
                         },
                         'orders.service': {
                             select: readAnyServicePermission.attributes
@@ -125,13 +135,23 @@ module.exports = {
             .readAny(resources.service);
         const readAnyParameterPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
+        const readOwnCourierPermission = accessControl.can(user.userType)
+            .readOwn(resources.courier);
+        const readOwnPickupPermission = accessControl.can(user.userType)
+            .readOwn(resources.collector);
 
         if (readAnyCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readAnyOrderPermission.attributes
+                        },
+                        'courier': {
+                            select: readOwnCourierPermission.attributes
+                        },
+                        'pickup': {
+                            select: readOwnPickupPermission.attributes
                         },
                         'orders.service': {
                             select: readAnyServicePermission.attributes
