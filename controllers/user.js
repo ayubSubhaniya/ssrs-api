@@ -16,7 +16,7 @@ module.exports = {
             .readAny(resources.user);
 
         if (createPermission.granted) {
-            const { daiictId, password} = req.value.body;
+            const { daiictId, password } = req.value.body;
 
             //check if user exist
             const foundUser = await User.findOne({ daiictId });
@@ -30,7 +30,7 @@ module.exports = {
             const primaryEmail = daiictId + '@' + daiictMailDomainName;
             const createdOn = new Date();
 
-            if (!userType){
+            if (!userType) {
                 userType = userTypes.student;
             }
 
@@ -63,7 +63,8 @@ module.exports = {
 
         if (readPermission.granted) {
             const filteredUser = filterResourceData(user, readPermission.attributes);
-            res.status(HttpStatus.OK).json({user:filteredUser});
+            res.status(HttpStatus.OK)
+                .json({ user: filteredUser });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -94,12 +95,17 @@ module.exports = {
 
     getAllUser: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user;
 
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.user);
 
         if (readPermission.granted) {
-            const requestedUsers = await User.find({});
+            const requestedUsers = await User.find({
+                daiictId: {
+                    $nin: [daiictId]
+                }
+            });
             const filteredUsers = filterResourceData(requestedUsers, readPermission.attributes);
             res.status(HttpStatus.OK)
                 .json({ user: filteredUsers });
@@ -119,9 +125,10 @@ module.exports = {
             .readAny(resources.user);
 
         /* A user cannot change its own user-type */
-        if(daiictId === requestedUserId)
+        if (daiictId === requestedUserId) {
             return res.sendStatus(HttpStatus.BAD_REQUEST);
-        
+        }
+
         if (updatePermission.granted) {
             const userUpdateAtt = req.value.body;
             const updatedUser = await User.findOneAndUpdate({ daiictId: requestedUserId }, userUpdateAtt, { new: true });
