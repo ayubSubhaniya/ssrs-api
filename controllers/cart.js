@@ -153,11 +153,16 @@ module.exports = {
     getAllCart: async (req, res, next) => {
 
         const { user } = req;
+        const {daiictId} =user;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
             .readAny(resources.order);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
         const readAnyServicePermission = accessControl.can(user.userType)
             .readAny(resources.service);
         const readAnyParameterPermission = accessControl.can(user.userType)
@@ -184,6 +189,30 @@ module.exports = {
                 });
 
             const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
+            res.status(httpStatusCodes.OK)
+                .json({ cart: filteredCart });
+        } else if (readOwnCartPermission.granted) {
+            const query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
+            const sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
+            query.requestedBy = daiictId;
+
+            const cart = await Cart.find(query)
+                .sort(sortQuery)
+                .deepPopulate(['orders.service', 'orders.parameters'], {
+                    populate: {
+                        'orders': {
+                            select: readOwnOrderPermission.attributes
+                        },
+                        'orders.service': {
+                            select: readAnyServicePermission.attributes
+                        },
+                        'orders.parameters': {
+                            select: readAnyParameterPermission.attributes
+                        }
+                    }
+                });
+
+            const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
             res.status(httpStatusCodes.OK)
                 .json({ cart: filteredCart });
         } else {
