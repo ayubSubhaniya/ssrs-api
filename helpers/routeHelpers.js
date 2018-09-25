@@ -224,7 +224,6 @@ module.exports = {
                     isPaymentDone: Joi.boolean(),
                     paymentId: Joi.string(),
                     collectionType: Joi.string(),
-                    comment: Joi.string(),
                 },
             }),
         updateOrderSchema: Joi.object()
