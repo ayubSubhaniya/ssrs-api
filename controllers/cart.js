@@ -190,6 +190,9 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             const query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
+            query.status = {
+                $gte: cartStatus.placed
+            };
             const sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
 
             const cart = await Cart.find(query)
