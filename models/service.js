@@ -54,7 +54,7 @@ const serviceSchema = new Schema({
             type: Boolean,
             default: false,
         },
-        paytm: {
+        payTm: {
             type: Boolean,
             default: false,
         },
@@ -73,6 +73,14 @@ const serviceSchema = new Schema({
     }],
     specialServiceUsers: [{
         type: String,
+    }],
+    news:[{
+        type: Schema.Types.ObjectId,
+        ref: 'news',
+    }],
+    notifications:[{
+        type: Schema.Types.ObjectId,
+        ref: 'notification',
     }],
 });
 
