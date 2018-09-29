@@ -7,11 +7,12 @@ const { filterResourceData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources } = require('../configuration');
 
-const generateNews = async (message, daiictId) => {
+const generateNews = async (message, daiictId, serviceId) => {
     const news = new News({
         message,
         createdOn: new Date(),
-        createdBy: daiictId
+        createdBy: daiictId,
+        serviceId: serviceId.toString()
     });
     await news.save();
 };
@@ -35,7 +36,7 @@ const generateServiceCreatedMessage = async (service, daiictId) => {
     if (service.isSpecialService) {
         await generateNotification(message, daiictId, service.specialServiceUsers);
     } else {
-        await generateNews(message, daiictId);
+        await generateNews(message, daiictId, service._id);
     }
 };
 
@@ -46,8 +47,12 @@ const generateServiceUpdatedMessage = async (service, daiictId) => {
     if (service.isSpecialService) {
         await generateNotification(message, daiictId, service.specialServiceUsers);
     } else {
-        await generateNews(message, daiictId);
+        await generateNews(message, daiictId, service._id);
     }
+};
+
+const deleteCurrServiceNews = async (currServiceId) => {
+    await News.deleteMany({ serviceId: currServiceId });
 };
 
 module.exports = {
@@ -584,7 +589,6 @@ module.exports = {
         }
     },
 
-
     deleteService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -595,17 +599,18 @@ module.exports = {
             .deleteOwn(resources.service);
 
         if (deleteAnyPermission.granted) {
-
+            deleteCurrServiceNews(serviceId);
+            
             const service = await Service.findByIdAndRemove(serviceId);
-
+            
             if (service) {
                 res.sendStatus(HttpStatus.OK);
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
-
-
+            
         } else if (deleteOwnPermission.granted) {
+            deleteCurrServiceNews(serviceId);
 
             const service = await Service.findOneAndRemove({
                 _id: serviceId,

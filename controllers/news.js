@@ -117,12 +117,14 @@ module.exports = {
             .readOwn(resources.news);
 
         if (createPermission.granted) {
-            const { message } = req.body;
+            const { message } = req.body.message;
+            const { serviceId } = req.body.serviceId;
             const createdOn = new Date();
             const newNews = new News({
                 message,
                 createdOn,
-                createdBy: daiictId
+                createdBy: daiictId,
+                serviceId: serviceId
             });
             const news = await newNews.save();
 
@@ -210,7 +212,8 @@ module.exports = {
             .readOwn(resources.news);
 
         const newNews = {
-            message: req.body.message
+            message: req.body.message,
+            serviceId: req.body.serviceId
         };
 
         if (updateAnyPermission.granted) {

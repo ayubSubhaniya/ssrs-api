@@ -14,7 +14,10 @@ const newsSchema = new Schema({
     createdOn: {
         type: Date,
         required: true,
-    }
+    },
+    serviceId: {
+        type: String,
+    },
 });
 
 
