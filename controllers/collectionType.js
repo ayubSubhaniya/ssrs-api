@@ -123,9 +123,9 @@ module.exports = {
             if (readAnyInActiveResource.granted) {
                 requestedCollectionTypes = await CollectionType.find({});
             } else if (readOwnInActiveResource.granted) {
-                requestedCollectionTypes = await CollectionType.findMany({ $or: [{ createdBy: daiictId }, { isActive: true }] });
+                requestedCollectionTypes = await CollectionType.find({ $or: [{ createdBy: daiictId }, { isActive: true }] });
             } else {
-                requestedCollectionTypes = await CollectionType.findMany({ isActive: true });
+                requestedCollectionTypes = await CollectionType.find({ isActive: true });
             }
 
             if (requestedCollectionTypes) {

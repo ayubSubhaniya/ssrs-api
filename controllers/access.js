@@ -61,6 +61,13 @@ const grantDefaultAccess = () => {
                 .readAny(resourceType, fieldAccess[resourceType][userType]['canRead']);
         });
 
+    resourceType = resources.collectionType;
+    Object.keys(userTypes)
+        .forEach(userType => {
+            accessControl.grant(userType)
+                .readAny(resourceType, fieldAccess[resourceType][userType]['canRead']);
+        });
+
     resourceType = resources.service;
     Object.keys(userTypes)
         .forEach(userType => {
