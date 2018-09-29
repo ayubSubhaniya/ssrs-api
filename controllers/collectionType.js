@@ -1,6 +1,7 @@
 const HttpStatus = require('http-status-codes');
 
 const CollectionType = require('../models/collectionType');
+const News = require('../models/news');
 const { resources } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -143,6 +144,7 @@ module.exports = {
 
     changeStatus: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user;
         const { collectionTypeId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
@@ -153,7 +155,17 @@ module.exports = {
         if (changeStatusPermission.granted) {
             const collectionTypeUpdateAtt = req.value.body;
             const updatedCollectionType = await CollectionType.findByIdAndUpdate(collectionTypeId, collectionTypeUpdateAtt, { new: true });
+            
             if (updatedCollectionType) {
+                const message = 'Collection type ' + updatedCollectionType.name + ' is now '
+                                + (updatedCollectionType.isActive ? 'activated' : 'deactivated');
+                const news = new News({
+                    message,
+                    createdOn: new Date(),
+                    createdBy: daiictId,
+                });
+                await news.save();
+
                 const filteredCollectionType = filterResourceData(updatedCollectionType, readPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ collectionType: filteredCollectionType });
