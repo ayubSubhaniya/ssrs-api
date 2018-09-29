@@ -453,6 +453,7 @@ module.exports = {
     addService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
+
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.service);
         const createPermission = accessControl.can(user.userType)
@@ -464,9 +465,19 @@ module.exports = {
 
         if (createPermission.granted) {
             const currentTimestamp = new Date();
-            let newServiceAtt = req.value.body;
+            const newServiceAtt = req.value.body;
             newServiceAtt.createdOn = currentTimestamp;
             newServiceAtt.createdBy = daiictId;
+
+            const { isApplicationSpecific } = req.value.body;
+            if (isApplicationSpecific === true) {
+                
+                const { attachedFile } = req.value.body;
+                
+                //Load the docx file as a binary
+                // var content = fs.readFileSync(attachedFile, 'binary');
+                newServiceAtt.templateFile = attachedFile;
+            }
 
             //populate service with parameters and collection
             const newService = new Service(newServiceAtt);
@@ -505,6 +516,16 @@ module.exports = {
 
             let newService = req.value.body;
 
+            const { isApplicationSpecific } = req.value.body;
+            if (isApplicationSpecific === true) {
+                
+                var { attachedFile } = req.value.body;
+                
+                //Load the docx file as a binary
+                // var content = fs.readFileSync(attachedFile, 'binary');
+                newService.templateFile = attachedFile;
+            }
+
             const service = await Service.findByIdAndUpdate(serviceId, newService, { new: true })
                 .populate({
                     path: 'collectionTypes',
@@ -530,6 +551,16 @@ module.exports = {
 
             let newService = req.value.body;
             newService.createdOn = new Date();
+
+            const { isApplicationSpecific } = req.value.body;
+            if (isApplicationSpecific === true) {
+                
+                var { attachedFile } = req.value.body;
+                
+                //Load the docx file as a binary
+                // var content = fs.readFileSync(attachedFile, 'binary');
+                newService.templateFile = attachedFile;
+            }
 
             const service = await Service.findOneAndUpdate({
                 _id: serviceId,
@@ -584,7 +615,6 @@ module.exports = {
         }
     },
 
-
     deleteService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -622,4 +652,5 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+
 };

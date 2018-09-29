@@ -74,6 +74,12 @@ const serviceSchema = new Schema({
     specialServiceUsers: [{
         type: String,
     }],
+    templateFile: {
+        type: Buffer,
+    },
+    templateTags: [{
+        type: String
+    }]
 });
 
 const Service = moongose.model('service', serviceSchema);

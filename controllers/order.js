@@ -1,5 +1,8 @@
 const httpStatusCodes = require('http-status-codes');
 
+var JSZip = require('jszip');
+var Docxtemplater = require('docxtemplater');
+
 const Service = require('../models/service');
 const Order = require('../models/order');
 const Cart = require('../models/cart');
@@ -228,6 +231,39 @@ module.exports = {
             }
             newOrder.parameterCost = parameterCost;
 
+            if (service.isApplicationSpecific === true){
+                var data = req.value.body.templateData;
+                if (data) {
+                    var zip = new JSZip(service.templateFile);
+                    var doc = new Docxtemplater();
+                    doc.loadZip(zip);
+                    doc.setData(data);
+
+                    try {
+                        /* Replacing all tags with actual data */
+                        doc.render();
+                    } catch (error) {
+                        var e = {
+                            message: error.message,
+                            name: error.name,
+                            stack: error.stack,
+                            properties: error.properties,
+                        }
+                        console.log(JSON.stringify({error: e}));
+                        throw error;
+                    }
+
+                    var buf = doc.getZip()
+                                .generate({type: 'nodebuffer'});
+                    
+                    newOrder.applicationFile = buf;
+                } else {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send('User data required for template file.');
+                    return;
+                }
+            }
+
             const order = await newOrder.save();
 
             await Cart.findByIdAndUpdate(cartId, {
@@ -286,7 +322,7 @@ module.exports = {
             .updateOwn(resources.order);
 
         if (updateOwnPermission.granted) {
-            const updatedOrder = req.value.body;
+            var updatedOrder = req.value.body;
 
             const orderInDB = await Order.findOne({
                 _id: orderId,
@@ -318,6 +354,36 @@ module.exports = {
                         }
 
                         updatedOrder.parameterCost = parameterCost;
+                    }
+
+                    if (orderInDB.service.isApplicationSpecific === true){
+                        var data = req.value.body.data;
+                        if (data) {
+                            updatedOrder.data = undefined;
+                            var zip = new JSZip(orderInDB.service.templateFile);
+                            var doc = new Docxtemplater();
+                            doc.loadZip(zip);
+                            doc.setData(data);
+            
+                            try {
+                                /* Replacing all tags with actual data */
+                                doc.render();
+                            } catch (error) {
+                                var e = {
+                                    message: error.message,
+                                    name: error.name,
+                                    stack: error.stack,
+                                    properties: error.properties,
+                                }
+                                console.log(JSON.stringify({error: e}));
+                                throw error;
+                            }
+            
+                            var buf = doc.getZip()
+                                        .generate({type: 'nodebuffer'});
+                            
+                            updatedOrder.applicationFile = buf;
+                        }
                     }
 
                     const order = await Order.findOneAndUpdate({

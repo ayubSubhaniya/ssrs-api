@@ -130,6 +130,9 @@ module.exports = {
                 },
                 specialServiceUsers: Joi.array()
                     .items(Joi.number()),
+                attachedFile: Joi.binary(),
+                templateTags: Joi.array()
+                    .items(Joi.strict())
             }),
         serviceUpdateSchema: Joi.object()
             .keys({
@@ -156,6 +159,9 @@ module.exports = {
                 },
                 specialServiceUsers: Joi.array()
                     .items(Joi.number()),
+                attachedFile: Joi.binary(),
+                templateTags: Joi.array()
+                    .items(Joi.strict())
             }),
         parameterSchema: Joi.object()
             .keys({
@@ -226,6 +232,7 @@ module.exports = {
                     collectionType: Joi.string(),
                     comment: Joi.string(),
                 },
+                data: Joi.object(),
             }),
         updateOrderSchema: Joi.object()
             .keys({
@@ -233,6 +240,7 @@ module.exports = {
                 comment: Joi.string(),
                 parameters: Joi.array().items(Joi.string()
                     .regex(/^[0-9a-fA-F]{24}$/)),
+                data: Joi.object(),
             }),
         addPaymentSchema: Joi.object()
             .keys({

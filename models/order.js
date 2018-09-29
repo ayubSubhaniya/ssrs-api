@@ -56,6 +56,9 @@ const orderSchema = new Schema({
     validityErrors: [{
        type:String,
     }],
+    applicationFile: {
+        type: Buffer,
+    },
 });
 
 
