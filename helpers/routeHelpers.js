@@ -60,6 +60,11 @@ module.exports = {
                 newPassword: Joi.string()
                     .required(),
             }),
+        resetPasswordSchema: Joi.object()
+            .keys({
+                password: Joi.string()
+                    .required(),
+            }),
         addUserSchema: Joi.object()
             .keys({
                 daiictId: Joi.string()
@@ -205,6 +210,10 @@ module.exports = {
             .keys({
                 status: Joi.number().required()
             }),
+        cancelSchema: Joi.object()
+            .keys({
+                cancelReason: Joi.string().required()
+            }),
         changeCartStatusSchema: Joi.object()
             .keys({
                 status: Joi.number().required(),
@@ -224,6 +233,7 @@ module.exports = {
                     isPaymentDone: Joi.boolean(),
                     paymentId: Joi.string(),
                     collectionType: Joi.string(),
+                    comment: Joi.string(),
                 },
             }),
         updateOrderSchema: Joi.object()

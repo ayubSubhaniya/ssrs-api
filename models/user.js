@@ -67,6 +67,14 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'order',
     }],
+
+    resetPasswordToken : {
+        type: String,
+    },
+
+    resetPasswordExpires : {
+        type: Date,
+    }
 });
 
 userSchema.methods.isValid = async function (newPassword) {
