@@ -1,4 +1,4 @@
-const { orderStatus } = require('../configuration/index');
+const { orderStatus, cartStatus } = require('../configuration/index');
 const Notification = require('../models/notification');
 
 const generateOrderStatusChangeNotification = (userId, adminId, orderName, orderStatusNum) => {
@@ -47,6 +47,58 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
     return notification;
 };
 
+const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum) => {
+    var cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
+    switch(cartStatusNum){
+        case cartStatus.unplaced:
+            cartStatusMsg += 'is still unplaced';
+            break;
+        case cartStatus.placed:
+            cartStatusMsg += 'has been placed';
+            break;
+        case cartStatus.paymentComplete:
+            cartStatusMsg += 'has completed payment and is in process';
+            if(adminId !== 'System')
+                cartStatusMsg += '. Payment accepted by ' + adminId;
+            break;
+        case cartStatus.readyToDeliver:
+            cartStatusMsg += 'is now ready to deliver';
+            break;
+        case cartStatus.readyToPickup:
+            cartStatusMsg += 'is now ready to pickup';
+            break;
+        case cartStatus.completed:
+            cartStatusMsg += 'has been completed';
+            break;
+
+        case cartStatus.invalidOrder:
+            cartStatusMsg += 'is invalid';
+            break;
+        case cartStatus.cancelled:
+            cartStatusMsg += 'was cancelled';
+            break;
+        case cartStatus.failed:
+            cartStatusMsg += 'has failed';
+            break;
+        case cartStatus.onHold:
+            cartStatusMsg += 'is on hold';
+            break;
+        case cartStatus.refunded:
+            cartStatusMsg += 'has been refunded';
+            break;
+    }
+
+    const notification = new Notification({
+        createdBy: adminId,
+        createdOn: new Date(),
+        message: cartStatusMsg,
+        userId: userId
+    });
+
+    return notification;
+}
+
 module.exports = {
     generateOrderStatusChangeNotification,
+    generateCartStatusChangeNotification,
 };

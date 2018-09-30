@@ -10,7 +10,7 @@ const CollectionType = require('../models/collectionType');
 
 const paymentCodeGenerator = require('shortid');
 
-const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus } = require('../configuration');
@@ -535,14 +535,12 @@ module.exports = {
                         }
 
                         for (let i=0;i<cartInDb.orders.length;i++){
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
-                            // if(order){
-                            //     const service = Service.findById(order.service);
-                            //     const notification = generateOrderStatusChangeNotification(daiictId, service.createdBy, service.name, order.status);
-                            //     await notification.save();
-                            // }
+                            await Order.findByIdAndUpdate(cartInDb.orders[i], {status:orderStatus.placed});
                         }
                     }
+                    
+                    const notification = generateCartStatusChangeNotification(daiictId, 'System', cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
 
                     const cart = new Cart({
                         requestedBy: daiictId,
@@ -601,6 +599,9 @@ module.exports = {
                     for (let i=0;i<cartInDb.orders.length;i++){
                         await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
                     }
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
 
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
 
