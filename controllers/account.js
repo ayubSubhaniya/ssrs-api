@@ -73,8 +73,10 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Please confirm your Email account',
-            html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
+            subject: 'Verify your Email account',
+            html: 'Welcome to Student Service Request System - DAIICT!' +
+                '<br> Please click on the below mentioned link to verify your email.' +
+                '<br><a href=' + link + '>Click here to verify</a>',
 
         };
 
@@ -132,8 +134,8 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Please confirm your Email account to reset password',
-            html: 'Hello,<br> Please Click on the link to reset your password.<br><a href=' + link + '>Click here to reset password</a>',
+            subject: 'Password Reset Link',
+            html: 'Hello,<br> Please click on the link below to reset your password.<br><a href=' + link + '>Click here to reset password</a>',
 
         };
         foundUser.resetPasswordToken = randomHash;
@@ -142,7 +144,7 @@ module.exports = {
         const info = await smtpTransport.sendMail(mailOptions);
 
         res.status(HttpStatus.OK)
-            .end('Response: Verification link sent');
+            .end('Response: Password reset link sent');
     },
 
     verifyResetPasswordLink: async (req, res, next) => {
@@ -183,8 +185,8 @@ module.exports = {
             from: mailAccountUserName,
             to: primaryEmail,
             subject: 'Password successfully changed',
-            text: 'Hello,\n\n' +
-                'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n',
+            text: 'Hello,\n' +
+                '\tThis is a confirmation mail for successful change in password for your account ' + user.email + '.\n',
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
