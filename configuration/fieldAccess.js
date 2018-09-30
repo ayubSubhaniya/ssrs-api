@@ -123,6 +123,7 @@ module.exports = {
             canRead: [
                 '_id',
                 'requestedBy',
+                'cartId',
                 'service',
                 'serviceName',
                 'createdOn',
@@ -155,6 +156,7 @@ module.exports = {
             canRead: [
                 '_id',
                 'requestedBy',
+                'cartId',
                 'service',
                 'serviceName',
                 'createdOn',

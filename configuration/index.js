@@ -62,7 +62,7 @@ module.exports = {
     },
     cartStatus: {
         failed: 0,
-        invalidOrders: 10,
+        invalid: 10,
         unplaced: 20,
         placed: 30,
         paymentComplete: 40,
@@ -93,6 +93,28 @@ module.exports = {
         ready: 30,
         completed: 40
     },
+
+    placedOrderServiceAttributes: [
+        'name',
+        'description',
+        'baseCharge'
+    ],
+
+    placedOrderAttributes: [
+        'orderId',
+        'requestedBy',
+        'service',
+        'cartId',
+        'createdOn',
+        'serviceCost',
+        'parameterCost',
+        'comment',
+        'totalCost',
+        'status',
+        'parameters',
+        'unitsRequested',
+        'cancelReason'
+    ],
 
     allowedCartStatusChanges : {
         'placed': ['paymentComplete', 'processing', 'failed', 'cancelled'],
