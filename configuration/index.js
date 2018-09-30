@@ -5,6 +5,7 @@ module.exports = {
     JWT_SECRET: 'ssrs-daiict-authentication',
     JWT_ISSUER: 'ssrs-daiict',
     JWT_EXPIRY_TIME: 1,
+    RESET_PASSWORD_EXPIRY_TIME: 1,
     NEWS_EXPIRY_TIME: 8,
     NOTIFICATION_EXPIRY_TIME: 8,
     collectionTypes: {
@@ -91,6 +92,20 @@ module.exports = {
         processing: 20,
         ready: 30,
         completed: 40
+    },
+
+    allowedCartStatusChanges : {
+        'placed': ['paymentComplete', 'processing', 'failed', 'cancelled'],
+        'paymentComplete': ['processing', 'cancelled'],
+        'processing': ['readyToDeliver', 'readyToPickup', 'cancelled'],
+        'readyToDeliver': ['completed', 'cancelled'],
+        'readyToPickup': ['completed', 'cancelled']
+    },
+
+    allowedOrderStatusChanges : {
+        'placed': ['processing', 'failed', 'cancelled'],
+        'processing': ['ready', 'cancelled'],
+        'ready': ['completed', 'cancelled'],
     },
 }
 ;

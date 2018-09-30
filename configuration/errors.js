@@ -1,4 +1,5 @@
 module.exports = {
+    userNotExist: "User doesn't exist",
     invalidService: "Invalid service request. Please check validity",
     invalidOrders: "Invalid orders request. Please check validity",
     invalidParameter: "Invalid parameter request. Please check validity",
