@@ -62,6 +62,9 @@ const cartSchema = new Schema({
     validityErrors: [{
         type: String,
     }],
+    cancelReason: {
+        type: String
+    },
 });
 
 

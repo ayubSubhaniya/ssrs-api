@@ -24,6 +24,14 @@ router.route('/changeStatus/:orderId')
         orderController.changeStatus
     );
 
+router.route('/cancelOrder/:orderId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'orderId'),
+        validateBody(schemas.cancelSchema),
+        orderController.cancelOrder
+    );
+
 router.route('/:orderId')
     .get(
         passport.authenticate('jwt', { session: false }),

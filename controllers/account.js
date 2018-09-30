@@ -7,7 +7,8 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
-const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, daiictMailDomainName, userTypes, resources, errors, cookiesName } = require('../configuration');
+const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName } = require('../configuration');
+const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 
@@ -87,7 +88,6 @@ module.exports = {
             randomHash
         };
         const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
-        const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
 
         res.status(HttpStatus.CREATED)
@@ -116,6 +116,80 @@ module.exports = {
             .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
     },
 
+    forgetPassword: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const primaryEmail = daiictId + '@' + daiictMailDomainName;
+
+        //check if user exist
+        const foundUser = await User.findOne({ daiictId });
+
+        const randomHash = randomstring.generate();
+        const linkExpiryTime = new Date();
+        linkExpiryTime.setHours(linkExpiryTime.getHours() + RESET_PASSWORD_EXPIRY_TIME);
+
+        const host = req.get('host');
+        const link = httpProtocol + '://' + host + '/account/resetPassword/' + daiictId + '?id=' + randomHash;
+        const mailOptions = {
+            from: mailAccountUserName,
+            to: primaryEmail,
+            subject: 'Please confirm your Email account to reset password',
+            html: 'Hello,<br> Please Click on the link to reset your password.<br><a href=' + link + '>Click here to reset password</a>',
+
+        };
+        foundUser.resetPasswordToken = randomHash;
+        foundUser.resetPasswordExpires = linkExpiryTime;
+        await foundUser.save();
+        const info = await smtpTransport.sendMail(mailOptions);
+
+        res.status(HttpStatus.OK)
+            .end('Response: Verification link sent');
+    },
+
+    verifyResetPasswordLink: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const user = await User.findOne({daiictId});
+        //user already exist
+        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+            req.flash('error', 'Password reset token is invalid or has expired.');
+            return res.redirect('/forgot');
+        }
+
+        res.render('reset', {
+            user: req.user
+        });
+    },
+
+    resetPassword: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const primaryEmail = daiictId + '@' + daiictMailDomainName;
+        const user = await User.findOne({daiictId});
+
+        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+            req.flash('error', 'Password reset token is invalid or has expired.');
+            return res.redirect('/');
+        }
+
+        if (!user) {
+            req.flash('error', 'Password reset token is invalid or has expired.');
+            return res.redirect('back');
+        }
+        user.password = await hashPassword(req.body.password);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        const mailOptions = {
+            from: mailAccountUserName,
+            to: primaryEmail,
+            subject: 'Password successfully changed',
+            text: 'Hello,\n\n' +
+                'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n',
+
+        };
+        const info = await smtpTransport.sendMail(mailOptions);
+    },
+
 
     verifyAccount: async (req, res, next) => {
         const { daiictId } = req.params;
@@ -124,7 +198,7 @@ module.exports = {
         if (req.query.id === user.randomHash) {
             //crete new Cart
             const cart = new Cart({
-                requestedBy:daiictId,
+                requestedBy: daiictId,
                 createdOn: user.createdOn,
             });
             await cart.save();
@@ -165,6 +239,10 @@ module.exports = {
 
         //get User Id
         const { user } = req;
+        if (user.resetPasswordToken !== undefined) {
+            user.resetPasswordRandomHash = undefined;
+            await user.save();
+        }
         const permission = accessControl.can(user.userType)
             .readOwn(resources.user);
 
@@ -172,7 +250,7 @@ module.exports = {
 
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,
-            expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+            expires: new Date(Date.now() + JWT_EXPIRY_TIME * 24 * 60 * 60 * 1000),
         })
             .status(HttpStatus.OK)
             .json({ user: filteredUser });
@@ -183,4 +261,4 @@ module.exports = {
         res.status(HttpStatus.OK)
             .end();
     },
-}
+};

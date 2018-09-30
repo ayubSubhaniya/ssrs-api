@@ -2,7 +2,12 @@ const db = require('mongoose');
 
 const { Schema } = db;
 
-const orderSchema = new Schema({
+const placedOrderSchema = new Schema({
+    orderId: {
+        type: Schema.Types.ObjectId,
+        ref: 'order',
+        required: true
+    },
     requestedBy: {
         type: String,
         required: true,
@@ -12,14 +17,18 @@ const orderSchema = new Schema({
         ref: 'cart',
         required: true,
     },
-    serviceName: {
-        type: String,
-        required: true,
-    },
     service: {
-        type: Schema.Types.ObjectId,
-        ref: 'service',
-        required: true,
+        name: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String
+        },
+        baseCharge: {
+            type: Number,
+            default: 0,
+        },
     },
     unitsRequested: {
         type: Number,
@@ -28,12 +37,6 @@ const orderSchema = new Schema({
     createdOn: {
         type: Date,
         required: true,
-    },
-    lastModified: {
-        type: Date,
-    },
-    lastModifiedBy: {
-        type: String,
     },
     serviceCost: {
         type: Number,
@@ -58,19 +61,16 @@ const orderSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'parameter',
     }],
-    validityErrors: [{
-       type:String,
-    }],
     cancelReason: {
         type: String
-    },
+    }
 });
 
 
-orderSchema.pre('save', function (next) {
+placedOrderSchema.pre('save', function (next) {
     this.totalCost = this.serviceCost + this.parameterCost;
     next();
 });
 
-const Order = db.model('order', orderSchema);
-module.exports = Order;
+const PlacedOrder = db.model('placedOrder', placedOrderSchema);
+module.exports = PlacedOrder;

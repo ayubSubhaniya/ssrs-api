@@ -4,6 +4,7 @@ const Service = require('../models/service');
 const Courier = require('../models/courier');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
+const PlacedOrder = require('../models/placedOrder');
 const Cart = require('../models/cart');
 const Notification = require('../models/notification');
 const CollectionType = require('../models/collectionType');
@@ -13,7 +14,7 @@ const paymentCodeGenerator = require('shortid');
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus } = require('../configuration');
+const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
@@ -44,7 +45,7 @@ const calculateOrdersCost = async (cart) => {
     let cost = 0;
     const { orders } = cart;
     for (let i = 0; i < orders.length; i++) {
-        if (orders[i].status < orderStatus.paymentIncomplete) {
+        if (orders[i].status < orderStatus.unplaced) {
             return -1;
         } else {
             cost += orders[i].totalCost;
@@ -99,8 +100,8 @@ module.exports = {
 
             const ordersCost = await calculateOrdersCost(cart);
             if (ordersCost === -1) {
-                cart.status = cartStatus.invalidOrders;
-                cart.validityErrors.push(errorMessages.invalidOrders);
+                cart.status = cartStatus.invalid;
+                cart.validityErrors.push(errorMessages.invalid);
             } else {
                 cart.ordersCost = ordersCost;
             }
@@ -108,7 +109,7 @@ module.exports = {
             const collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders);
 
             if (collectionTypeCost === -1) {
-                cart.status = cartStatus.invalidOrders;
+                cart.status = cartStatus.invalid;
                 cart.validityErrors.push(errorMessages.invalidCollectionType);
             } else {
                 cart.collectionTypeCost = collectionTypeCost;
@@ -175,7 +176,7 @@ module.exports = {
     getAllCart: async (req, res, next) => {
 
         const { user } = req;
-        const {daiictId} =user;
+        const { daiictId } = user;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
             .readAny(resources.order);
@@ -190,59 +191,52 @@ module.exports = {
         const readAnyParameterPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
 
+        let query = {};
+        let sortQuery = {};
+        let cartAttributesPermission = {};
+        let orderAttributesPermission = {};
+
         if (readAnyCartPermission.granted) {
-            const query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
+            query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
             query.status = {
                 $gte: cartStatus.placed
             };
-            const sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
+            sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
 
-            const cart = await Cart.find(query)
-                .sort(sortQuery)
-                .deepPopulate(['orders.service', 'orders.parameters'], {
-                    populate: {
-                        'orders': {
-                            select: readAnyOrderPermission.attributes
-                        },
-                        'orders.service': {
-                            select: readAnyServicePermission.attributes
-                        },
-                        'orders.parameters': {
-                            select: readAnyParameterPermission.attributes
-                        }
-                    }
-                });
+            cartAttributesPermission = readAnyCartPermission.attributes;
+            orderAttributesPermission = readAnyOrderPermission.attributes;
 
-            const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
-            res.status(httpStatusCodes.OK)
-                .json({ cart: filteredCart });
         } else if (readOwnCartPermission.granted) {
             const query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
             const sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
             query.requestedBy = daiictId;
 
-            const cart = await Cart.find(query)
-                .sort(sortQuery)
-                .deepPopulate(['orders.service', 'orders.parameters'], {
-                    populate: {
-                        'orders': {
-                            select: readOwnOrderPermission.attributes
-                        },
-                        'orders.service': {
-                            select: readAnyServicePermission.attributes
-                        },
-                        'orders.parameters': {
-                            select: readAnyParameterPermission.attributes
-                        }
-                    }
-                });
+            cartAttributesPermission = readOwnCartPermission.attributes;
+            orderAttributesPermission = readOwnOrderPermission.attributes;
 
-            const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
-            res.status(httpStatusCodes.OK)
-                .json({ cart: filteredCart });
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
+
+        const cart = await Cart.find(query)
+            .sort(sortQuery)
+            .deepPopulate(['orders.service', 'orders.parameters'], {
+                populate: {
+                    'orders': {
+                        select: orderAttributesPermission
+                    },
+                    'orders.service': {
+                        select: readAnyServicePermission.attributes
+                    },
+                    'orders.parameters': {
+                        select: readAnyParameterPermission.attributes
+                    }
+                }
+            });
+
+        const filteredCart = await filterResourceData(cart, cartAttributesPermission);
+        res.status(httpStatusCodes.OK)
+            .json({ cart: filteredCart });
     },
 
     addCourier: async (req, res, next) => {
@@ -274,12 +268,23 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status < cartStatus.placed) {
 
+                cart.orders = await validateOrder(cart.orders);
+
+                const ordersCost = await calculateOrdersCost(cart);
+                if (ordersCost === -1) {
+                    cart.status = cartStatus.invalid;
+                    cart.validityErrors.push(errorMessages.invalid);
+                } else {
+                    cart.ordersCost = ordersCost;
+                }
+
                 const cost = await calculateCollectionTypeCost(collectionTypes.courier, cart.orders);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
+
 
                 cart.collectionTypeCost = cost;
 
@@ -334,6 +339,17 @@ module.exports = {
             if (!cart || !cart.courier) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status < cartStatus.placed) {
+
+                cart.orders = await validateOrder(cart.orders);
+
+                const ordersCost = await calculateOrdersCost(cart);
+                if (ordersCost === -1) {
+                    cart.status = cartStatus.invalid;
+                    cart.validityErrors.push(errorMessages.invalid);
+                } else {
+                    cart.ordersCost = ordersCost;
+                }
+
 
                 const cost = await calculateCollectionTypeCost(collectionTypes.courier, cart.orders);
                 if (cost === -1) {
@@ -396,6 +412,17 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status < cartStatus.placed) {
 
+                cart.orders = await validateOrder(cart.orders);
+
+                const ordersCost = await calculateOrdersCost(cart);
+                if (ordersCost === -1) {
+                    cart.status = cartStatus.invalid;
+                    cart.validityErrors.push(errorMessages.invalid);
+                } else {
+                    cart.ordersCost = ordersCost;
+                }
+
+
                 const cost = await calculateCollectionTypeCost(collectionTypes.pickup, cart.orders);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -456,6 +483,17 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status < cartStatus.placed) {
 
+                cart.orders = await validateOrder(cart.orders);
+
+                const ordersCost = await calculateOrdersCost(cart);
+                if (ordersCost === -1) {
+                    cart.status = cartStatus.invalid;
+                    cart.validityErrors.push(errorMessages.invalid);
+                } else {
+                    cart.ordersCost = ordersCost;
+                }
+
+
                 const cost = await calculateCollectionTypeCost(collectionTypes.pickup, cart.orders);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -492,6 +530,8 @@ module.exports = {
             .updateOwn(resources.cart);
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
 
@@ -506,25 +546,48 @@ module.exports = {
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.lastModified = new Date();
 
-            const cartInDb = await Cart.findById(cartId);
-
-            if (cartInDb.orders.length===0){
-                return res.status(httpStatusCodes.BAD_REQUEST).send(errorMessages.noOrdersInCart);
-            }
-            if (!calculateOrdersCost(cartInDb)) {
-                cartInDb.status = cartStatus.invalidOrders;
-                return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                    .send(errorMessages.invalidOrders);
-            }
-
-            if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
-                return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                    .send(errorMessages.noCollectionType);
-            }
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
 
             if (cartInDb) {
+
+                cartInDb.orders = await validateOrder(cartInDb.orders);
+
+                const ordersCost = await calculateOrdersCost(cartInDb);
+                if (ordersCost === -1) {
+                    cartInDb.status = cartStatus.invalid;
+                    cartInDb.validityErrors.push(errorMessages.invalid);
+                } else {
+                    cartInDb.ordersCost = ordersCost;
+                }
+
+                if (cartInDb.orders.length === 0) {
+                    return res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.noOrdersInCart);
+                }
+                if (ordersCost === -1) {
+                    cartInDb.status = cartStatus.invalid;
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.invalid);
+                }
+
+                if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.noCollectionType);
+                }
+
                 if (cartInDb.status === cartStatus.unplaced) {
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    /* save final cart and orders*/
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].save();
+                    }
+
+                    await cartInDb.save();
+
 
                     if (cartUpdateAtt.status === cartStatus.paymentComplete) {
 
@@ -534,13 +597,34 @@ module.exports = {
                             await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
                         }
 
-                        for (let i=0;i<cartInDb.orders.length;i++){
-                            await Order.findByIdAndUpdate(cartInDb.orders[i], {status:orderStatus.placed});
+                        for (let i = 0; i < cartInDb.orders.length; i++) {
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing }, { new: true })
+                                .populate('service');
+                            const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                            placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                            placedOrderDoc.orderId = order._id;
+
+                            const placedOrder = new PlacedOrder(placedOrderDoc);
+                            await placedOrder.save();
+                        }
+                        cartUpdateAtt.status = cartStatus.processing;
+                    } else {
+                        for (let i = 0; i < cartInDb.orders.length; i++) {
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.placed }, { new: true })
+                                .populate('service');
+                            const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                            placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                            placedOrderDoc.orderId = order._id;
+
+                            const placedOrder = new PlacedOrder(order);
+                            await placedOrder.save();
                         }
                     }
-                    
+
                     const notification = generateCartStatusChangeNotification(daiictId, 'System', cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
+
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const cart = new Cart({
                         requestedBy: daiictId,
@@ -588,7 +672,6 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
-                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
 
                     if (cartInDb.collectionType === collectionTypes.pickup) {
                         await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
@@ -596,9 +679,12 @@ module.exports = {
                         await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
                     }
 
-                    for (let i=0;i<cartInDb.orders.length;i++){
-                        await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing });
                     }
+
+                    cartUpdateAtt.status = cartStatus.processing;
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
@@ -640,92 +726,99 @@ module.exports = {
                     select: readAnyOrderPermission.attributes
                 });
 
-            if (!(cartUpdateAtt.status===cartStatus.completed&&cartInDb.status===cartStatus.readyToDeliver)&&!(cartUpdateAtt.status===cartStatus.readyToPickup&&cartInDb.status===cartStatus.processing)&&(cartUpdateAtt.status - cartInDb.status > 10)) {
-                return res.status(httpStatusCodes.BAD_REQUEST)
-                    .send(errorMessages.invalidStatusChange);
+            if (cartInDb) {
+                if (cartInDb.status !== cartStatus.readyToDeliver && cartInDb.status !== cartStatus.readyToPickup) {
+                    return res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.invalidStatusChange);
+                }
+
+                let updateAtt = {
+                    lastModifiedBy: daiictId,
+                    lastModified: new Date()
+                };
+                switch (cartUpdateAtt.status) {
+                    case cartStatus.completed:
+                        updateAtt.status = cartStatus.completed;
+                        if (cartInDb.collectionType === collectionTypes.courier) {
+                            if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
+                                return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                                    .send(errorMessages.courierInformationRequired);
+                            }
+
+                            await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.completed });
+
+                            const updatedCourier = await Courier.findByIdAndUpdate(cartInDb.courier, {
+                                courierServiceName: cartUpdateAtt.courierServiceName,
+                                trackingId: cartUpdateAtt.trackingId
+                            });
+
+                            if (!updatedCourier) {
+                                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+                            }
+
+
+                        } else {
+                            await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.completed });
+                        }
+                        for (let i = 0; i < cartInDb.orders.length; i++) {
+                            if (cartInDb.orders[i].status !== orderStatus.cancelled) {
+                                await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
+                            }
+
+                        }
+                        break;
+                    default :
+                        return res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+                const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
+                if (updatedCart) {
+                    const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
+                    res.status(httpStatusCodes.OK)
+                        .json({ cart: filteredCart });
+                } else {
+                    res.sendStatus(httpStatusCodes.NOT_FOUND);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
 
-            let updateAtt = {
-                lastModifiedBy: daiictId,
-                lastModified: new Date()
-            };
-            switch (cartUpdateAtt.status) {
-                case cartStatus.processing:
-                    updateAtt.status = cartStatus.processing;
-                    console.log(cartInDb.orders);
-                    for (let i=0;i<cartInDb.orders.length;i++){
-                        await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.processing});
-                    }
+    cancelCart: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { cartId } = req.params;
 
-                    break;
-                case cartStatus.readyToDeliver:
-                    if (cartInDb.collectionType !== collectionTypes.courier) {
-                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                            .send(errorMessages.noCourierInOrder);
-                    }
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        if (cartInDb.orders[i].status !== orderStatus.ready) {
-                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                                .send(errorMessages.allOrdersNotReady);
-                        }
-                    }
+        const changeStatusPermission = accessControl.can(user.userType)
+            .updateAny(resources.changeResourceStatus);
 
-                    await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.ready });
-                    updateAtt.status = cartStatus.readyToDeliver;
-                    break;
-                case cartStatus.readyToPickup:
-                    updateAtt.status = cartStatus.readyToPickup;
+        if (changeStatusPermission.granted) {
 
-                    if (cartInDb.collectionType !== collectionTypes.pickup) {
-                        return res.status(httpStatusCodes.BAD_REQUEST)
-                            .send(errorMessages.noPickupInOrder);
-                    }
+            const cartUpdateAtt = req.value.body;
+            cartUpdateAtt.lastModified = new Date();
+            cartUpdateAtt.lastModifiedBy = daiictId;
+            cartUpdateAtt.status = cartStatus.cancelled;
+
+            const cartInDb = await Cart.findById(cartId);
+
+            if (cartInDb) {
+                if (cartInDb.status >= cartStatus.placed) {
+                    await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        if (cartInDb.orders[i].status !== orderStatus.ready) {
-                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                                .send(errorMessages.allOrdersNotReady);
-                        }
-                    }
-                    await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.ready });
-
-                    break;
-
-                case cartStatus.completed:
-                    updateAtt.status = cartStatus.completed;
-                    if (cartInDb.collectionType === collectionTypes.courier) {
-                        if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
-                            return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                                .send(errorMessages.courierInformationRequired);
-                        }
-
-                        await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.completed });
-
-                        const updatedCourier = await Courier.findByIdAndUpdate(cartInDb.courier, {
-                            courierServiceName: cartUpdateAtt.courierServiceName,
-                            trackingId: cartUpdateAtt.trackingId
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.cancelled,
+                            lastModified: cartUpdateAtt.lastModified,
+                            lastModifiedBy: daiictId
                         });
-
-                        if (!updatedCourier) {
-                            return res.sendStatus(httpStatusCodes.NOT_FOUND);
-                        }
-
-
-                    } else {
-                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.completed });
                     }
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
-                    }
-                    break;
-                default :
-                    return res.sendStatus(httpStatusCodes.BAD_REQUEST);
-            }
-            const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
-            if (updatedCart) {
-                const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
-                res.status(httpStatusCodes.OK)
-                    .json({ cart: filteredCart });
+                    res.sendStatus(httpStatusCodes.OK);
+                } else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+
             } else {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }

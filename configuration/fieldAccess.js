@@ -123,6 +123,7 @@ module.exports = {
             canRead: [
                 '_id',
                 'requestedBy',
+                'cartId',
                 'service',
                 'serviceName',
                 'createdOn',
@@ -143,16 +144,19 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'unitsRequested',
+                'cancelReason'
             ],
             canCreate: [],
             canUpdate: [
-                'status'
+                'status',
+                'cancelReason'
             ],
         },
         student: {
             canRead: [
                 '_id',
                 'requestedBy',
+                'cartId',
                 'service',
                 'serviceName',
                 'createdOn',
@@ -172,6 +176,7 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'unitsRequested',
+                'cancelReason'
             ],
             canCreate: [
                 'service',
@@ -217,10 +222,12 @@ module.exports = {
                 'pickup',
                 'collectionType',
                 'validityErrors',
+                'cancelReason'
             ],
             canCreate: [],
             canUpdate: [
-                'status'
+                'status',
+                'cancelReason'
             ],
         },
         student: {
@@ -243,6 +250,7 @@ module.exports = {
                 'pickup',
                 'collectionType',
                 'validityErrors',
+                'cancelReason'
             ],
             canCreate: [
                 'orders',

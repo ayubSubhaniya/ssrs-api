@@ -1,10 +1,20 @@
 const express = require('express');
-const logger = require('morgan');
+const morgan = require('morgan');
 const db = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const HttpStatus = require('http-status-codes');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const rfs = require('rotating-file-stream');
+const favicon = require('static-favicon');
+const flash = require('express-flash');
+const session = require('express-session');
+const Sentry = require('@sentry/node');
+const winston = require('winston');
+
+Sentry.init({ dsn:'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
 
 const app = express();
 
@@ -17,22 +27,44 @@ if (app.get('env')==='development'){
     }
 }
 
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+        //
+        // - Write to all logs with level `info` and below to `combined.log`
+        // - Write all logs error (and below) to `error.log`.
+        //
+        new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'logs/combined.log' })
+    ]
+});
+
+const logDirectory = path.join(__dirname, 'logs');
+
+// ensure log directory exists
+fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
+
+// create a rotating write stream
+const accessLogStream = rfs('access.log', {
+    interval: '1d', // rotate daily
+    path: logDirectory
+});
+
 
 /* CONNECTING TO MongoDB */
 
 /* Local Database */
-const DB_HOST = process.env.DB_HOST;
-const DB_PORT = process.env.DB_PORT;
+/*const DB_HOST = process.env.DB_HOST;
 const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
 
-const dbURI = `mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_COLLECTION_NAME}`;
-
-
+const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
+*/
 /* Online Database */
-// const dbURI = process.env.DB_URI;
+const dbURI = process.env.DB_URI;
 
 db.connect(dbURI)
     .then(
@@ -58,10 +90,25 @@ const collectionType = require('./routes/collectionType');
 const courier = require('./routes/courier');
 const collector = require('./routes/collector');
 
-// Middlewares
-app.use(logger('dev'));
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
+
+
+//Middlewares
+app.use(Sentry.Handlers.requestHandler());
+
+if (app.get('env')==='development'){
+    app.use(morgan('dev'));
+}
+
+app.use(flash());
+app.use(favicon());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }))
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(session({secret: "Shh, its a secret!"}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cors({
     origin: true,
@@ -84,6 +131,7 @@ app.use('/collector', collector);
 app.use('/cart/', cart);
 
 
+app.use(Sentry.Handlers.errorHandler());
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
     res.sendStatus(HttpStatus.NOT_FOUND);

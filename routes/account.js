@@ -34,6 +34,19 @@ router.route('/changePassword')
         AccountController.changePassword
     );
 
+router.route('/forgotPassword/:daiictId')
+    .get(
+        AccountController.forgetPassword
+    );
+
+router.route('/resetPassword/:daiictId')
+    .get(
+        AccountController.verifyResetPasswordLink
+    )
+    .post(
+        AccountController.resetPassword
+    );
+
 router.route('/signout')
     .get(
         passport.authenticate('jwt', { session: false }),
