@@ -179,7 +179,6 @@ module.exports = {
 
         if (deletePermission.granted) {
             const deletedUser = await User.findOneAndRemove({ daiictId: requestedUserId });
-
             res.sendStatus(HttpStatus.OK);
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
