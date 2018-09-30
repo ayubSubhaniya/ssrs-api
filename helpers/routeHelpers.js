@@ -220,10 +220,6 @@ module.exports = {
                     unitsRequested: Joi.number(),
                     parameters: Joi.array().items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
-                    paymentType: Joi.number(),
-                    isPaymentDone: Joi.boolean(),
-                    paymentId: Joi.string(),
-                    collectionType: Joi.string(),
                 },
             }),
         updateOrderSchema: Joi.object()

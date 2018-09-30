@@ -5,10 +5,12 @@ const Courier = require('../models/courier');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
 const Cart = require('../models/cart');
-
+const Notification = require('../models/notification');
 const CollectionType = require('../models/collectionType');
+
 const paymentCodeGenerator = require('shortid');
 
+const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus } = require('../configuration');
@@ -533,7 +535,12 @@ module.exports = {
                         }
 
                         for (let i=0;i<cartInDb.orders.length;i++){
-                            await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i],{status:orderStatus.placed});
+                            // if(order){
+                            //     const service = Service.findById(order.service);
+                            //     const notification = generateOrderStatusChangeNotification(daiictId, service.createdBy, service.name, order.status);
+                            //     await notification.save();
+                            // }
                         }
                     }
 
