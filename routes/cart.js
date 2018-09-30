@@ -62,6 +62,14 @@ router.route('/changeStatus/:cartId')
         cartController.changeStatus
     );
 
+router.route('/cancelCart/:cartId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'cartId'),
+        validateBody(schemas.cancelSchema),
+        cartController.cancelCart
+    );
+
 router.route('/:cartId')
     .get(
         passport.authenticate('jwt', { session: false }),

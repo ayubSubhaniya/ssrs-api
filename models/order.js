@@ -7,6 +7,11 @@ const orderSchema = new Schema({
         type: String,
         required: true,
     },
+    cartId:{
+        type: Schema.Types.ObjectId,
+        ref: 'cart',
+        required: true,
+    },
     serviceName: {
         type: String,
         required: true,
@@ -56,6 +61,9 @@ const orderSchema = new Schema({
     validityErrors: [{
        type:String,
     }],
+    cancelReason: {
+        type: String
+    },
 });
 
 

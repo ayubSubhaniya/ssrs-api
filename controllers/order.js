@@ -7,7 +7,7 @@ const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus } = require('../configuration');
+const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 
 
@@ -116,7 +116,7 @@ const validateOrder = async (orders) => {
     }
 };
 
-const getOrders = async (query, readableAttributes,parameterReadableAtt, sortQuery) => {
+const getOrders = async (query, readableAttributes, parameterReadableAtt, sortQuery) => {
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({
@@ -185,7 +185,7 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, readOwnPermission.attributes,readAnyParameterPermission.attributes);
+        const filteredOrders = await getOrders(query, readOwnPermission.attributes, readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -227,6 +227,7 @@ module.exports = {
                 return;
             }
             newOrder.parameterCost = parameterCost;
+            newOrder.cartId = cartId;
 
             const order = await newOrder.save();
 
@@ -235,6 +236,8 @@ module.exports = {
                     'orders': order._id
                 }
             });
+
+            /*order saved but not in cart*/
             const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
             res.status(httpStatusCodes.CREATED)
                 .json({
@@ -364,19 +367,17 @@ module.exports = {
 
             const orderInDb = await Order.findById(orderId);
 
-            if (orderUpdateAtt.status - orderInDb.status > 10) {
-                return res.status(httpStatusCodes.BAD_REQUEST)
-                    .send(errorMessages.invalidStatusChange);
-            }
-
             let updateAtt = {
                 lastModifiedBy: daiictId,
                 lastModified: new Date()
             };
+
+            if (orderInDb.status !== orderStatus.processing) {
+                return res.status(httpStatusCodes.BAD_REQUEST)
+                    .send(errorMessages.invalidStatusChange);
+            }
+
             switch (orderUpdateAtt.status) {
-                case orderStatus.processing:
-                    updateAtt.status = orderStatus.processing;
-                    break;
                 case orderStatus.ready:
                     updateAtt.status = orderStatus.ready;
                     break;
@@ -384,6 +385,29 @@ module.exports = {
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
+
+            const cart = await Cart.findById(orderInDb.cartId)
+                .populate({
+                    path: 'orders',
+                    select: 'status'
+                });
+
+            let allReady = true;
+            for (let i = 0; i < cart.orders.length; i++) {
+                if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !==  orderStatus.cancelled) {
+                    allReady = false;
+                }
+            }
+
+            if (allReady) {
+                if (cart.collectionType = collectionTypes.courier) {
+                    cart.status = cartStatus.readyToDeliver;
+                } else {
+                    cart.status = cartStatus.readyToPickup;
+                }
+            }
+            await cart.save();
+
             if (updatedOrder) {
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
                 res.status(httpStatusCodes.OK)
@@ -391,6 +415,63 @@ module.exports = {
             } else {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    cancelOrder: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { orderId } = req.params;
+
+        const changeStatusPermission = accessControl.can(user.userType)
+            .updateAny(resources.changeResourceStatus);
+
+        if (changeStatusPermission.granted) {
+            const updatedOrder = req.value.body;
+            updatedOrder.lastModified = new Date();
+            updatedOrder.lastModifiedBy = daiictId;
+            updatedOrder.status = orderStatus.cancelled;
+
+            const orderInDB = await Order.findById(orderId);
+            if (orderInDB) {
+
+                if (orderInDB.status >= orderStatus.placed) {
+
+                    const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
+
+                    const cart = await Cart.findById(orderInDB.cartId)
+                        .populate({
+                            path: 'orders',
+                            select: 'status'
+                        });
+
+                    let allReady = true;
+                    for (let i = 0; i < cart.orders.length; i++) {
+                        if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !==  orderStatus.cancelled) {
+                            allReady = false;
+                        }
+                    }
+
+                    if (allReady) {
+                        if (cart.collectionType = collectionTypes.courier) {
+                            cart.status = cartStatus.readyToDeliver;
+                        } else {
+                            cart.status = cartStatus.readyToPickup;
+                        }
+                    }
+                    await cart.save();
+
+                    res.sendStatus(httpStatusCodes.OK);
+                } else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
