@@ -9,6 +9,7 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { resources, sortQueryName, orderStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
+const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
 
 
 /*return -1 when invalid*/
@@ -373,6 +374,7 @@ module.exports = {
                 lastModifiedBy: daiictId,
                 lastModified: new Date()
             };
+
             switch (orderUpdateAtt.status) {
                 case orderStatus.processing:
                     updateAtt.status = orderStatus.processing;
@@ -383,11 +385,17 @@ module.exports = {
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
+
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
+            
             if (updatedOrder) {
+                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status);
+                await notification.save();
+                
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
                 res.status(httpStatusCodes.OK)
                     .json({ order: filteredOrder });
+
             } else {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
