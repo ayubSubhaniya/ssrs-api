@@ -179,10 +179,6 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-        const readAnyOrderPermission = accessControl.can(user.userType)
-            .readAny(resources.order);
-        const readOwnOrderPermission = accessControl.can(user.userType)
-            .readOwn(resources.order);
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
         const readOwnCartPermission = accessControl.can(user.userType)
@@ -196,6 +192,8 @@ module.exports = {
         let sortQuery = {};
         let cartAttributesPermission = {};
         let orderAttributesPermission = {};
+        let pickupAttributesPermission = {};
+        let courierAttributesPermission = {};
 
         if (readAnyCartPermission.granted) {
             query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
@@ -205,7 +203,12 @@ module.exports = {
             sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
 
             cartAttributesPermission = readAnyCartPermission.attributes;
-            orderAttributesPermission = readAnyOrderPermission.attributes;
+            orderAttributesPermission = accessControl.can(user.userType)
+                .readAny(resources.order).attributes;
+            courierAttributesPermission = accessControl.can(user.userType)
+                .readAny(resources.courier).attributes;
+            pickupAttributesPermission = accessControl.can(user.userType)
+                .readAny(resources.pickup).attributes;
 
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
@@ -213,7 +216,12 @@ module.exports = {
             query.requestedBy = daiictId;
 
             cartAttributesPermission = readOwnCartPermission.attributes;
-            orderAttributesPermission = readOwnOrderPermission.attributes;
+            orderAttributesPermission = accessControl.can(user.userType)
+                .readOwn(resources.order).attributes;
+            courierAttributesPermission = accessControl.can(user.userType)
+                .readOwn(resources.courier).attributes;
+            pickupAttributesPermission = accessControl.can(user.userType)
+                .readOwn(resources.pickup).attributes;
 
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
@@ -221,10 +229,16 @@ module.exports = {
 
         const cart = await Cart.find(query)
             .sort(sortQuery)
-            .deepPopulate(['orders.service', 'orders.parameters'], {
+            .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
                 populate: {
                     'orders': {
                         select: orderAttributesPermission
+                    },
+                    'courier': {
+                        select: courierAttributesPermission
+                    },
+                    'pickup': {
+                        select: pickupAttributesPermission
                     },
                     'orders.service': {
                         select: readAnyServicePermission.attributes
@@ -234,6 +248,31 @@ module.exports = {
                     }
                 }
             });
+
+        for (let i=0;i<cart.length;i++){
+            if (cart[i].status<cartStatus.placed){
+                cart[i].orders = await validateOrder(cart[i].orders);
+
+                const ordersCost = await calculateOrdersCost(cart[i]);
+                if (ordersCost === -1) {
+                    cart[i].status = cartStatus.invalid;
+                    cart[i].validityErrors.push(errorMessages.invalid);
+                } else {
+                    cart[i].ordersCost = ordersCost;
+                }
+
+                const collectionTypeCost = await calculateCollectionTypeCost(cart[i].collectionType, cart[i].orders);
+
+                if (collectionTypeCost === -1) {
+                    cart[i].status = cartStatus.invalid;
+                    cart[i].validityErrors.push(errorMessages.invalidCollectionType);
+                } else {
+                    cart[i].collectionTypeCost = collectionTypeCost;
+                }
+
+                cart[i].totalCost = cart[i].collectionTypeCost + cart[i].ordersCost;
+            }
+        }
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
