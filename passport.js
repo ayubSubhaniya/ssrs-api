@@ -1,7 +1,7 @@
 const passport = require('passport');
 const JwtStrategy = require('passport-jwt').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
-const { JWT_SECRET, errors } = require('./configuration');
+const { JWT_SECRET, gvalidityErrors } = require('./configuration');
 const User = require('./models/user');
 
 //JSON WEB TOKEN STRATEGY
@@ -16,12 +16,12 @@ passport.use(new JwtStrategy({
 
         //if user doesn't exist handle it
         if (!user) {
-            return done(null, false, { message: errors.invalidToken });
+            return done(null, false, { message: validityErrors.invalidToken });
         }
 
         //token expired
         if (payload.exp < Date.now()) {
-            return done(null, false, { message: errors.sessionExpired });
+            return done(null, false, { message: validityErrors.sessionExpired });
         }
         req['user'] = user;
         //Otherwise, return the user
