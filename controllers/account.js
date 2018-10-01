@@ -75,7 +75,7 @@ module.exports = {
             to: primaryEmail,
             subject: 'Verify your Email account',
             html: 'Welcome to Student Service Request System - DAIICT!' +
-                '<br> Please click on the below mentioned link to verify your email.' +
+                '<br><br> Please click on the below mentioned link to verify your email.' +
                 '<br><a href=' + link + '>Click here to verify</a>',
 
         };
@@ -108,7 +108,9 @@ module.exports = {
             from: mailAccountUserName,
             to: primaryEmail,
             subject: 'Please confirm your Email account',
-            html: 'Hello,<br> Please Click on the link to verify your email.<br><a href=' + link + '>Click here to verify</a>',
+            html: 'Welcome to Student Service Request System - DAIICT!' +
+                '<br><br> Please click on the below mentioned link to verify your email.' +
+                '<br><a href=' + link + '>Click here to verify</a>'
 
         };
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
@@ -214,10 +216,10 @@ module.exports = {
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
-            res.end('<h1>Email ' + user.daiictId + ' is been successfully verified</h1>');
+            res.end('<h2>Email for ' + user.daiictId + ' has been successfully verified!</h2>');
         }
         else {
-            res.end('<h1>Bad Request</h1>');
+            res.end('<h2>Bad Request</h2>');
         }
     },
 
