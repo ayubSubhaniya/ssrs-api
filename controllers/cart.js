@@ -603,6 +603,7 @@ module.exports = {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing }, { new: true })
                                 .populate('service');
+
                             const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                             placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                             placedOrderDoc.orderId = order._id;
@@ -620,7 +621,7 @@ module.exports = {
                             placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                             placedOrderDoc.orderId = order._id;
 
-                            const placedOrder = new PlacedOrder(order);
+                            const placedOrder = new PlacedOrder(placedOrderDoc);
                             await placedOrder.save();
                             placedCartDoc.orders[i] = placedOrder._id;
                         }
