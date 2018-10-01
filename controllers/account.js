@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
-const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName } = require('../configuration');
+const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName, homePage } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -155,7 +155,7 @@ module.exports = {
         //user already exist
         if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
-            return res.redirect('/forgot');
+            return res.redirect(homePage);
         }
 
         res.render('reset', {
@@ -192,6 +192,7 @@ module.exports = {
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
+        res.redirect(homePage)
     },
 
 

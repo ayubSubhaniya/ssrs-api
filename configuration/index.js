@@ -1,4 +1,5 @@
 module.exports = {
+    homePage:'http://student-service-request-system.herokuapp.com/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
