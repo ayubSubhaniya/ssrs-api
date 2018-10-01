@@ -54,7 +54,6 @@ const placedCartSchema = new Schema({
     },
     status: {
         type: Number,
-        default: cartStatus.unplaced,
     },
     cancelReason: {
         type: String

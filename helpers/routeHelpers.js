@@ -229,6 +229,7 @@ module.exports = {
                     unitsRequested: Joi.number(),
                     parameters: Joi.array().items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
+                    comment: Joi.string(),
                 },
             }),
         updateOrderSchema: Joi.object()
