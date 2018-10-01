@@ -116,6 +116,24 @@ module.exports = {
         'cancelReason'
     ],
 
+    placedCartAttributes: [
+        'cartId',
+        'requestedBy',
+        'orders',
+        'createdOn',
+        'collectionTypeCost',
+        'ordersCost',
+        'totalCost',
+        'status',
+        'paymentType',
+        'paymentId',
+        'paymentCode',
+        'courier',
+        'pickup',
+        'collectionType',
+        'cancelReason'
+    ],
+
     allowedCartStatusChanges : {
         'placed': ['paymentComplete', 'processing', 'failed', 'cancelled'],
         'paymentComplete': ['processing', 'cancelled'],

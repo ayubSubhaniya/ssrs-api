@@ -5,6 +5,7 @@ const Courier = require('../models/courier');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
+const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
 const Notification = require('../models/notification');
 const CollectionType = require('../models/collectionType');
@@ -14,7 +15,7 @@ const paymentCodeGenerator = require('shortid');
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes } = require('../configuration');
+const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
@@ -588,6 +589,8 @@ module.exports = {
 
                     await cartInDb.save();
 
+                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
+                    placedCartDoc.cartId = cartInDb._id;
 
                     if (cartUpdateAtt.status === cartStatus.paymentComplete) {
 
@@ -606,6 +609,7 @@ module.exports = {
 
                             const placedOrder = new PlacedOrder(placedOrderDoc);
                             await placedOrder.save();
+                            placedCartDoc.orders[i] = placedOrder._id;
                         }
                         cartUpdateAtt.status = cartStatus.processing;
                     } else {
@@ -618,8 +622,13 @@ module.exports = {
 
                             const placedOrder = new PlacedOrder(order);
                             await placedOrder.save();
+                            placedCartDoc.orders[i] = placedOrder._id;
                         }
                     }
+
+                    placedCartDoc.status = cartUpdateAtt.status;
+                    const placedCart = new PlacedCart(placedCartDoc);
+                    await placedCart.save();
 
                     const notification = generateCartStatusChangeNotification(daiictId, 'System', cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
@@ -684,6 +693,7 @@ module.exports = {
                     }
 
                     cartUpdateAtt.status = cartStatus.processing;
+
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
@@ -763,6 +773,7 @@ module.exports = {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             if (cartInDb.orders[i].status !== orderStatus.cancelled) {
                                 await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
+                                await PlacedOrder.findOneAndUpdate({orderId:cartInDb.orders[i]},{status:orderStatus.completed});
                             }
 
                         }
@@ -770,6 +781,8 @@ module.exports = {
                     default :
                         return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
+
+                await PlacedCart.findOneAndUpdate({cartId},{status:cartStatus.completed});
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
                 if (updatedCart) {
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
@@ -806,12 +819,22 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status >= cartStatus.placed) {
                     await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
+                    await PlacedCart.findOneAndUpdate({ cartId }, {
+                        status: cartStatus.cancelled,
+                        cancelReason: cartUpdateAtt.cancelReason
+                    });
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.cancelled,
                             lastModified: cartUpdateAtt.lastModified,
-                            lastModifiedBy: daiictId
+                            lastModifiedBy: daiictId,
+                            cancelReason: cartUpdateAtt.cancelReason
+                        });
+
+                        await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, {
+                            status: orderStatus.cancelled,
+                            cancelReason: cartUpdateAtt.cancelReason
                         });
                     }
                     res.sendStatus(httpStatusCodes.OK);

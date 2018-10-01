@@ -2,6 +2,7 @@ const httpStatusCodes = require('http-status-codes');
 
 const Service = require('../models/service');
 const Order = require('../models/order');
+const PlacedOrder = require('../models/placedOrder');
 const Cart = require('../models/cart');
 const Parameter = require('../models/parameter');
 
@@ -397,7 +398,7 @@ module.exports = {
 
             let allReady = true;
             for (let i = 0; i < cart.orders.length; i++) {
-                if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !==  orderStatus.cancelled) {
+                if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !== orderStatus.cancelled) {
                     allReady = false;
                 }
             }
@@ -448,6 +449,10 @@ module.exports = {
                 if (orderInDB.status >= orderStatus.placed) {
 
                     const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
+                    const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
+                        status: orderStatus.failed,
+                        cancelReason: updatedOrder.cancelReason
+                    });
 
                     const cart = await Cart.findById(orderInDB.cartId)
                         .populate({
@@ -457,7 +462,7 @@ module.exports = {
 
                     let allReady = true;
                     for (let i = 0; i < cart.orders.length; i++) {
-                        if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !==  orderStatus.cancelled) {
+                        if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !== orderStatus.cancelled) {
                             allReady = false;
                         }
                     }
