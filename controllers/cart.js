@@ -208,7 +208,7 @@ module.exports = {
             courierAttributesPermission = accessControl.can(user.userType)
                 .readAny(resources.courier).attributes;
             pickupAttributesPermission = accessControl.can(user.userType)
-                .readAny(resources.pickup).attributes;
+                .readAny(resources.collector).attributes;
 
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
@@ -221,7 +221,7 @@ module.exports = {
             courierAttributesPermission = accessControl.can(user.userType)
                 .readOwn(resources.courier).attributes;
             pickupAttributesPermission = accessControl.can(user.userType)
-                .readOwn(resources.pickup).attributes;
+                .readOwn(resources.collector).attributes;
 
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
