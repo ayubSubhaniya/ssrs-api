@@ -217,7 +217,8 @@ module.exports = {
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
-            res.end('<h2>Email for ' + user.daiictId + ' has been successfully verified!</h2>');
+            req.flash('user sucessfully verified');
+            res.redirect(homePage);
         }
         else {
             res.end('<h2>Bad Request</h2>');

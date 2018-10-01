@@ -12,5 +12,6 @@ module.exports = {
     noPickupInOrder: "Pickup is not collection type in order",
     noCollectionType: "No Collection type",
     allOrdersNotReady: "All orders not ready",
-    noOrdersInCart: "No orders in cart"
+    noOrdersInCart: "No orders in cart",
+    userAlreadyExist: "User Already Exist"
 };
