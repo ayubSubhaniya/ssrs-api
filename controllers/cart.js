@@ -608,7 +608,7 @@ module.exports = {
                     cartInDb.ordersCost = ordersCost;
                 }
 
-                const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, cartInDb.orders);
+                const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
                 if (collectionTypeCost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
