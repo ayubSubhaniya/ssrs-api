@@ -288,6 +288,7 @@ module.exports = {
 
 
                 cart.collectionTypeCost = cost;
+                cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
                 cart.pickup = undefined;
 
@@ -360,6 +361,7 @@ module.exports = {
                 }
 
                 cart.collectionTypeCost = cost;
+                cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
                 const newCourier = await Courier.findByIdAndUpdate(cart.courier, courier, { new: true });
                 /* check if courier is present*/
@@ -431,6 +433,7 @@ module.exports = {
                     return;
                 }
                 cart.collectionTypeCost = cost;
+                cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
                 cart.courier = undefined;
 
                 cart.collectionType = collectionTypes.pickup;
@@ -503,6 +506,7 @@ module.exports = {
                 }
 
                 cart.collectionTypeCost = cost;
+                cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
                 const newPickup = await Collector.findByIdAndUpdate(cart.pickup, pickup, { new: true });
                 const newCart = await cart.save();
@@ -564,6 +568,15 @@ module.exports = {
                 } else {
                     cartInDb.ordersCost = ordersCost;
                 }
+
+                const collectionTypeCost = await calculateCollectionTypeCost(collectionTypes.courier, cartInDb.orders);
+                if (collectionTypeCost === -1) {
+                    res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.invalidCollectionType);
+                    return;
+                }
+                cartInDb.collectionTypeCost = collectionTypeCost;
+                cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
 
                 if (cartInDb.orders.length === 0) {
                     return res.status(httpStatusCodes.BAD_REQUEST)
