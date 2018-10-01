@@ -208,8 +208,8 @@ module.exports = {
             orderAttributesPermission = readAnyOrderPermission.attributes;
 
         } else if (readOwnCartPermission.granted) {
-            const query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
-            const sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
+            query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
+            sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
             query.requestedBy = daiictId;
 
             cartAttributesPermission = readOwnCartPermission.attributes;
