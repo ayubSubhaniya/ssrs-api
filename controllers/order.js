@@ -16,7 +16,7 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits) => {
 
-    if (!service.isActive || requiredUnits > service.maxUnits) {
+    if (!service.isActive || requiredUnits > service.maxUnits || requiredUnits<=0) {
         return -1;
     }
 
