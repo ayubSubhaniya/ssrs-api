@@ -1,7 +1,7 @@
 const passport = require('passport');
 const JwtStrategy = require('passport-jwt').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
-const { JWT_SECRET, gvalidityErrors } = require('./configuration');
+const { JWT_SECRET, validityErrors } = require('./configuration');
 const User = require('./models/user');
 
 //JSON WEB TOKEN STRATEGY
