@@ -9,7 +9,7 @@ const courierSchema = new Schema({
         required: true,
     },
     contactNo: {
-        type: Number,
+        type: String,
         required: true,
     },
     email: {
