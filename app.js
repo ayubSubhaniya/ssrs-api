@@ -13,12 +13,26 @@ const flash = require('express-flash');
 const session = require('express-session');
 const Sentry = require('@sentry/node');
 const winston = require('winston');
+const internetAvailable = require('internet-available');
 
-Sentry.init({ dsn:'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
+let isInternetAvaliable = false;
+internetAvailable()
+    .then(function () {
+        isInternetAvaliable = true;
+        console.log('Internet available');
+    })
+    .catch(function () {
+        isInternetAvaliable = false;
+        console.log('No internet');
+    });
+
+if (isInternetAvaliable){
+    Sentry.init({ dsn: 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
+}
 
 const app = express();
 
-if (app.get('env')==='development'){
+if (app.get('env') === 'development') {
     const dotenv = require('dotenv');
 
     const { error } = dotenv.config();
@@ -35,7 +49,10 @@ const logger = winston.createLogger({
         // - Write to all logs with level `info` and below to `combined.log`
         // - Write all logs error (and below) to `error.log`.
         //
-        new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+        new winston.transports.File({
+            filename: 'logs/error.log',
+            level: 'error'
+        }),
         new winston.transports.File({ filename: 'logs/combined.log' })
     ]
 });
@@ -68,10 +85,10 @@ const dbURI = process.env.DB_URI;
 
 db.connect(dbURI)
     .then(
-        ()=>{
-            console.log("MongoDB connection established");
+        () => {
+            console.log('MongoDB connection established');
         },
-        (err)=>{
+        (err) => {
             console.log(`Cannot connect to mongoDB\n${err}`);
         }
     );
@@ -95,19 +112,21 @@ app.set('view engine', 'jade');
 
 
 //Middlewares
-app.use(Sentry.Handlers.requestHandler());
+if (isInternetAvaliable){
+    app.use(Sentry.Handlers.requestHandler());
+}
 
-if (app.get('env')==='development'){
+if (app.get('env') === 'development') {
     app.use(morgan('dev'));
 }
 
 app.use(flash());
 app.use(favicon());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }))
+app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(session({secret: "Shh, its a secret!"}));
+app.use(session({ secret: 'Shh, its a secret!' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cors({
@@ -131,7 +150,10 @@ app.use('/collector', collector);
 app.use('/cart/', cart);
 
 
-app.use(Sentry.Handlers.errorHandler());
+if (isInternetAvaliable){
+    app.use(Sentry.Handlers.errorHandler());
+}
+
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
     res.sendStatus(HttpStatus.NOT_FOUND);
