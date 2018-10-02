@@ -40,6 +40,10 @@ const userSchema = new Schema({
     programme: {
         type: String,
     },
+     addresses: [{
+        type: Schema.Types.ObjectId,
+        ref: 'courierinfo'
+    }],
 
     /*Server added field*/
     createdOn: {

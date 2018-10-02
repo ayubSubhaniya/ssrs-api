@@ -49,4 +49,30 @@ router.route('/:requestedUserId')
         userController.deleteUser
     );
 
+router.route('/address')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        userController.getAllAddresses
+    )
+    .post(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.addUserAddressSchema),
+        userController.addAddress
+    );
+
+router.route('/address/:requestedCourierInfoId')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        userController.getAddress
+    )
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.updateUserAddressSchema),
+        userController.updateAddress
+    )
+    .delete(
+        passport.authenticate('jwt', { session: false }),
+        userController.deleteAddress
+    );
+
 module.exports = router;
