@@ -111,6 +111,7 @@ module.exports = {
         },
         student: {
             canRead: [
+                '_id',
                 'message',
                 'createdOn',
             ],

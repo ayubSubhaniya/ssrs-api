@@ -152,7 +152,7 @@ module.exports = {
             if (news) {
                 res.sendStatus(HttpStatus.OK);
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else if (deleteOwnPermission.granted) {
             const news = await News.findOneAndRemove({
@@ -162,7 +162,7 @@ module.exports = {
             if (news) {
                 res.sendStatus(HttpStatus.OK);
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
