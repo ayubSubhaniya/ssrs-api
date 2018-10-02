@@ -1,3 +1,4 @@
+const orderid = require('order-id')('ssrs-daiict');
 const db = require('mongoose');
 const deepPopulate = require('mongoose-deep-populate')(db);
 
@@ -5,6 +6,11 @@ const { Schema } = db;
 const { cartStatus } = require('../configuration');
 
 const cartSchema = new Schema({
+    orderId:{
+        type: String,
+        required:true,
+        unique:true
+    },
     orders: [{
         type: Schema.Types.ObjectId,
         ref: 'order'
@@ -65,6 +71,11 @@ const cartSchema = new Schema({
     cancelReason: {
         type: String
     },
+});
+
+cartSchema.pre('validate', function (next) {
+    this.orderId = orderid.generate();
+    next();
 });
 
 
