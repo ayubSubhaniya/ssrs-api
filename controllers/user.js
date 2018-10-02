@@ -220,13 +220,13 @@ module.exports = {
             .readOwn(resources.courierInfo);
 
         if (readPermission.granted) {
-            const addresses = await user.populate({
+            const userInDb = await User.findById(user._id).populate({
                 path: 'addresses',
                 select: readPermission.attributes
-            }).addresses;
+            });
 
             res.status(HttpStatus.OK)
-                .json({ addresses: addresses });
+                .json({ addresses: userInDb.addresses });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
