@@ -26,9 +26,9 @@ internetAvailable()
         console.log('No internet');
     });
 
-if (isInternetAvaliable){
+//if (isInternetAvaliable){
     Sentry.init({ dsn: 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
-}
+//}
 
 const app = express();
 
@@ -112,9 +112,9 @@ app.set('view engine', 'jade');
 
 
 //Middlewares
-if (isInternetAvaliable){
+//if (isInternetAvaliable){
     app.use(Sentry.Handlers.requestHandler());
-}
+//}
 
 if (app.get('env') === 'development') {
     app.use(morgan('dev'));
@@ -150,9 +150,9 @@ app.use('/collector', collector);
 app.use('/cart/', cart);
 
 
-if (isInternetAvaliable){
+//if (isInternetAvaliable){
     app.use(Sentry.Handlers.errorHandler());
-}
+//}
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
