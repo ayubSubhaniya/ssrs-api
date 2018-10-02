@@ -51,6 +51,7 @@ module.exports = {
         parameter: 'Parameter',
         collectionType: 'CollectionType',
         cart: 'Cart',
+        courierInfo: 'CourierInfo'
     },
     validityErrors: {
         permissionDenied: 'Permission Denied',

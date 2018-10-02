@@ -23,6 +23,7 @@ module.exports = {
                 'daiictId',
                 'primaryEmail',
                 'createdOn',
+                'addresses',
             ],
             canCreate: [
                 'name',
@@ -44,6 +45,7 @@ module.exports = {
                 'gender',
                 'programme',
                 'requestedServices',
+                'addresses',
             ],
             canRead: [
                 'name',
@@ -58,6 +60,7 @@ module.exports = {
                 'daiictId',
                 'primaryEmail',
                 'createdOn',
+                'addresses',
             ],
             canCreate: [
                 'name',
@@ -69,6 +72,7 @@ module.exports = {
                 'daiictId',
                 'primaryEmail',
                 'password',
+                'addresses',
             ],
         },
     },
@@ -458,6 +462,46 @@ module.exports = {
                 'courierServiceName',
                 'orderId',
                 'status',
+            ],
+            canCreate: [
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'pinCode',
+            ],
+            canUpdate: [
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'pinCode',
+            ]
+        },
+    },
+    CourierInfo: {
+        superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [],
+        },
+        student: {
+            canRead: [
+                '_id',
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'pinCode',
             ],
             canCreate: [
                 'name',

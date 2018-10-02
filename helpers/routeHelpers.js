@@ -84,6 +84,44 @@ module.exports = {
                     .required(),
                 isActive: Joi.boolean(),
             }),
+        addUserAddressSchema: Joi.object()
+            .keys({
+                name: Joi.string()
+                    .required(),
+                contactNo: Joi.number()
+                    .required(),
+                email: Joi.string()
+                    .email()
+                    .required(),
+                address: {
+                    line1: Joi.string(),
+                    line2: Joi.string(),
+                    line3: Joi.string()
+                },
+                city: Joi.string()
+                    .required(),
+                state: Joi.string()
+                    .required(),
+                country: Joi.string(),
+                pinCode: Joi.number()
+                    .required(),
+            }),
+        updateUserAddressSchema: Joi.object()
+            .keys({
+                name: Joi.string(),
+                contactNo: Joi.number(),
+                email: Joi.string()
+                    .email(),
+                address: {
+                    line1: Joi.string(),
+                    line2: Joi.string(),
+                    line3: Joi.string()
+                },
+                city: Joi.string(),
+                state: Joi.string(),
+                country: Joi.string(),
+                pinCode: Joi.number(),
+            }),
         updateUserSchema: Joi.object()
             .keys({
                 name: {
