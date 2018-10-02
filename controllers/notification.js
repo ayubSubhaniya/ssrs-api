@@ -57,7 +57,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else if (readOwnPermission.granted) {
             const notification = await Notification.findOne({
@@ -69,7 +69,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -117,17 +117,17 @@ module.exports = {
             if (notification) {
                 res.sendStatus(HttpStatus.OK);
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else if (deleteOwnPermission.granted) {
             const notification = await Notification.findOneAndRemove({
                 _id: notificationId,
-                createdBy: daiictId
+                userId: daiictId
             });
             if (notification) {
                 res.sendStatus(HttpStatus.OK);
             } else {
-                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -171,7 +171,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.status(HttpStatus.NOT_ACCEPTABLE);
+                res.status(HttpStatus.NOT_FOUND);
             }
         } else if (updateOwnPermission.granted) {
             const notification = await Notification.updateOne({
@@ -184,7 +184,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ notification: filteredNotification });
             } else {
-                res.status(HttpStatus.NOT_ACCEPTABLE);
+                res.status(HttpStatus.NOT_FOUND);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
