@@ -49,7 +49,7 @@ const courierSchema = new Schema({
         default: 'India',
     },
     pinCode: {
-        type: Number,
+        type: String,
         required: true,
     },
     trackingId: {

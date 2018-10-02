@@ -103,7 +103,7 @@ module.exports = {
                 state: Joi.string()
                     .required(),
                 country: Joi.string(),
-                pinCode: Joi.number()
+                pinCode: Joi.string()
                     .required(),
             }),
         updateUserAddressSchema: Joi.object()
@@ -320,7 +320,7 @@ module.exports = {
                 state: Joi.string()
                     .required(),
                 country: Joi.string(),
-                pinCode: Joi.number()
+                pinCode: Joi.string()
                     .required(),
             }),
         updateCourierSchema: Joi.object()
@@ -337,7 +337,7 @@ module.exports = {
                 city: Joi.string(),
                 state: Joi.string(),
                 country: Joi.string(),
-                pinCode: Joi.number(),
+                pinCode: Joi.string(),
             }),
         courierUpdateSchema: Joi.object()
             .keys({
