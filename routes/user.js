@@ -34,21 +34,6 @@ router.route('/changeStatus/:requestedUserId')
         userController.changeStatus
     );
 
-router.route('/:requestedUserId')
-    .get(
-        passport.authenticate('jwt', { session: false }),
-        userController.getOtherUser
-    )
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateBody(schemas.updateUserSchema),
-        userController.updateOtherUser
-    )
-    .delete(
-        passport.authenticate('jwt', { session: false }),
-        userController.deleteUser
-    );
-
 router.route('/address')
     .get(
         passport.authenticate('jwt', { session: false }),
@@ -73,6 +58,21 @@ router.route('/address/:requestedCourierInfoId')
     .delete(
         passport.authenticate('jwt', { session: false }),
         userController.deleteAddress
+    );
+
+router.route('/:requestedUserId')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        userController.getOtherUser
+    )
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.updateUserSchema),
+        userController.updateOtherUser
+    )
+    .delete(
+        passport.authenticate('jwt', { session: false }),
+        userController.deleteUser
     );
 
 module.exports = router;

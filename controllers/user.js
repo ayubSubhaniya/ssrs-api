@@ -102,6 +102,7 @@ module.exports = {
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.user);
 
+
         if (readPermission.granted) {
             const requestedUsers = await User.find({
                 daiictId: {
@@ -212,23 +213,21 @@ module.exports = {
     },
 
     getAllAddresses: async (req, res, next) => {
-        console.log('*************')
         const { user } = req;
 
         // Check Permission
         const readPermission = accessControl.can(user.userType)
             .readOwn(resources.courierInfo);
-        
+
         if (readPermission.granted) {
             const addresses = await user.populate({
                 path: 'addresses',
                 select: readPermission.attributes
-            });
+            }).addresses;
 
             res.status(HttpStatus.OK)
                 .json({ addresses: addresses });
         } else {
-            console.log('Itthe bug hai');
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
@@ -244,7 +243,7 @@ module.exports = {
             .readOwn(resources.courierInfo);
 
         if (createPermission.granted) {
-            
+
             const courierInfoDoc = req.value.body;
             courierInfoDoc.createdBy = daiictId;
             courierInfoDoc.createdOn = new Date();
@@ -254,8 +253,8 @@ module.exports = {
 
             user.addresses.push(courierInfo._id);
             await user.save();
-
-            res.sendStatus(HttpStatus.OK)
+            const filteredAddress = filterResourceData(courierInfo,readPermission.attributes);
+            res.status(HttpStatus.OK).json({address:filteredAddress})
 
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
