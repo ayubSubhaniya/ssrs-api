@@ -218,15 +218,19 @@ module.exports = {
         // Check Permission
         const readPermission = accessControl.can(user.userType)
             .readOwn(resources.courierInfo);
+        const userReadPermission = accessControl.can(user.userType)
+            .readOwn(resources.user);
 
         if (readPermission.granted) {
-            const addresses = await user.populate({
+            const userInDb = await User.findById(user._id).populate({
                 path: 'addresses',
                 select: readPermission.attributes
-            }).addresses;
+            });
+
+            const filteredUser = filterResourceData(userInDb, userReadPermission.attributes);
 
             res.status(HttpStatus.OK)
-                .json({ addresses: addresses });
+                .json({ addresses: filteredUser.addresses });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -290,8 +294,8 @@ module.exports = {
 
         const updatePermission = accessControl.can(user.userType)
             .updateOwn(resources.courierInfo);
-        // const readPermission = accessControl.can(user.userType)
-        //     .readOwn(resources.courierInfo);
+        const readPermission = accessControl.can(user.userType)
+            .readOwn(resources.courierInfo);
 
         if (updatePermission.granted) {
             const updateAtt = req.value.body;
@@ -299,8 +303,9 @@ module.exports = {
             const updatedAddress = await CourierInfo.findByIdAndUpdate(requestedCourierInfoId, updateAtt, {new: true});
 
             if (updatedAddress) {
+                const filteredAddress = filterResourceData(updatedAddress, readPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({address: updatedAddress});
+                    .json({address: filteredAddress});
             }
             else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
@@ -320,6 +325,14 @@ module.exports = {
             .deleteOwn(resources.courierInfo);
 
         if (deletePermission.granted) {
+
+            // Removing requestedCourierInfoId from user.addresses array
+            var idx = user.addresses.indexOf(requestedCourierInfoId);
+            if(idx >= 0){
+                user.addresses.splice(idx, 1);
+                await user.save();
+            }
+
             await CourierInfo.findByIdAndRemove(requestedCourierInfoId);
             res.sendStatus(HttpStatus.OK);
         } else {
