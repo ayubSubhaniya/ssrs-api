@@ -21,7 +21,7 @@ router.route('/roles')
     )
     .post(
         passport.authenticate('jwt', { session: false }),
-        accessController.addRoles
+        accessController.addRole
     )
     .delete(
         passport.authenticate('jwt', { session: false }),
