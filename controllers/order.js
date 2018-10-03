@@ -166,6 +166,17 @@ module.exports = {
 
         if (readAnyPermission.granted) {
             orderAttributes = readAnyPermission.attributes;
+
+            if (query.status!==undefined){
+                if (query.status<orderStatus.placed){
+                    query.status=-1;
+                }
+            } else {
+                query.status = {
+                    $gte: orderStatus.placed
+                };
+            }
+
         } else if (readOwnPermission.granted) {
             orderAttributes = readOwnPermission.attributes;
             query.requestedBy = daiictId;
