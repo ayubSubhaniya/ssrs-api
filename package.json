@@ -42,6 +42,7 @@
     "mongoose": "^5.0.11",
     "mongoose-deep-populate": "^3.1.1",
     "morgan": "^1.9.0",
+    "nodeice": "^3.0.8",
     "nodemailer": "^4.6.7",
     "npm": "^6.4.1",
     "passport": "^0.4.0",
