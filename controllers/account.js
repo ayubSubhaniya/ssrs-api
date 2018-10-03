@@ -188,7 +188,7 @@ module.exports = {
             to: primaryEmail,
             subject: 'Password successfully changed',
             text: 'Hello,\n' +
-                '\tThis is a confirmation mail for successful change in password for your account ' + user.email + '.\n',
+                '\tThis is a confirmation mail for successful change in password for your account ' + user.daiictId + '.\n',
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
