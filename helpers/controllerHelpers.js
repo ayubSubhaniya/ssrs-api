@@ -1,7 +1,24 @@
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
-const aggregations = ['gte', 'gt', 'lte', 'lt' ];
+const aggregations = ['gte', 'gt', 'lte', 'lt'];
+
+const constructPermissionObject = (permissions) => {
+    let permissionData = {};
+
+    Object.keys(permissions).forEach(role=>{
+        permissionData[role]={};
+        Object.keys(permissions[role]).forEach(resource=>{
+            permissionData[role][resource]={};
+            Object.keys(permissions[role][resource]).forEach(permission=>{
+                permissionData[role][resource][permission] = permissions[role][resource][permission].length > 0;
+            });
+        });
+    });
+    return permissionData;
+};
+
+
 
 const filterResourceData = (resourcesData, attributes) => {
 
@@ -13,7 +30,7 @@ const filterResourceData = (resourcesData, attributes) => {
             let filteredData = {};
 
             attributes.forEach(attribute => {
-                if (resourceData[attribute]!=undefined){
+                if (resourceData[attribute] !== undefined) {
                     filteredData[attribute] = resourceData[attribute];
                 }
             });
@@ -25,7 +42,7 @@ const filterResourceData = (resourcesData, attributes) => {
         let filteredResourceData = {};
 
         attributes.forEach(attribute => {
-            if (resourcesData[attribute]!=undefined) {
+            if (resourcesData[attribute] != undefined) {
                 filteredResourceData[attribute] = resourcesData[attribute];
             }
         });
@@ -39,9 +56,9 @@ const filterResourceData = (resourcesData, attributes) => {
 const extractAggregation = (query) => {
     let aggregationQuery = {};
     if (query) {
-        for (let i=0;i<aggregations.length;i++){
-            if (query[aggregations[i]]){
-                aggregationQuery['$'+aggregations[i]]=query[aggregations[i]];
+        for (let i = 0; i < aggregations.length; i++) {
+            if (query[aggregations[i]]) {
+                aggregationQuery['$' + aggregations[i]] = query[aggregations[i]];
             }
         }
     }
@@ -74,13 +91,15 @@ const parseSortQuery = (query, allowedAttributes) => {
 
             if (attribute.charAt(0) === descendingOrder) {
                 sortingOrder = -1;
-                attributeName = attribute.substring(1).trim();
+                attributeName = attribute.substring(1)
+                    .trim();
             } else if (attribute.charAt(0) === ascendingOrder) {
                 sortingOrder = 1;
-                attributeName = attribute.substring(1).trim();
+                attributeName = attribute.substring(1)
+                    .trim();
             }
 
-            if (!allowedAttributes.includes(attributeName)){
+            if (!allowedAttributes.includes(attributeName)) {
                 throw new Error('Invalid permission');
             }
 
@@ -91,9 +110,9 @@ const parseSortQuery = (query, allowedAttributes) => {
 };
 
 /* error handling*/
-const convertToStringArray = (array) =>{
+const convertToStringArray = (array) => {
     let ans = [];
-    for (let i=0;i<array.length;i++){
+    for (let i = 0; i < array.length; i++) {
         ans.push(array[i].toString());
     }
     return ans;
@@ -105,4 +124,5 @@ module.exports = {
     parseSortQuery,
     parseFilterQuery,
     convertToStringArray,
+    constructPermissionObject,
 };

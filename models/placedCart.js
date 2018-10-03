@@ -3,6 +3,11 @@ const db = require('mongoose');
 const { Schema } = db;
 
 const placedCartSchema = new Schema({
+    orderId:{
+        type: String,
+        required:true,
+        unique:true
+    },
     cartId:{
         type: Schema.Types.ObjectId,
         ref: 'cart',

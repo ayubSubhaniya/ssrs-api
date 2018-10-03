@@ -13,7 +13,7 @@ const collectorSchema = new Schema({
         type: String,
     },
     contactNo: {
-        type: Number,
+        type: String,
         required: true,
     },
     email: {

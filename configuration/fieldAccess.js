@@ -210,6 +210,7 @@ module.exports = {
         superAdmin: {
             canRead: [
                 '_id',
+                'orderId',
                 'requestedBy',
                 'orders',
                 'createdOn',
@@ -238,6 +239,7 @@ module.exports = {
         student: {
             canRead: [
                 '_id',
+                'orderId',
                 'requestedBy',
                 'orders',
                 'createdOn',

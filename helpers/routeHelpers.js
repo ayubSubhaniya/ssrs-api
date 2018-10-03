@@ -77,7 +77,7 @@ module.exports = {
                 },
                 secondaryEmail: Joi.string()
                     .email(),
-                contactNo: Joi.number(),
+                contactNo: Joi.string(),
                 gender: Joi.string(),
                 programme: Joi.string(),
                 userType: Joi.string()
@@ -88,7 +88,7 @@ module.exports = {
             .keys({
                 name: Joi.string()
                     .required(),
-                contactNo: Joi.number()
+                contactNo: Joi.string()
                     .required(),
                 email: Joi.string()
                     .email()
@@ -103,13 +103,13 @@ module.exports = {
                 state: Joi.string()
                     .required(),
                 country: Joi.string(),
-                pinCode: Joi.number()
+                pinCode: Joi.string()
                     .required(),
             }),
         updateUserAddressSchema: Joi.object()
             .keys({
                 name: Joi.string(),
-                contactNo: Joi.number(),
+                contactNo: Joi.string(),
                 email: Joi.string()
                     .email(),
                 address: {
@@ -130,7 +130,7 @@ module.exports = {
                 },
                 secondaryEmail: Joi.string()
                     .email(),
-                contactNo: Joi.number(),
+                contactNo: Joi.string(),
                 gender: Joi.string(),
                 programme: Joi.string(),
                 userType: Joi.string(),
@@ -286,7 +286,7 @@ module.exports = {
             .keys({
                 name: Joi.string()
                     .required(),
-                contactNo: Joi.number()
+                contactNo: Joi.string()
                     .required(),
                 daiictId: Joi.string(),
                 email: Joi.string()
@@ -296,7 +296,7 @@ module.exports = {
         updatePickupSchema: Joi.object()
             .keys({
                 name: Joi.string(),
-                contactNo: Joi.number(),
+                contactNo: Joi.string(),
                 daiictId: Joi.string(),
                 email: Joi.string()
                     .email(),
@@ -305,7 +305,7 @@ module.exports = {
             .keys({
                 name: Joi.string()
                     .required(),
-                contactNo: Joi.number()
+                contactNo: Joi.string()
                     .required(),
                 email: Joi.string()
                     .email()
@@ -320,13 +320,13 @@ module.exports = {
                 state: Joi.string()
                     .required(),
                 country: Joi.string(),
-                pinCode: Joi.number()
+                pinCode: Joi.string()
                     .required(),
             }),
         updateCourierSchema: Joi.object()
             .keys({
                 name: Joi.string(),
-                contactNo: Joi.number(),
+                contactNo: Joi.string(),
                 email: Joi.string()
                     .email(),
                 address: {
@@ -337,7 +337,7 @@ module.exports = {
                 city: Joi.string(),
                 state: Joi.string(),
                 country: Joi.string(),
-                pinCode: Joi.number(),
+                pinCode: Joi.string(),
             }),
         courierUpdateSchema: Joi.object()
             .keys({

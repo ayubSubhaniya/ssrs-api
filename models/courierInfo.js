@@ -7,7 +7,7 @@ const courierInfoSchema = new Schema({
         required: true,
     },
     contactNo: {
-        type: Number,
+        type: String,
         required: true,
     },
     email: {
@@ -47,7 +47,7 @@ const courierInfoSchema = new Schema({
         default: 'India',
     },
     pinCode: {
-        type: Number,
+        type: String,
         required: true,
     }
 });

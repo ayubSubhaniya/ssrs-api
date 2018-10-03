@@ -119,6 +119,7 @@ module.exports = {
     ],
 
     placedCartAttributes: [
+        'orderId',
         'cartId',
         'requestedBy',
         'orders',

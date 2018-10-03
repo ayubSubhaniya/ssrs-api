@@ -9,7 +9,7 @@ const courierSchema = new Schema({
         required: true,
     },
     contactNo: {
-        type: Number,
+        type: String,
         required: true,
     },
     email: {
@@ -49,7 +49,7 @@ const courierSchema = new Schema({
         default: 'India',
     },
     pinCode: {
-        type: Number,
+        type: String,
         required: true,
     },
     trackingId: {

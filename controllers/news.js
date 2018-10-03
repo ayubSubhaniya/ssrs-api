@@ -117,15 +117,14 @@ module.exports = {
             .readOwn(resources.news);
 
         if (createPermission.granted) {
-            const { message } = req.body.message;
-            const { serviceId } = req.body.serviceId;
+            const { message } = req.body;
             const createdOn = new Date();
             const newNews = new News({
                 message,
                 createdOn,
-                createdBy: daiictId,
-                serviceId: serviceId
+                createdBy: daiictId
             });
+
             const news = await newNews.save();
 
             const filteredNews = filterResourceData(news, readPermission.attributes);
