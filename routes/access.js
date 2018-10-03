@@ -4,11 +4,11 @@ const passportConf = require('../passport');
 const accessController = require('../controllers/access');
 const { validateBody, schemas } = require('../helpers/routeHelpers');
 
-router.route('/')
-    .get(
-        passport.authenticate('jwt', { session: false }),
-        accessController.getAllAccessLevel
-    );
+// router.route('/')
+//     .get(
+//         passport.authenticate('jwt', { session: false }),
+//         accessController.getAllAccessLevel
+//     );
 router.route('/roles')
     .get(
         passport.authenticate('jwt', { session: false }),

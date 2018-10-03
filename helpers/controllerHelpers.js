@@ -1,23 +1,29 @@
+const { defaultPermissionObject, adminTypes, userTypes } = require('../configuration');
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
 const aggregations = ['gte', 'gt', 'lte', 'lt'];
 
-const constructPermissionObject = (permissions) => {
-    let permissionData = {};
+const constructPermissionObject = (permissions, role) => {
+    let permissionData = defaultPermissionObject;
 
-    Object.keys(permissions).forEach(role=>{
-        permissionData[role]={};
-        Object.keys(permissions[role]).forEach(resource=>{
-            permissionData[role][resource]={};
-            Object.keys(permissions[role][resource]).forEach(permission=>{
-                permissionData[role][resource][permission] = permissions[role][resource][permission].length > 0;
-            });
+    Object.keys(permissions[role])
+        .forEach(resource => {
+
+            Object.keys(permissions[role][resource])
+                .forEach(permission => {
+
+                    if (permissions[role][resource][permission].length > 0) {
+
+                        const permissionInfo = permission.split(':');
+                        permissionData[resource][permissionInfo[0]] = permissionInfo[1];
+
+                    }
+                });
         });
-    });
+
     return permissionData;
 };
-
 
 
 const filterResourceData = (resourcesData, attributes) => {

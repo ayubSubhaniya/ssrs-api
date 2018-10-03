@@ -204,14 +204,25 @@ loadAdminTypes();
 module.exports = {
     accessControl,
 
+    /*not working*/
     getAllAccessLevel: async (req, res, next) => {
         const { user } = req;
 
         if (accessControl.can(user.userType)
             .readAny(resources.accessLevel)) {
             const result = accessControl.getGrants();
+            const permissionObject = {};
+
+            Object.keys(userTypes).forEach(user=>{
+                permissionObject[user] = constructPermissionObject(result,user);
+            });
+
+            Object.keys(adminTypes).forEach(admin=>{
+                permissionObject[admin] = constructPermissionObject(result,admin);
+            });
+
             res.status(HttpStatus.OK)
-                .json({ permissions: constructPermissionObject(result) });
+                .json({ permissions: permissionObject });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -223,8 +234,10 @@ module.exports = {
         if (accessControl.can(user.userType)
             .readAny(resources.accessLevel)) {
             const result = accessControl.getGrants();
+            const permissionObject = constructPermissionObject(result,role);
+
             res.status(HttpStatus.OK)
-                .json({ permissions: constructPermissionObject(result)[role] });
+                .json({ permissions: permissionObject });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
