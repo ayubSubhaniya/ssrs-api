@@ -9,17 +9,6 @@ router.route('/')
         passport.authenticate('jwt', { session: false }),
         accessController.getAllAccessLevel
     );
-
-router.route('/:role')
-    .get(
-        passport.authenticate('jwt', { session: false }),
-        accessController.getAccessLevel
-    )
-    .post(
-        passport.authenticate('jwt', { session: false }),
-        accessController.addAccessLevel
-    );
-
 router.route('/roles')
     .get(
         passport.authenticate('jwt', { session: false }),
@@ -33,4 +22,14 @@ router.route('/roles')
         passport.authenticate('jwt', { session: false }),
         accessController.deleteRoles
     );
+router.route('/:role')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        accessController.getAccessLevel
+    )
+    .post(
+        passport.authenticate('jwt', { session: false }),
+        accessController.addAccessLevel
+    );
+
 module.exports = router;
