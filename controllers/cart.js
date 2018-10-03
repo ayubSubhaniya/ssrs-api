@@ -236,9 +236,16 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
-            query.status = {
-                $gte: cartStatus.placed
-            };
+            if (query.status!==undefined){
+                if (query.status<cartStatus.placed){
+                    query.status=-1;
+                }
+            } else {
+                query.status = {
+                    $gte: cartStatus.placed
+                };
+            }
+
             sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
 
             cartAttributesPermission = readAnyCartPermission.attributes;
