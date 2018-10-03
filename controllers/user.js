@@ -220,10 +220,11 @@ module.exports = {
             .readOwn(resources.courierInfo);
 
         if (readPermission.granted) {
-            const userInDb = await User.findById(user._id).populate({
-                path: 'addresses',
-                select: readPermission.attributes
-            });
+            const userInDb = await User.findById(user._id)
+                .populate({
+                    path: 'addresses',
+                    select: readPermission.attributes
+                });
 
             res.status(HttpStatus.OK)
                 .json({ addresses: userInDb.addresses });
@@ -253,8 +254,9 @@ module.exports = {
 
             user.addresses.push(courierInfo._id);
             await user.save();
-            const filteredAddress = filterResourceData(courierInfo,readPermission.attributes);
-            res.status(HttpStatus.OK).json({address:filteredAddress})
+            const filteredAddress = filterResourceData(courierInfo, readPermission.attributes);
+            res.status(HttpStatus.OK)
+                .json({ address: filteredAddress });
 
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -272,7 +274,7 @@ module.exports = {
         if (readPermission.granted) {
             const address = await CourierInfo.findById(requestedCourierInfoId);
 
-            if(address) {
+            if (address) {
                 res.status(HttpStatus.OK)
                     .json({ address: address });
             }
@@ -296,11 +298,11 @@ module.exports = {
         if (updatePermission.granted) {
             const updateAtt = req.value.body;
 
-            const updatedAddress = await CourierInfo.findByIdAndUpdate(requestedCourierInfoId, updateAtt, {new: true});
+            const updatedAddress = await CourierInfo.findByIdAndUpdate(requestedCourierInfoId, updateAtt, { new: true });
 
             if (updatedAddress) {
                 res.status(HttpStatus.OK)
-                    .json({address: updatedAddress});
+                    .json({ address: updatedAddress });
             }
             else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
@@ -321,6 +323,9 @@ module.exports = {
 
         if (deletePermission.granted) {
             await CourierInfo.findByIdAndRemove(requestedCourierInfoId);
+            await User.findByIdAndUpdate(user._id, { 'pull': {
+                    'addresses': requestedCourierInfoId
+                } });
             res.sendStatus(HttpStatus.OK);
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
