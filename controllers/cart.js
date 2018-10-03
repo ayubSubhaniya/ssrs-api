@@ -135,6 +135,10 @@ module.exports = {
             .readAny(resources.order);
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
         const readAnyServicePermission = accessControl.can(user.userType)
             .readAny(resources.service);
         const readAnyParameterPermission = accessControl.can(user.userType)
@@ -143,6 +147,10 @@ module.exports = {
             .readOwn(resources.courier);
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
+        const readAnyCourierPermission = accessControl.can(user.userType)
+            .readAny(resources.courier);
+        const readAnyPickupPermission = accessControl.can(user.userType)
+            .readAny(resources.collector);
 
         if (readAnyCartPermission.granted) {
             const cart = await Cart.findById(cartId)
@@ -150,6 +158,34 @@ module.exports = {
                     populate: {
                         'orders': {
                             select: readAnyOrderPermission.attributes
+                        },
+                        'courier': {
+                            select: readAnyCourierPermission.attributes
+                        },
+                        'pickup': {
+                            select: readAnyPickupPermission.attributes
+                        },
+                        'orders.service': {
+                            select: readAnyServicePermission.attributes
+                        },
+                        'orders.parameters': {
+                            select: readAnyParameterPermission.attributes
+                        }
+                    }
+                });
+            if (cart.status >= cartStatus.placed) {
+                const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
+                res.status(httpStatusCodes.OK)
+                    .json({ cart: filteredCart });
+            } else {
+                res.sendStatus(httpStatusCodes.FORBIDDEN);
+            }
+        } else if (readOwnCartPermission.granted) {
+            const cart = await Cart.findById(cartId)
+                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                    populate: {
+                        'orders': {
+                            select: readOwnOrderPermission.attributes
                         },
                         'courier': {
                             select: readOwnCourierPermission.attributes
@@ -165,10 +201,13 @@ module.exports = {
                         }
                     }
                 });
-
-            const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
-            res.status(httpStatusCodes.OK)
-                .json({ cart: filteredCart });
+            if (cart.status >= cartStatus.placed) {
+                const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
+                res.status(httpStatusCodes.OK)
+                    .json({ cart: filteredCart });
+            } else {
+                res.sendStatus(httpStatusCodes.FORBIDDEN);
+            }
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -306,7 +345,7 @@ module.exports = {
 
             if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (cart.status < cartStatus.placed) {
+            } else if (cart.status === cartStatus.unplaced) {
 
                 cart.orders = await validateOrder(cart.orders);
 
@@ -379,7 +418,7 @@ module.exports = {
 
             if (!cart || !cart.courier) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (cart.status < cartStatus.placed) {
+            } else if (cart.status === cartStatus.unplaced) {
 
                 cart.orders = await validateOrder(cart.orders);
 
@@ -452,7 +491,7 @@ module.exports = {
 
             if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (cart.status < cartStatus.placed) {
+            } else if (cart.status === cartStatus.unplaced) {
 
                 cart.orders = await validateOrder(cart.orders);
 
@@ -524,7 +563,7 @@ module.exports = {
 
             if (!cart || !cart.pickup) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
-            } else if (cart.status < cartStatus.placed) {
+            } else if (cart.status === cartStatus.unplaced) {
 
                 cart.orders = await validateOrder(cart.orders);
 
@@ -579,17 +618,6 @@ module.exports = {
 
         if (updateOwnCartPermission.granted) {
 
-            const cartUpdateAtt = req.value.body;
-            if (cartUpdateAtt.paymentType === paymentTypes.offline) {
-                cartUpdateAtt.status = cartStatus.placed;
-                cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
-            } else {
-                cartUpdateAtt.status = cartStatus.paymentComplete;
-            }
-
-            cartUpdateAtt.lastModifiedBy = daiictId;
-            cartUpdateAtt.lastModified = new Date();
-
             const cartInDb = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
@@ -597,42 +625,51 @@ module.exports = {
                 });
 
             if (cartInDb) {
-
-                cartInDb.orders = await validateOrder(cartInDb.orders);
-
-                const ordersCost = await calculateOrdersCost(cartInDb);
-                if (ordersCost === -1) {
-                    cartInDb.status = cartStatus.invalid;
-                    cartInDb.validityErrors.push(errorMessages.invalid);
-                } else {
-                    cartInDb.ordersCost = ordersCost;
-                }
-
-                const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
-                if (collectionTypeCost === -1) {
-                    res.status(httpStatusCodes.PRECONDITION_FAILED)
-                        .send(errorMessages.invalidCollectionType);
-                    return;
-                }
-                cartInDb.collectionTypeCost = collectionTypeCost;
-                cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
-
-                if (cartInDb.orders.length === 0) {
-                    return res.status(httpStatusCodes.BAD_REQUEST)
-                        .send(errorMessages.noOrdersInCart);
-                }
-                if (ordersCost === -1) {
-                    cartInDb.status = cartStatus.invalid;
-                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                        .send(errorMessages.invalid);
-                }
-
-                if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
-                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
-                        .send(errorMessages.noCollectionType);
-                }
-
                 if (cartInDb.status === cartStatus.unplaced) {
+                    const cartUpdateAtt = req.value.body;
+                    if (cartUpdateAtt.paymentType === paymentTypes.offline) {
+                        cartUpdateAtt.status = cartStatus.placed;
+                        cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                    } else {
+                        cartUpdateAtt.status = cartStatus.paymentComplete;
+                    }
+
+                    cartUpdateAtt.lastModifiedBy = daiictId;
+                    cartUpdateAtt.lastModified = new Date();
+
+                    cartInDb.orders = await validateOrder(cartInDb.orders);
+
+                    const ordersCost = await calculateOrdersCost(cartInDb);
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        cartInDb.validityErrors.push(errorMessages.invalid);
+                    } else {
+                        cartInDb.ordersCost = ordersCost;
+                    }
+
+                    const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
+                    if (collectionTypeCost === -1) {
+                        res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidCollectionType);
+                        return;
+                    }
+                    cartInDb.collectionTypeCost = collectionTypeCost;
+                    cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
+
+                    if (cartInDb.orders.length === 0) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.noOrdersInCart);
+                    }
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalid);
+                    }
+
+                    if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.noCollectionType);
+                    }
 
                     /* save final cart and orders*/
                     for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -700,7 +737,8 @@ module.exports = {
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
-                } else {
+                }
+                else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -870,7 +908,7 @@ module.exports = {
             const cartInDb = await Cart.findById(cartId);
 
             if (cartInDb) {
-                if (cartInDb.status >= cartStatus.placed) {
+                if (cartInDb.status >= cartStatus.placed && cartInDb.status<cartStatus.completed) {
                     await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
                     await PlacedCart.findOneAndUpdate({ cartId }, {
                         status: cartStatus.cancelled,

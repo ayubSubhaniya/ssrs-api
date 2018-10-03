@@ -95,7 +95,7 @@ const validateOrder = async (orders) => {
 
         for (let i = 0; i < orders.length; i++) {
 
-            if (orders[i].status < orderStatus.placed) {
+            if (orders[i].status === orderStatus.placed || orders[i].status === orderStatus.invalidOrder) {
                 newOrders.push(await recalculateOrderCost(orders[i]));
             } else {
                 newOrders.push(orders[i]);
@@ -106,7 +106,7 @@ const validateOrder = async (orders) => {
     } else if (orders !== undefined) {
         let newOrder = {};
 
-        if (orders.status < orderStatus.placed) {
+        if (orders.status === orderStatus.unplaced || orders.status === orderStatus.invalidOrder) {
             newOrder = await recalculateOrderCost(orders);
         } else {
             newOrder = orders;
@@ -118,7 +118,7 @@ const validateOrder = async (orders) => {
     }
 };
 
-const validateAddedOrder = async (cartId, service,unitsRequested) => {
+const validateAddedOrder = async (cartId, service, unitsRequested) => {
     const cart = await Cart.findById(cartId)
         .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup']);
     const { orders } = cart;
@@ -162,16 +162,18 @@ module.exports = {
 
         const query = parseFilterQuery(req.query, readOwnPermission.attributes);
         const sortQuery = parseSortQuery(req.query[sortQueryName], readOwnPermission.attributes);
+        let orderAttributes = {};
 
         if (readAnyPermission.granted) {
-
+            orderAttributes = readAnyPermission.attributes;
         } else if (readOwnPermission.granted) {
+            orderAttributes = readOwnPermission.attributes;
             query.requestedBy = daiictId;
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, readOwnPermission.attributes, readAnyParameterPermission.attributes, sortQuery);
+        const filteredOrders = await getOrders(query, orderAttributes, readAnyParameterPermission.attributes, sortQuery);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -192,15 +194,18 @@ module.exports = {
             _id: orderId
         };
 
-        if (readAnyPermission.granted) {
+        let orderAttributes = {};
 
+        if (readAnyPermission.granted) {
+            orderAttributes = readAnyPermission.attributes;
         } else if (readOwnPermission.granted) {
+            orderAttributes = readOwnPermission.attributes;
             query.requestedBy = daiictId;
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, readOwnPermission.attributes, readAnyParameterPermission.attributes);
+        const filteredOrders = await getOrders(query, orderAttributes, readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -244,7 +249,7 @@ module.exports = {
             newOrder.parameterCost = parameterCost;
             newOrder.cartId = cartId;
 
-            if (!await validateAddedOrder(cartId,service,newOrder.unitsRequested)){
+            if (!await validateAddedOrder(cartId, service, newOrder.unitsRequested)) {
                 res.status(httpStatusCodes.PRECONDITION_FAILED)
                     .send('Orders of ' + service.name + ' exceeds maximum allowed units');
                 return;
@@ -278,7 +283,7 @@ module.exports = {
         if (deleteOwnPermission.granted) {
             const order = await Order.findById(orderId);
 
-            if (order.status < orderStatus.placed && order.requestedBy === daiictId) {
+            if ((order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
@@ -316,7 +321,7 @@ module.exports = {
             });
             if (orderInDB) {
 
-                if (orderInDB.status < orderStatus.placed) {
+                if (orderInDB.status === orderStatus.unplaced || orderInDB.status === orderStatus.invalidOrder) {
 
                     if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.service);
@@ -463,7 +468,7 @@ module.exports = {
             const orderInDB = await Order.findById(orderId);
             if (orderInDB) {
 
-                if (orderInDB.status >= orderStatus.placed) {
+                if (orderInDB.status >= orderStatus.placed && orderInDB.status<orderStatus.completed) {
 
                     const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
                     const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
