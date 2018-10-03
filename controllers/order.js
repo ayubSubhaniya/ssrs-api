@@ -118,13 +118,13 @@ const validateOrder = async (orders) => {
     }
 };
 
-const validateAddedOrder = async (cartId, service) => {
+const validateAddedOrder = async (cartId, service,unitsRequested) => {
     const cart = await Cart.findById(cartId)
         .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup']);
     const { orders } = cart;
-    let count = 1;
+    let count = unitsRequested;
     for (let i = 0; i < orders.length - 1; i++) {
-        if (orders[i].service._id === service._id) {
+        if (orders[i].service._id.toString() === service._id.toString()) {
             count++;
         }
     }
@@ -244,7 +244,7 @@ module.exports = {
             newOrder.parameterCost = parameterCost;
             newOrder.cartId = cartId;
 
-            if (!validateAddedOrder(cartId,service)){
+            if (!await validateAddedOrder(cartId,service,newOrder.unitsRequested)){
                 res.status(httpStatusCodes.PRECONDITION_FAILED)
                     .send('Orders of ' + service.name + ' exceeds maximum allowed units');
                 return;
