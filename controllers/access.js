@@ -204,7 +204,7 @@ loadAdminTypes();
 module.exports = {
     accessControl,
 
-    getAccessLevel: async (req, res, next) => {
+    getAllAccessLevel: async (req, res, next) => {
         const { user } = req;
 
         if (accessControl.can(user.userType)
@@ -217,150 +217,197 @@ module.exports = {
         }
     },
 
+    getAccessLevel: async (req, res, next) => {
+        const { user } = req;
+        const { role } = req.params;
+        if (accessControl.can(user.userType)
+            .readAny(resources.accessLevel)) {
+            const result = accessControl.getGrants();
+            res.status(HttpStatus.OK)
+                .json({ permissions: constructPermissionObject(result)[role] });
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
     addAccessLevel: async (req, res, next) => {
         const { user } = req;
+        const { role } = req.params;
 
         if (accessControl.can(user.userType)
             .createAny(resources.accessLevel)) {
-            const { role, roleType, permissions } = req.body;
+            const { roleType, permissions } = req.body;
 
-            if (roleType==="admin"){
-                if (adminTypes[role]!==undefined){
+            if (roleType === 'admin') {
+                if (adminTypes[role] !== undefined) {
                     accessControl.deny(role);
-                    Object.keys(permissions).forEach(resource=>{
-                       Object.keys(permissions[resource]).forEach(permission=>{
-                           let attributes;
-                           let type = adminTypes.superAdmin;
-                          switch (permission) {
-                              case "read:own":
-                                  attributes = fieldAccess[resource][type]['canRead'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).readOwn(resource,attributes);
-                                  break;
-                              case "read:Any":
-                                  attributes = fieldAccess[resource][type]['canRead'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).readAny(resource,attributes);
-                                  break;
-                              case "create:own":
-                                  attributes = fieldAccess[resource][type]['canCreate'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).createOwn(resource,attributes);
-                                  break;
-                              case "create:Any":
-                                  attributes = fieldAccess[resource][type]['canCreate'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).createAny(resource,attributes);
-                                  break;
-                              case "update:own":
-                                  attributes = fieldAccess[resource][type]['canUpdate'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).updateOwn(resource,attributes);
-                                  break;
-                              case "update:Any":
-                                  attributes = fieldAccess[resource][type]['canUpdate'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).updateAny(resource,attributes);
-                                  break;
-                              case "delete:own":
-                                  attributes = fieldAccess[resource][type]['canDelete'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).deleteOwn(resource,attributes);
-                                  break;
-                              case "delete:Any":
-                                  attributes = fieldAccess[resource][type]['canDelete'];
-                                  if (attributes===undefined||attributes.length===0){
-                                      attributes = ['*'];
-                                  }
-                                  accessControl.grant(role).deleteAny(resource,attributes);
-                                  break;
-                          }
-                       });
-                    });
+
+                    Object.keys(permissions)
+                        .forEach(resource => {
+
+                            Object.keys(permissions[resource])
+                                .forEach(permission => {
+
+                                    if (permissions[resource][permission]) {
+
+                                        let attributes;
+                                        let type = adminTypes.superAdmin;
+
+                                        switch (permission) {
+                                            case 'read:own':
+                                                attributes = fieldAccess[resource][type]['canRead'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .readOwn(resource, attributes);
+                                                break;
+                                            case 'read:Any':
+                                                attributes = fieldAccess[resource][type]['canRead'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .readAny(resource, attributes);
+                                                break;
+                                            case 'create:own':
+                                                attributes = fieldAccess[resource][type]['canCreate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .createOwn(resource, attributes);
+                                                break;
+                                            case 'create:Any':
+                                                attributes = fieldAccess[resource][type]['canCreate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .createAny(resource, attributes);
+                                                break;
+                                            case 'update:own':
+                                                attributes = fieldAccess[resource][type]['canUpdate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .updateOwn(resource, attributes);
+                                                break;
+                                            case 'update:Any':
+                                                attributes = fieldAccess[resource][type]['canUpdate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .updateAny(resource, attributes);
+                                                break;
+                                            case 'delete:own':
+                                                attributes = fieldAccess[resource][type]['canDelete'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .deleteOwn(resource, attributes);
+                                                break;
+                                            case 'delete:Any':
+                                                attributes = fieldAccess[resource][type]['canDelete'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .deleteAny(resource, attributes);
+                                                break;
+                                        }
+                                    }
+                                });
+                        });
                 } else {
                     res.sendStatus(HttpStatus.NOT_FOUND);
                 }
             } else {
-                if (userTypes[role]!==undefined){
+
+                if (userTypes[role] !== undefined) {
                     accessControl.deny(role);
-                    Object.keys(permissions).forEach(resource=>{
-                        Object.keys(permissions[resource]).forEach(permission=>{
-                            let attributes;
-                            let type = userTypes.student;
-                            switch (permission) {
-                                case "read:own":
-                                    attributes = fieldAccess[resource][type]['canRead'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
+
+                    Object.keys(permissions)
+                        .forEach(resource => {
+
+                            Object.keys(permissions[resource])
+                                .forEach(permission => {
+
+                                    if (permissions[resource][permission]) {
+                                        let attributes;
+                                        let type = userTypes.student;
+                                        switch (permission) {
+                                            case 'read:own':
+                                                attributes = fieldAccess[resource][type]['canRead'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .readOwn(resource, attributes);
+                                                break;
+                                            case 'read:Any':
+                                                attributes = fieldAccess[resource][type]['canRead'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .readAny(resource, attributes);
+                                                break;
+                                            case 'create:own':
+                                                attributes = fieldAccess[resource][type]['canCreate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .createOwn(resource, attributes);
+                                                break;
+                                            case 'create:Any':
+                                                attributes = fieldAccess[resource][type]['canCreate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .createAny(resource, attributes);
+                                                break;
+                                            case 'update:own':
+                                                attributes = fieldAccess[resource][type]['canUpdate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .updateOwn(resource, attributes);
+                                                break;
+                                            case 'update:Any':
+                                                attributes = fieldAccess[resource][type]['canUpdate'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .updateAny(resource, attributes);
+                                                break;
+                                            case 'delete:own':
+                                                attributes = fieldAccess[resource][type]['canDelete'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .deleteOwn(resource, attributes);
+                                                break;
+                                            case 'delete:Any':
+                                                attributes = fieldAccess[resource][type]['canDelete'];
+                                                if (attributes === undefined || attributes.length === 0) {
+                                                    attributes = ['*'];
+                                                }
+                                                accessControl.grant(role)
+                                                    .deleteAny(resource, attributes);
+                                                break;
+                                        }
                                     }
-                                    accessControl.grant(role).readOwn(resource,attributes);
-                                    break;
-                                case "read:Any":
-                                    attributes = fieldAccess[resource][type]['canRead'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).readAny(resource,attributes);
-                                    break;
-                                case "create:own":
-                                    attributes = fieldAccess[resource][type]['canCreate'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).createOwn(resource,attributes);
-                                    break;
-                                case "create:Any":
-                                    attributes = fieldAccess[resource][type]['canCreate'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).createAny(resource,attributes);
-                                    break;
-                                case "update:own":
-                                    attributes = fieldAccess[resource][type]['canUpdate'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).updateOwn(resource,attributes);
-                                    break;
-                                case "update:Any":
-                                    attributes = fieldAccess[resource][type]['canUpdate'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).updateAny(resource,attributes);
-                                    break;
-                                case "delete:own":
-                                    attributes = fieldAccess[resource][type]['canDelete'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).deleteOwn(resource,attributes);
-                                    break;
-                                case "delete:Any":
-                                    attributes = fieldAccess[resource][type]['canDelete'];
-                                    if (attributes===undefined||attributes.length===0){
-                                        attributes = ['*'];
-                                    }
-                                    accessControl.grant(role).deleteAny(resource,attributes);
-                                    break;
-                            }
+                                });
                         });
-                    });
                 } else {
                     res.sendStatus(HttpStatus.NOT_FOUND);
                 }

@@ -7,6 +7,12 @@ const { validateBody, schemas } = require('../helpers/routeHelpers');
 router.route('/')
     .get(
         passport.authenticate('jwt', { session: false }),
+        accessController.getAllAccessLevel
+    );
+
+router.route('/:role')
+    .get(
+        passport.authenticate('jwt', { session: false }),
         accessController.getAccessLevel
     )
     .post(
