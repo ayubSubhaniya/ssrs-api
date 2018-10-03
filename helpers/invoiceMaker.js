@@ -39,24 +39,42 @@ const generateInvoice = (cart, user) => {
     myInvoice.buyer.lastName = user.name.lastName;
 
     // Setting invoice fields
-    myInvoice.data.invoice.number = cart.???;
+    myInvoice.data.invoice.number = cart.orderId;
     myInvoice.data.invoice.date = new Date();
     myInvoice.data.invoice.collectionType = cart.collectionType;
-    myInvoice.data.invoice.collectionCost = cart.collectionTypeCost;
+    myInvoice.data.invoice.collectionCost = cart.collectionTypeCost.toFixed(2);
     myInvoice.data.invoice.paymentType = cart.paymentType;
-    myInvoice.data.invoice.paymentID = cart.paymentId;
-    myInvoice.data.invoice.subTotal = cart.ordersCost;
-    myInvoice.data.invoice.totalCost = cart.totalCost;
+    myInvoice.data.invoice.subTotal = cart.ordersCost.toFixed(2);
+    myInvoice.data.invoice.totalCost = cart.totalCost.toFixed(2);
 
+    if(myInvoice.data.invoice.collectionType === 'courier'){
+        myInvoice.data.invoice.paymentID = cart.paymentId;
+        myInvoice.data.invoice.info = cart.courier;
+    } else {
+        myInvoice.data.invoice.paymentID = cart.paymentCode;
+        myInvoice.data.invoice.info = cart.pickup;
+    }
 
-    var subTask = {
-        unitPrice: 0,
-        servicename: "",
-        quantity: 0,
-        serviceCost: 0,
-        parameterCost: 0,
-        subTotal: 0
-    };
+    for(let i=0; i<cart.orders.length; i++){
+        var subTask = {
+            unitPrice: 0,
+            servicename: "",
+            quantity: 0,
+            serviceCost: 0,
+            parameterCost: 0,
+            subTotal: 0
+        };
+
+        subTask.servicename = cart.orders[i].serviceName;
+        subTask.quantity = cart.orders[i].unitsRequested;
+        subTask.serviceCost = cart.orders[i].serviceCost.toFixed(2);
+        subTask.parameterCost = cart.orders[i].parameterCost.toFixed(2);
+        subTask.subTotal = subTask.quantity * (subTask.serviceCost + subTask.parameterCost);
+
+        myInvoice.data.tasks.push(subTask);
+    }
+
+    return myInvoice;
 };
 
 module.exports = {
