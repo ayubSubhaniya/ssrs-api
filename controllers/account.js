@@ -127,6 +127,10 @@ module.exports = {
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
+        if (!foundUser){
+            return res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+
         const randomHash = randomstring.generate();
         const linkExpiryTime = new Date();
         linkExpiryTime.setHours(linkExpiryTime.getHours() + RESET_PASSWORD_EXPIRY_TIME);
