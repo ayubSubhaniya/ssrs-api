@@ -13,5 +13,9 @@ module.exports = {
     noCollectionType: "No Collection type",
     allOrdersNotReady: "All orders not ready",
     noOrdersInCart: "No orders in cart",
-    userAlreadyExist: "User Already Exist"
+    userAlreadyExist: "User Already Exist",
+    permissionDenied: 'Permission Denied',
+    accountAlreadyExists: 'Account Already Exists',
+    invalidToken: 'Invalid Token',
+    sessionExpired: 'Session Expired',
 };

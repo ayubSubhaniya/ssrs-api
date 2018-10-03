@@ -249,8 +249,8 @@ module.exports = {
                 }
             });
 
-        for (let i=0;i<cart.length;i++){
-            if (cart[i].status<cartStatus.placed){
+        for (let i = 0; i < cart.length; i++) {
+            if (cart[i].status < cartStatus.placed) {
                 cart[i].orders = await validateOrder(cart[i].orders);
 
                 const ordersCost = await calculateOrdersCost(cart[i]);
@@ -826,7 +826,7 @@ module.exports = {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             if (cartInDb.orders[i].status !== orderStatus.cancelled) {
                                 await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
-                                await PlacedOrder.findOneAndUpdate({orderId:cartInDb.orders[i]},{status:orderStatus.completed});
+                                await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, { status: orderStatus.completed });
                             }
 
                         }
@@ -835,7 +835,7 @@ module.exports = {
                         return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
 
-                await PlacedCart.findOneAndUpdate({cartId},{status:cartStatus.completed});
+                await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
                 if (updatedCart) {
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);

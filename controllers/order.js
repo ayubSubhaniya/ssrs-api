@@ -16,7 +16,7 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits) => {
 
-    if (!service.isActive || requiredUnits > service.maxUnits || requiredUnits<=0) {
+    if (!service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
     }
 
@@ -116,6 +116,19 @@ const validateOrder = async (orders) => {
     } else {
         return orders;
     }
+};
+
+const validateAddedOrder = async (cartId, service) => {
+    const cart = await Cart.findById(cartId)
+        .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup']);
+    const { orders } = cart;
+    let count = 1;
+    for (let i = 0; i < orders.length - 1; i++) {
+        if (orders[i].service._id === service._id) {
+            count++;
+        }
+    }
+    return count <= service.maxUnits;
 };
 
 const getOrders = async (query, readableAttributes, parameterReadableAtt, sortQuery) => {
@@ -231,6 +244,11 @@ module.exports = {
             newOrder.parameterCost = parameterCost;
             newOrder.cartId = cartId;
 
+            if (!validateAddedOrder(cartId,service)){
+                res.status(httpStatusCodes.PRECONDITION_FAILED)
+                    .send('Orders of ' + service.name + ' exceeds maximum allowed units');
+                return;
+            }
             const order = await newOrder.save();
 
             await Cart.findByIdAndUpdate(cartId, {
@@ -239,7 +257,6 @@ module.exports = {
                 }
             });
 
-            /*order saved but not in cart*/
             const filteredOrder = filterResourceData(order, readOwnOrderPermission.attributes);
             res.status(httpStatusCodes.CREATED)
                 .json({
