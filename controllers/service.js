@@ -51,6 +51,16 @@ const generateServiceUpdatedMessage = async (service, daiictId) => {
     }
 };
 
+const generateServiceChangeStatusMessage = async (service, daiictId) => {
+    let message = 'Service ' + service.name + ' is now ' + (service.isActive ? 'active' : 'inactive');
+
+    if (service.isSpecialService) {
+        await generateNotification(message, daiictId, service.specialServiceUsers);
+    } else {
+        await generateNews(message, daiictId, service._id);
+    }
+};
+
 const deleteCurrServiceNews = async (currServiceId) => {
     await News.deleteMany({ serviceId: currServiceId });
 };
@@ -567,6 +577,7 @@ module.exports = {
 
     changeStatus: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user
         const { serviceId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
@@ -579,6 +590,8 @@ module.exports = {
             const updatedService = await Service.findByIdAndUpdate(serviceId, serviceUpdateAtt, { new: true });
             if (updatedService) {
                 const filteredService = filterResourceData(updatedService, readPermission.attributes);
+                await generateServiceChangeStatusMessage(filteredService, daiictId);
+                
                 res.status(HttpStatus.OK)
                     .json({ service: filteredService });
             } else {
