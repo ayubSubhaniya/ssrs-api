@@ -213,13 +213,15 @@ module.exports = {
             const result = accessControl.getGrants();
             const permissionObject = {};
 
-            Object.keys(userTypes).forEach(user=>{
-                permissionObject[user] = constructPermissionObject(result,user);
-            });
+            Object.keys(userTypes)
+                .forEach(user => {
+                    permissionObject[user] = constructPermissionObject(result, user);
+                });
 
-            Object.keys(adminTypes).forEach(admin=>{
-                permissionObject[admin] = constructPermissionObject(result,admin);
-            });
+            Object.keys(adminTypes)
+                .forEach(admin => {
+                    permissionObject[admin] = constructPermissionObject(result, admin);
+                });
 
             res.status(HttpStatus.OK)
                 .json({ permissions: permissionObject });
@@ -234,7 +236,7 @@ module.exports = {
         if (accessControl.can(user.userType)
             .readAny(resources.accessLevel)) {
             const result = accessControl.getGrants();
-            const permissionObject = constructPermissionObject(result,role);
+            const permissionObject = constructPermissionObject(result, role);
 
             res.status(HttpStatus.OK)
                 .json({ permissions: permissionObject });
@@ -250,7 +252,6 @@ module.exports = {
         if (accessControl.can(user.userType)
             .createAny(resources.accessLevel)) {
             const { roleType, permissions } = req.body;
-
             if (roleType === 'admin') {
                 if (adminTypes[role] !== undefined) {
                     accessControl.deny(role);
@@ -273,10 +274,10 @@ module.exports = {
                                                     attributes = ['*'];
                                                 }
 
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .readOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .readAny(resource, attributes);
                                                 }
@@ -287,10 +288,10 @@ module.exports = {
                                                 if (attributes === undefined || attributes.length === 0) {
                                                     attributes = ['*'];
                                                 }
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .createOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .createAny(resource, attributes);
                                                 }
@@ -300,10 +301,10 @@ module.exports = {
                                                 if (attributes === undefined || attributes.length === 0) {
                                                     attributes = ['*'];
                                                 }
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .updateOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .updateAny(resource, attributes);
                                                 }
@@ -313,10 +314,10 @@ module.exports = {
                                                 if (attributes === undefined || attributes.length === 0) {
                                                     attributes = ['*'];
                                                 }
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .deleteOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .deleteAny(resource, attributes);
                                                 }
@@ -326,12 +327,14 @@ module.exports = {
                                 });
                         });
                 } else {
-                    res.sendStatus(HttpStatus.NOT_FOUND);
+                    return res.sendStatus(HttpStatus.NOT_FOUND);
                 }
+                saveAccessRoleInFile();
             } else {
 
                 if (userTypes[role] !== undefined) {
-                    accessControl.deny(role);
+                    accessControl.removeRoles(role);
+                    accessControl.grant(role);
 
                     Object.keys(permissions)
                         .forEach(resource => {
@@ -350,10 +353,10 @@ module.exports = {
                                                     attributes = ['*'];
                                                 }
 
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .readOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .readAny(resource, attributes);
                                                 }
@@ -364,10 +367,10 @@ module.exports = {
                                                 if (attributes === undefined || attributes.length === 0) {
                                                     attributes = ['*'];
                                                 }
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .createOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .createAny(resource, attributes);
                                                 }
@@ -377,10 +380,10 @@ module.exports = {
                                                 if (attributes === undefined || attributes.length === 0) {
                                                     attributes = ['*'];
                                                 }
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .updateOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .updateAny(resource, attributes);
                                                 }
@@ -390,10 +393,10 @@ module.exports = {
                                                 if (attributes === undefined || attributes.length === 0) {
                                                     attributes = ['*'];
                                                 }
-                                                if (permissions[resource][permission]==="own"){
+                                                if (permissions[resource][permission] === 'own') {
                                                     accessControl.grant(role)
                                                         .deleteOwn(resource, attributes);
-                                                } else if (permissions[resource][permission]==="any"){
+                                                } else if (permissions[resource][permission] === 'any') {
                                                     accessControl.grant(role)
                                                         .deleteAny(resource, attributes);
                                                 }
@@ -404,10 +407,10 @@ module.exports = {
                                 });
                         });
                 } else {
-                    res.sendStatus(HttpStatus.NOT_FOUND);
+                    return res.sendStatus(HttpStatus.NOT_FOUND);
                 }
+                saveAccessRoleInFile();
             }
-            saveAccessRoleInFile();
             res.sendStatus(HttpStatus.OK);
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
