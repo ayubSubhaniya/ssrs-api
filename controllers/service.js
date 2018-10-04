@@ -3,7 +3,7 @@ const HttpStatus = require('http-status-codes');
 const Service = require('../models/service');
 const News = require('../models/news');
 const Notification = require('../models/notification');
-const { filterResourceData } = require('../helpers/controllerHelpers');
+const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources } = require('../configuration');
 
@@ -114,15 +114,20 @@ module.exports = {
                     isSpecialService: false,
                     isActive: true
                 })
-                    .populate({
-                        path: 'collectionTypes',
-                        select: readCollectionTypePermission.attributes
-                    })
-                    .populate({
-                        path: 'availableParameters',
-                        select: readParameterPermission.attributes
-                    })
-                    .exec();
+                .populate({
+                    path: 'collectionTypes',
+                    select: readCollectionTypePermission.attributes
+                })
+                .populate({
+                    path: 'availableParameters',
+                    select: readParameterPermission.attributes
+                })
+                .exec();
+            
+                // Allowing only those parameters which are active
+                for (let i = 0; i < services.length; i++){
+                    services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                }
             }
 
             if (services) {
@@ -192,15 +197,20 @@ module.exports = {
                         isSpecialService: true,
                         isActive: true
                     })
-                        .populate({
-                            path: 'collectionTypes',
-                            select: readCollectionTypePermission.attributes
-                        })
-                        .populate({
-                            path: 'availableParameters',
-                            select: readParameterPermission.attributes
-                        })
-                        .exec();
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
+
+                    // Allowing only those parameters which are active
+                    for (let i = 0; i < services.length; i++){
+                        services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                    }
                 }
             } else if (readOwnSpecialService.granted) {
                 if (readOwnInActiveService.granted) {
@@ -223,22 +233,6 @@ module.exports = {
                         isActive: true,
                         createdBy: daiictId
                     })
-                        .populate({
-                            path: 'collectionTypes',
-                            select: readCollectionTypePermission.attributes
-                        })
-                        .populate({
-                            path: 'availableParameters',
-                            select: readParameterPermission.attributes
-                        })
-                        .exec();
-                }
-            } else {
-                services = await Service.find({
-                    isSpecialService: true,
-                    isActive: true,
-                    specialServiceUsers: daiictId
-                })
                     .populate({
                         path: 'collectionTypes',
                         select: readCollectionTypePermission.attributes
@@ -248,6 +242,32 @@ module.exports = {
                         select: readParameterPermission.attributes
                     })
                     .exec();
+
+                    // Allowing only those parameters which are active
+                    for (let i = 0; i < services.length; i++){
+                        services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                    }
+                }
+            } else {
+                services = await Service.find({
+                    isSpecialService: true,
+                    isActive: true,
+                    specialServiceUsers: daiictId
+                })
+                .populate({
+                    path: 'collectionTypes',
+                    select: readCollectionTypePermission.attributes
+                })
+                .populate({
+                    path: 'availableParameters',
+                    select: readParameterPermission.attributes
+                })
+                .exec();
+
+                // Allowing only those parameters which are active
+                for (let i = 0; i < services.length; i++){
+                    services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                }
             }
 
             if (services) {
@@ -312,15 +332,18 @@ module.exports = {
                     _id: serviceId,
                     isActive: true
                 })
-                    .populate({
-                        path: 'collectionTypes',
-                        select: readCollectionTypePermission.attributes
-                    })
-                    .populate({
-                        path: 'availableParameters',
-                        select: readParameterPermission.attributes
-                    })
-                    .exec();
+                .populate({
+                    path: 'collectionTypes',
+                    select: readCollectionTypePermission.attributes
+                })
+                .populate({
+                    path: 'availableParameters',
+                    select: readParameterPermission.attributes
+                })
+                .exec();
+
+                // Allowing only those parameters which are active
+                service.availableParameters = filterActiveData(service.availableParameters);
             }
 
             if (service) {
@@ -395,15 +418,18 @@ module.exports = {
                         isSpecialService: true,
                         isActive: true
                     })
-                        .populate({
-                            path: 'collectionTypes',
-                            select: readCollectionTypePermission.attributes
-                        })
-                        .populate({
-                            path: 'availableParameters',
-                            select: readParameterPermission.attributes
-                        })
-                        .exec();
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    })
+                    .exec();
+
+                    // Allowing only those parameters which are active
+                    service.availableParameters = filterActiveData(service.availableParameters);
                 }
             } else if (readOwnSpecialService.granted) {
                 if (readAnyInActiveService.granted || readOwnInActiveService.granted) {
@@ -427,21 +453,6 @@ module.exports = {
                         isSpecialService: true,
                         isActive: true
                     })
-                        .populate({
-                            path: 'collectionTypes',
-                            select: readCollectionTypePermission.attributes
-                        })
-                        .populate({
-                            path: 'availableParameters',
-                            select: readParameterPermission.attributes
-                        })
-                        .exec();
-                }
-            } else {
-                service = await Service.find({
-                    _id: serviceId,
-                    specialServiceUsers: daiictId
-                })
                     .populate({
                         path: 'collectionTypes',
                         select: readCollectionTypePermission.attributes
@@ -451,6 +462,27 @@ module.exports = {
                         select: readParameterPermission.attributes
                     })
                     .exec();
+
+                    // Allowing only those parameters which are active
+                    service.availableParameters = filterActiveData(service.availableParameters);
+                }
+            } else {
+                service = await Service.find({
+                    _id: serviceId,
+                    specialServiceUsers: daiictId
+                })
+                .populate({
+                    path: 'collectionTypes',
+                    select: readCollectionTypePermission.attributes
+                })
+                .populate({
+                    path: 'availableParameters',
+                    select: readParameterPermission.attributes
+                })
+                .exec();
+
+                // Allowing only those parameters which are active
+                service.availableParameters = filterActiveData(service.availableParameters);
             }
 
             if (service) {
