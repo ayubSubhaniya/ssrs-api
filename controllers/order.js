@@ -437,7 +437,7 @@ module.exports = {
             }
 
             if (allReady) {
-                if (cart.collectionType = collectionTypes.courier) {
+                if (cart.collectionType === collectionTypes.courier) {
                     cart.status = cartStatus.readyToDeliver;
                 } else {
                     cart.status = cartStatus.readyToPickup;
