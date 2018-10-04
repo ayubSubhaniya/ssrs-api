@@ -59,6 +59,31 @@ const filterResourceData = (resourcesData, attributes) => {
     }
 };
 
+const filterActiveData = (resourcesData) => {
+
+    if (resourcesData instanceof Array) {
+        let filteredResourcesData = [];
+
+        for (let i = 0; i < resourcesData.length; i++) {
+            const resourceData = resourcesData[i];
+            
+            if(resourceData.isActive === true)
+                filteredResourcesData.push(resourceData);
+        }
+        return filteredResourcesData;
+        
+    } else if (resourcesData) {
+        let filteredResourceData = {};
+
+        if (resourcesData.isActive == true)
+            filteredResourceData = resourcesData;
+
+        return filteredResourceData;
+    } else {
+        return {};
+    }
+};
+
 const extractAggregation = (query) => {
     let aggregationQuery = {};
     if (query) {
@@ -127,6 +152,7 @@ const convertToStringArray = (array) => {
 
 module.exports = {
     filterResourceData,
+    filterActiveData,
     parseSortQuery,
     parseFilterQuery,
     convertToStringArray,
