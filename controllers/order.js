@@ -95,7 +95,7 @@ const validateOrder = async (orders) => {
 
         for (let i = 0; i < orders.length; i++) {
 
-            if (orders[i].status === orderStatus.placed || orders[i].status === orderStatus.invalidOrder) {
+            if (orders[i].status === orderStatus.unplaced || orders[i].status === orderStatus.invalidOrder) {
                 newOrders.push(await recalculateOrderCost(orders[i]));
             } else {
                 newOrders.push(orders[i]);
