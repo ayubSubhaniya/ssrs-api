@@ -322,11 +322,16 @@ module.exports = {
             .deleteOwn(resources.courierInfo);
 
         if (deletePermission.granted) {
+
+            // Removing requestedCourierInfoId from user.addresses array
+            var idx = user.addresses.indexOf(requestedCourierInfoId);
+            if(idx >= 0){
+                user.addresses.splice(idx, 1);
+                await user.save();
+            }
             await CourierInfo.findByIdAndRemove(requestedCourierInfoId);
-            await User.findByIdAndUpdate(user._id, { 'pull': {
-                    'addresses': requestedCourierInfoId
-                } });
             res.sendStatus(HttpStatus.OK);
+            
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
