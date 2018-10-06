@@ -234,7 +234,7 @@ module.exports = {
         const { user } = req;
         const { role } = req.params;
         if (accessControl.can(user.userType)
-            .readAny(resources.accessLevel)) {
+            .readAny(resources.accessLevel) && role !== adminTypes.superAdmin) {
             const result = accessControl.getGrants();
             const permissionObject = constructPermissionObject(result, role);
 
@@ -250,7 +250,7 @@ module.exports = {
         const { role } = req.params;
 
         if (accessControl.can(user.userType)
-            .createAny(resources.accessLevel)) {
+            .createAny(resources.accessLevel) && role!==adminTypes.superAdmin) {
             const { roleType, permissions } = req.body;
             if (roleType === 'admin') {
                 if (adminTypes[role] !== undefined) {
@@ -330,7 +330,7 @@ module.exports = {
                     return res.sendStatus(HttpStatus.NOT_FOUND);
                 }
                 saveAccessRoleInFile();
-            } else {
+            } else if (roleType === "user") {
 
                 if (userTypes[role] !== undefined) {
                     accessControl.removeRoles(role);
@@ -410,6 +410,8 @@ module.exports = {
                     return res.sendStatus(HttpStatus.NOT_FOUND);
                 }
                 saveAccessRoleInFile();
+            } else {
+                return res.sendStatus(HttpStatus.NOT_FOUND);
             }
             res.sendStatus(HttpStatus.OK);
         } else {
@@ -422,11 +424,14 @@ module.exports = {
 
         if (accessControl.can(user.userType)
             .readAny(resources.role)) {
+            const users = Object.keys(userTypes);
+            const admins = Object.keys(adminTypes);
+            admins.superAdmin = undefined;
 
             res.status(HttpStatus.OK)
                 .json({
-                    userTypes: Object.keys(userTypes),
-                    adminTypes: Object.keys(adminTypes),
+                    userTypes: users,
+                    adminTypes: admins,
                 });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -438,8 +443,7 @@ module.exports = {
 
         if (accessControl.can(user.userType)
             .createAny(resources.role)) {
-            const role = req.body.role;
-            const roleType = req.body.roleType;
+            const { role, roleType} = req.body;
 
             if (roleType === 'admin') {
                 if (adminTypes[role] === undefined) {
@@ -474,8 +478,7 @@ module.exports = {
         if (accessControl.can(user.userType)
             .deleteAny(resources.role)) {
 
-            const role = req.body.role;
-            const roleType = req.body.roleType;
+            const { role, roleType} = req.body;
 
             if (roleType === 'admin') {
                 adminTypes[role] = undefined;
