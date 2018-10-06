@@ -426,7 +426,11 @@ module.exports = {
             .readAny(resources.role)) {
             const users = Object.keys(userTypes);
             const admins = Object.keys(adminTypes);
-            admins.superAdmin = undefined;
+            const index = admins.indexOf(adminTypes.superAdmin);
+
+            if (index>=0){
+                admins.splice(index,1);
+            }
 
             res.status(HttpStatus.OK)
                 .json({
