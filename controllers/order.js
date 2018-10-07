@@ -432,7 +432,7 @@ module.exports = {
 
             const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.completed;
 
-            if (!holdOrder || orderInDb.status !== orderStatus.processing) {
+            if (!holdOrder && orderInDb.status !== orderStatus.processing) {
                 return res.status(httpStatusCodes.BAD_REQUEST)
                     .send(errorMessages.invalidStatusChange);
             }
