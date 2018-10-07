@@ -2,7 +2,7 @@ const { orderStatus, cartStatus } = require('../configuration/index');
 const Notification = require('../models/notification');
 
 const generateOrderStatusChangeNotification = (userId, adminId, orderName, orderStatusNum) => {
-    var orderStatusMsg = 'Your order ' + orderName + ' ';
+    let orderStatusMsg = 'Your order ' + orderName + ' ';
     switch (orderStatusNum) {
         case orderStatus.unplaced:
             orderStatusMsg += 'is still unplaced';
@@ -10,7 +10,7 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
         case orderStatus.placed:
             orderStatusMsg += 'has been placed';
             break;
-        case orderStatus.processing: 
+        case orderStatus.processing:
             orderStatusMsg += 'is in process';
             break;
         case orderStatus.ready:
@@ -48,7 +48,7 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
 };
 
 const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum) => {
-    var cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
+    let cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
     switch(cartStatusNum){
         case cartStatus.unplaced:
             cartStatusMsg += 'is still unplaced';
@@ -56,7 +56,7 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
         case cartStatus.placed:
             cartStatusMsg += 'has been placed';
             break;
-        case cartStatus.paymentComplete:
+        case cartStatus.processing:
             cartStatusMsg += 'has completed payment and is in process';
             if(adminId !== 'System')
                 cartStatusMsg += '. Payment accepted by ' + adminId;
@@ -96,7 +96,7 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
     });
 
     return notification;
-}
+};
 
 module.exports = {
     generateOrderStatusChangeNotification,
