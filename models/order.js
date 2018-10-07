@@ -64,6 +64,9 @@ const orderSchema = new Schema({
     cancelReason: {
         type: String
     },
+    holdReason:{
+        type:String
+    },
 });
 
 

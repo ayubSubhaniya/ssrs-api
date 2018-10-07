@@ -167,9 +167,9 @@ module.exports = {
         if (readAnyPermission.granted) {
             orderAttributes = readAnyPermission.attributes;
 
-            if (query.status!==undefined){
-                if (query.status<orderStatus.placed){
-                    query.status=-1;
+            if (query.status !== undefined) {
+                if (query.status < orderStatus.placed) {
+                    query.status = -1;
                 }
             } else {
                 query.status = {
@@ -331,8 +331,31 @@ module.exports = {
                 requestedBy: daiictId
             });
             if (orderInDB) {
+                if (orderInDB.status === orderStatus.onHold) {
 
-                if (orderInDB.status === orderStatus.unplaced || orderInDB.status === orderStatus.invalidOrder) {
+                    const order = await Order.findOneAndUpdate({
+                        _id: orderId,
+                        requestedBy: daiictId
+                    }, {
+                        status: orderStatus.processing,
+                        comment: updatedOrder.comment,
+                        lastModifiedBy: daiictId,
+                        lastModified: new Date()
+                    }, { new: true })
+                        .populate({
+                            path: 'parameters',
+                            select: readAnyParameterPermission.attributes
+                        });
+
+                    if (order) {
+                        const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
+                        res.status(httpStatusCodes.OK)
+                            .json({ order: filteredOrder });
+                    } else {
+                        res.sendStatus(httpStatusCodes.NOT_FOUND);
+                    }
+                }
+                else if (orderInDB.status === orderStatus.unplaced || orderInDB.status === orderStatus.invalidOrder) {
 
                     if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.service);
@@ -407,7 +430,9 @@ module.exports = {
                 lastModified: new Date()
             };
 
-            if (orderInDb.status !== orderStatus.processing) {
+            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.completed;
+
+            if (!holdOrder || orderInDb.status !== orderStatus.processing) {
                 return res.status(httpStatusCodes.BAD_REQUEST)
                     .send(errorMessages.invalidStatusChange);
             }
@@ -416,6 +441,11 @@ module.exports = {
             switch (orderUpdateAtt.status) {
                 case orderStatus.ready:
                     updateAtt.status = orderStatus.ready;
+                    break;
+                case orderStatus.onHold:
+                    updateAtt.status = orderStatus.onHold;
+                    updateAtt.holdReason = orderUpdateAtt.reason;
+                    /*generate notification for hold order*/
                     break;
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -479,7 +509,7 @@ module.exports = {
             const orderInDB = await Order.findById(orderId);
             if (orderInDB) {
 
-                if (orderInDB.status >= orderStatus.placed && orderInDB.status<orderStatus.completed) {
+                if (orderInDB.status >= orderStatus.placed && orderInDB.status < orderStatus.completed) {
 
                     const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
                     const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
