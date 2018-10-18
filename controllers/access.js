@@ -43,10 +43,6 @@ const grantDefaultAdminAccess = () => {
 const grantDefaultAccess = () => {
     let resourceType = resources.user;
 
-    console.log(userTypes);
-    console.log(adminTypes);
-    console.log('\n\n');
-
     Object.keys(userTypes)
         .forEach(userType => {
             accessControl.grant(userTypes[userType])
