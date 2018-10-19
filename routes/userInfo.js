@@ -12,7 +12,7 @@ router.route('/')
     .post(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.addUserInfoSchema),
-        userInfoController.addUserInfo
+        userInfoController.addUpdateUserInfo
     );
 
 module.exports = router;

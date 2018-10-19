@@ -24,7 +24,7 @@ module.exports = {
         }
     },
 
-    addUserInfo: async (req, res, next) => {
+    addUpdateUserInfo: async (req, res, next) => {
 
         const { user } = req;
         
@@ -38,12 +38,15 @@ module.exports = {
         if(readPermission.granted && createPermission.granted && updatePermission.granted) {
 
             const { userInfo } = req.value.body;
+            let bulk = UserInfo.collection.initializeUnorderedBulkOp();
 
             for(let i=0; i<userInfo.length; i++) {
-                const { user_inst_id } = userInfo[i];
-                await UserInfo.findOneAndUpdate({user_inst_id: user_inst_id}, userInfo[i], {upsert: true});
+                const { user_email_id } = userInfo[i];
+                // await UserInfo.findOneAndUpdate({user_inst_id: user_inst_id}, userInfo[i], {upsert: true});
+                bulk.find( {user_email_id: user_email_id} ).upsert().updateOne(userInfo[i]);
             }
 
+            bulk.execute();
             res.sendStatus(HttpStatus.OK);
 
         } else {
