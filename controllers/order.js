@@ -16,9 +16,11 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
-    const specialServiceValidation = service.isSpecialService && service.specialServiceUsers.includes(user.daiictId);
-    const useServiceValidation = (user.userInfo.user_batch && service.allowedBatches.includes(user.userInfo.user_batch)) &&
-        (user.userInfo.user_programme && service.allowedProgrammes.includes(user.userInfo.user_programme));
+    // const specialServiceValidation = service.isSpecialService && service.specialServiceUsers.includes(user.daiictId);
+    // const useServiceValidation = (user.userInfo.user_batch && service.allowedBatches.includes(user.userInfo.user_batch)) &&
+    //     (user.userInfo.user_programme && service.allowedProgrammes.includes(user.userInfo.user_programme));
+    const specialServiceValidation = true;
+    const useServiceValidation = true;
 
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
@@ -249,6 +251,7 @@ module.exports = {
             const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested, user);
 
             if (serviceCost === -1) {
+                console.log('\n***1\n')
                 res.status(httpStatusCodes.PRECONDITION_FAILED)
                     .send(errorMessages.invalidService);
                 return;
@@ -257,6 +260,7 @@ module.exports = {
 
             const parameterCost = await calculateParameterCost(newOrder.parameters, newOrder.unitsRequested, service.availableParameters);
             if (parameterCost === -1) {
+                console.log('\n***2\n')
                 res.status(httpStatusCodes.PRECONDITION_FAILED)
                     .send(errorMessages.invalidParameter);
                 return;
