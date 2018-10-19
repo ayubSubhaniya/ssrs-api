@@ -18,6 +18,7 @@ passport.use(new JwtStrategy({
 
         user.userInfo = userInfo?userInfo:{};
         //user.userType = userInfo.user_type;
+
         //if user doesn't exist handle it
         if (!user) {
             return done(null, false, { message: validityErrors.invalidToken });

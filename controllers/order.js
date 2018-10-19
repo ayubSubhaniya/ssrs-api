@@ -16,10 +16,10 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
-    const specialServiceValidation = service.isSpecialService && service.specialServiceUsers.includes(user.daiictId);
-    const useServiceValidation = (user.userInfo.user_batch && service.allowedBatches.includes(user.userInfo.user_batch)) &&
-        (user.userInfo.user_programme && service.allowedProgrammes.includes(user.userInfo.user_programme));
-
+    const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
+    //const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
+      //  (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
+    const useServiceValidation = true;
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
     }
