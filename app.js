@@ -106,6 +106,7 @@ const notification = require('./routes/notification');
 const collectionType = require('./routes/collectionType');
 const courier = require('./routes/courier');
 const collector = require('./routes/collector');
+const userInfo = require('./routes/userInfo');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -137,17 +138,18 @@ app.use(cors({
 
 // Routes
 app.use('/account', account);
-app.use('/news/', news);
-app.use('/user/', user);
-app.use('/access/', access);
-app.use('/service/', service);
-app.use('/parameter/', parameter);
-app.use('/notification/', notification);
-app.use('/collectionType/', collectionType);
-app.use('/order/', order);
+app.use('/news', news);
+app.use('/user', user);
+app.use('/access', access);
+app.use('/service', service);
+app.use('/parameter', parameter);
+app.use('/notification', notification);
+app.use('/collectionType', collectionType);
+app.use('/order', order);
 app.use('/courier', courier);
 app.use('/collector', collector);
-app.use('/cart/', cart);
+app.use('/cart', cart);
+app.use('/userInfo',userInfo);
 
 
 //if (isInternetAvaliable){

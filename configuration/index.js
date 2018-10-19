@@ -51,7 +51,8 @@ module.exports = {
         parameter: 'Parameter',
         collectionType: 'CollectionType',
         cart: 'Cart',
-        courierInfo: 'CourierInfo'
+        courierInfo: 'CourierInfo',
+        userInfo: 'UserInfo'
     },
     validityErrors: {
         permissionDenied: 'Permission Denied',
@@ -243,6 +244,12 @@ module.exports = {
             delete:'none',
         },
         CourierInfo:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        UserInfo:{
             read:'none',
             update:'none',
             create:'none',

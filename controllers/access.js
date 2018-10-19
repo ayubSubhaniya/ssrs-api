@@ -197,9 +197,9 @@ const loadAdminTypes = () => {
     }
 };
 
-loadAccessControl();
 loadUserTypes();
 loadAdminTypes();
+loadAccessControl();
 
 module.exports = {
     accessControl,
