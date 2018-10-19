@@ -67,7 +67,7 @@ const deleteCurrServiceNews = async (currServiceId) => {
 
 module.exports = {
     getAllServices: async (req, res, next) => {
-        const { user, userInfo } = req;
+        const { user } = req;
         const { daiictId } = user;
 
 
@@ -112,9 +112,9 @@ module.exports = {
                     isActive: true,
                     $or: [{
                         isSpecialService: false,
-                        allowedProgrammes: userInfo.user_programme,
-                        allowedBatches: userInfo.user_batch,
-                        allowedUserTypes: userInfo.user_type
+                        allowedProgrammes: user.userInfo.user_programme,
+                        allowedBatches: user.userInfo.user_batch,
+                        allowedUserTypes: user.userInfo.user_type
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -289,7 +289,7 @@ module.exports = {
     },
 
     getService: async (req, res, next) => {
-        const { user, userInfo } = req;
+        const { user } = req;
         const { daiictId } = user;
         const { serviceId } = req.params;
 
@@ -336,9 +336,9 @@ module.exports = {
                     isActive: true,
                     $or: [{
                         isSpecialService: false,
-                        allowedProgrammes: userInfo.user_programme,
-                        allowedBatches: userInfo.user_batch,
-                        allowedUserTypes: userInfo.user_type
+                        allowedProgrammes: user.userInfo.user_programme,
+                        allowedBatches: user.userInfo.user_batch,
+                        allowedUserTypes: user.userInfo.user_type
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId

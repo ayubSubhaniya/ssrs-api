@@ -47,6 +47,9 @@ const serviceSchema = new Schema({
             default: false,
         },
     },
+    availablePaymentModes: [{
+        type: String
+    }],
     collectionTypes: [{
         type: Schema.Types.ObjectId,
         ref: 'collectionType'
@@ -58,16 +61,23 @@ const serviceSchema = new Schema({
     specialServiceUsers: [{
         type: String,
     }],
-    allowedUserTypes:[{
-        type:String,
+    allowedUserTypes: [{
+        type: String,
     }],
-    allowedProgrammes:[{
-        type:String,
+    allowedProgrammes: [{
+        type: String,
     }],
-    allowedBatches:[{
-        type:String,
+    allowedBatches: [{
+        type: String,
     }]
 });
+
+// serviceSchema.pre('save', function (next) {
+//     this.availableParameters.map(function (x) {
+//        return x.toLowerCase();
+//     });
+//     next();
+// });
 
 const Service = moongose.model('service', serviceSchema);
 module.exports = Service;
