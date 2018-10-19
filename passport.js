@@ -3,6 +3,7 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
 const { JWT_SECRET, validityErrors } = require('./configuration');
 const User = require('./models/user');
+const UserInfo = require('./models/userInfo');
 
 //JSON WEB TOKEN STRATEGY
 passport.use(new JwtStrategy({
@@ -13,6 +14,7 @@ passport.use(new JwtStrategy({
     try {
         //find the user specified in token
         const user = await User.findOne({ daiictId: payload.sub });
+        const userInfo = await UserInfo.findOne({ user_email_id: payload.sub });
 
         //if user doesn't exist handle it
         if (!user) {
@@ -24,6 +26,7 @@ passport.use(new JwtStrategy({
             return done(null, false, { message: validityErrors.sessionExpired });
         }
         req['user'] = user;
+        req['userInfo'] = !userInfo?{}:userInfo;
         //Otherwise, return the user
         done(null, user);
     } catch (error) {

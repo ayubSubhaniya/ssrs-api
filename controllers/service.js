@@ -67,12 +67,14 @@ const deleteCurrServiceNews = async (currServiceId) => {
 
 module.exports = {
     getAllServices: async (req, res, next) => {
-        const { user } = req;
-        const { userInfo } = user;
+        const { user, userInfo } = req;
         const { daiictId } = user;
+
 
         const readInActiveService = accessControl.can(user.userType)
             .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
         const readServicePermission = accessControl.can(user.userType)
             .readAny(resources.service);
         const readParameterPermission = accessControl.can(user.userType)
@@ -93,6 +95,18 @@ module.exports = {
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
                     });
+            } else if (readOwnInActiveService.granted) {
+                services = await Service.find({
+                    $or: [{ createdBy: daiictId }, { isActive: true }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
             } else {
                 services = await Service.find({
                     isActive: true,
@@ -100,7 +114,7 @@ module.exports = {
                         isSpecialService: false,
                         allowedProgrammes: userInfo.user_programme,
                         allowedBatches: userInfo.user_batch,
-                        allowedUserTypes: userInfo.user_TYPE
+                        allowedUserTypes: userInfo.user_type
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -275,7 +289,7 @@ module.exports = {
     },
 
     getService: async (req, res, next) => {
-        const { user } = req;
+        const { user, userInfo } = req;
         const { daiictId } = user;
         const { serviceId } = req.params;
 
@@ -283,6 +297,8 @@ module.exports = {
             .readAny(resources.service);
         const readAnyInActiveService = accessControl.can(user.userType)
             .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
         const readParameterPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
         const readCollectionTypePermission = accessControl.can(user.userType)
@@ -301,7 +317,20 @@ module.exports = {
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
                     });
-            } else {
+            } else if (readOwnInActiveService.granted) {
+                service = await Service.find({
+                    _id: serviceId,
+                    $or: [{ createdBy: daiictId }, { isActive: true }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+            }  else {
                 service = await Service.findOne({
                     _id: serviceId,
                     isActive: true,
@@ -309,7 +338,7 @@ module.exports = {
                         isSpecialService: false,
                         allowedProgrammes: userInfo.user_programme,
                         allowedBatches: userInfo.user_batch,
-                        allowedUserTypes: userInfo.user_TYPE
+                        allowedUserTypes: userInfo.user_type
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -324,7 +353,7 @@ module.exports = {
                         select: readParameterPermission.attributes
                     });
 
-                if (!service){
+                if (!service) {
                     return res.sendStatus(HttpStatus.NOT_FOUND);
                 }
                 // Allowing only those parameters which are active
