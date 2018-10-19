@@ -7,6 +7,11 @@ const userInfoSchema = new Schema({
         required: true,
         unique: true
     },
+    user_id: {
+        type: String,
+        required: true,
+        unique: true
+    },
     user_type: {
         type: String,
         required: true
@@ -14,6 +19,9 @@ const userInfoSchema = new Schema({
     user_first_name: {
         type: String,
         required: true
+    },
+    user_middle_name:{
+        type:String,
     },
     user_last_name: {
         type: String,

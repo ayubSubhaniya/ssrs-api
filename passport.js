@@ -16,6 +16,8 @@ passport.use(new JwtStrategy({
         const user = await User.findOne({ daiictId: payload.sub });
         const userInfo = await UserInfo.findOne({ user_email_id: payload.sub });
 
+        user.userInfo = userInfo;
+        //user.userType = userInfo.user_type;
         //if user doesn't exist handle it
         if (!user) {
             return done(null, false, { message: validityErrors.invalidToken });
@@ -26,7 +28,6 @@ passport.use(new JwtStrategy({
             return done(null, false, { message: validityErrors.sessionExpired });
         }
         req['user'] = user;
-        req['userInfo'] = !userInfo?{}:userInfo;
         //Otherwise, return the user
         done(null, user);
     } catch (error) {

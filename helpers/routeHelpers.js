@@ -249,15 +249,18 @@ module.exports = {
             }),
         changeOrderStatusSchema: Joi.object()
             .keys({
-                status: Joi.number().required()
+                status: Joi.number()
+                    .required()
             }),
         cancelSchema: Joi.object()
             .keys({
-                cancelReason: Joi.string().required()
+                cancelReason: Joi.string()
+                    .required()
             }),
         changeCartStatusSchema: Joi.object()
             .keys({
-                status: Joi.number().required(),
+                status: Joi.number()
+                    .required(),
                 courierServiceName: Joi.string(),
                 trackingId: Joi.string(),
             }),
@@ -268,8 +271,9 @@ module.exports = {
                         .regex(/^[0-9a-fA-F]{24}$/)
                         .required(),
                     unitsRequested: Joi.number(),
-                    parameters: Joi.array().items(Joi.string()
-                        .regex(/^[0-9a-fA-F]{24}$/)),
+                    parameters: Joi.array()
+                        .items(Joi.string()
+                            .regex(/^[0-9a-fA-F]{24}$/)),
                     comment: Joi.string(),
                 },
             }),
@@ -277,12 +281,14 @@ module.exports = {
             .keys({
                 unitsRequested: Joi.number(),
                 comment: Joi.string(),
-                parameters: Joi.array().items(Joi.string()
-                    .regex(/^[0-9a-fA-F]{24}$/)),
+                parameters: Joi.array()
+                    .items(Joi.string()
+                        .regex(/^[0-9a-fA-F]{24}$/)),
             }),
         addPaymentSchema: Joi.object()
             .keys({
-                paymentType: Joi.number().required(),
+                paymentType: Joi.number()
+                    .required(),
                 paymentId: Joi.string(),
             }),
         addPickupSchema: Joi.object()
@@ -351,27 +357,50 @@ module.exports = {
             }),
         addUserInfoSchema: Joi.object()
             .keys({
-				userInfo: Joi.array().items(Joi.object({
-					user_inst_id:           Joi.string().required(),
-					user_type:              Joi.string().required(),
-					user_first_name:        Joi.string().required(),
-					user_last_name:         Joi.string().required(),
-					user_sex:               Joi.string().required(),
-					user_email_id:          Joi.string().required(),
-					user_status:            Joi.string().required(),
-					user_adr_contact_name:  Joi.string().required(),
-					user_adr_line1:         Joi.string().required(),
-					user_adr_line2:         Joi.string(),
-					user_adr_line3:         Joi.string(),
-					user_adr_city:          Joi.string().required(),
-					user_adr_district:      Joi.string().required(),
-					user_adr_state:         Joi.string().required(),
-					user_adr_country:       Joi.string().required(),
-					user_adr_pincode:       Joi.string().required(),
-					user_adr_telno:         Joi.string().required(),
-					user_adr_mobileno:      Joi.string().required(),
-					user_adr_emailid:       Joi.string().required(),
-				}))
+                userInfo: Joi.array()
+                    .items(Joi.object({
+                        user_inst_id: Joi.string()
+                            .required(),
+                        user_id: Joi.string()
+                            .required(),
+                        user_type: Joi.string()
+                            .required(),
+                        user_first_name: Joi.string()
+                            .required(),
+                        user_middle_name: Joi.string(),
+                        user_last_name: Joi.string()
+                            .required(),
+                        user_sex: Joi.string()
+                            .required(),
+                        user_email_id: Joi.string()
+                            .required(),
+                        user_status: Joi.string()
+                            .required(),
+                        user_adr_contact_name: Joi.string()
+                            .required(),
+                        user_adr_line1: Joi.string()
+                            .required(),
+                        user_adr_line2: Joi.string(),
+                        user_adr_line3: Joi.string(),
+                        user_adr_city: Joi.string()
+                            .required(),
+                        user_adr_district: Joi.string()
+                            .required(),
+                        user_adr_state: Joi.string()
+                            .required(),
+                        user_adr_country: Joi.string()
+                            .required(),
+                        user_adr_pincode: Joi.string()
+                            .required(),
+                        user_adr_telno: Joi.string()
+                            .required(),
+                        user_adr_mobileno: Joi.string()
+                            .required(),
+                        user_adr_emailid: Joi.string()
+                            .required(),
+                        user_batch: Joi.string(),
+                        user_programme: Joi.string()
+                    }))
             }),
     },
 };
