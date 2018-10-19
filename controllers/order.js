@@ -14,9 +14,13 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 
 
 /*return -1 when invalid*/
-const calculateServiceCost = async (service, requiredUnits) => {
+const calculateServiceCost = async (service, requiredUnits, user) => {
 
-    if (!service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
+    const specialServiceValidation = service.isSpecialService && service.specialServiceUsers.includes(user.daiictId);
+    const useServiceValidation = (user.userInfo.user_batch && service.allowedBatches.includes(user.userInfo.user_batch)) &&
+        (user.userInfo.user_programme && service.allowedProgrammes.includes(user.userInfo.user_programme));
+
+    if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
     }
 
@@ -65,11 +69,11 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
     return totalCost * requiredUnits;
 };
 
-const recalculateOrderCost = async (order) => {
+const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
 
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
-    order.serviceCost = await calculateServiceCost(service, order.unitsRequested);
+    order.serviceCost = await calculateServiceCost(service, order.unitsRequested, user);
     order.totalCost = 0;
 
     if (order.parameterCost === -1) {
@@ -88,7 +92,7 @@ const recalculateOrderCost = async (order) => {
     return order;
 };
 
-const validateOrder = async (orders) => {
+const validateOrder = async (orders, user) => {
 
     if (orders instanceof Array) {
         let newOrders = [];
@@ -96,7 +100,7 @@ const validateOrder = async (orders) => {
         for (let i = 0; i < orders.length; i++) {
 
             if (orders[i].status === orderStatus.unplaced || orders[i].status === orderStatus.invalidOrder) {
-                newOrders.push(await recalculateOrderCost(orders[i]));
+                newOrders.push(await recalculateOrderCost(orders[i], user));
             } else {
                 newOrders.push(orders[i]);
             }
@@ -107,7 +111,7 @@ const validateOrder = async (orders) => {
         let newOrder = {};
 
         if (orders.status === orderStatus.unplaced || orders.status === orderStatus.invalidOrder) {
-            newOrder = await recalculateOrderCost(orders);
+            newOrder = await recalculateOrderCost(orders, user);
         } else {
             newOrder = orders;
         }
@@ -131,7 +135,7 @@ const validateAddedOrder = async (cartId, service, unitsRequested) => {
     return count <= service.maxUnits;
 };
 
-const getOrders = async (query, readableAttributes, parameterReadableAtt, sortQuery) => {
+const getOrders = async (user, query, readableAttributes, parameterReadableAtt, sortQuery) => {
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({
@@ -139,7 +143,7 @@ const getOrders = async (query, readableAttributes, parameterReadableAtt, sortQu
             select: parameterReadableAtt
         });
 
-    const validatedOrder = await validateOrder(orders);
+    const validatedOrder = await validateOrder(orders, user);
     return filterResourceData(validatedOrder, readableAttributes);
 };
 
@@ -184,13 +188,13 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, orderAttributes, readAnyParameterPermission.attributes, sortQuery);
+        const filteredOrders = await getOrders(user, query, orderAttributes, readAnyParameterPermission.attributes, sortQuery);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
 
     getOrder: async (req, res, next) => {
-        const { user } = req;
+        const { user} = req;
         const { daiictId } = user;
         const { orderId } = req.params;
 
@@ -216,13 +220,13 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, orderAttributes, readAnyParameterPermission.attributes);
+        const filteredOrders = await getOrders(user, query, orderAttributes, readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
 
     addOrder: async (req, res, next) => {
-        const { user } = req;
+        const { user} = req;
         const { daiictId, cartId } = user;
         const timeStamp = new Date();
 
@@ -242,7 +246,7 @@ module.exports = {
             const service = await Service.findById(newOrder.service);
             newOrder.serviceName = service.name;
 
-            const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested);
+            const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested, user);
 
             if (serviceCost === -1) {
                 res.status(httpStatusCodes.PRECONDITION_FAILED)

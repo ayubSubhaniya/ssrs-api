@@ -55,6 +55,18 @@ const calculateOrdersCost = async (cart) => {
     return cost;
 };
 
+const checkPaymentMode = async (cart, paymentMode) => {
+    //paymentMode = paymentMode.toLowerCase();
+    const { orders } = cart;
+    for (let i = 0; i < orders.length; i++) {
+        const service = await Service.findById(orders.service);
+        if (!service.availablePaymentModes.includes(paymentMode)) {
+            return false;
+        }
+    }
+    return true;
+};
+
 module.exports = {
     getMyCart: async (req, res, next) => {
 
@@ -236,9 +248,9 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
-            if (query.status!==undefined){
-                if (query.status<cartStatus.placed){
-                    query.status=-1;
+            if (query.status !== undefined) {
+                if (query.status < cartStatus.placed) {
+                    query.status = -1;
                 }
             } else {
                 query.status = {
@@ -678,6 +690,11 @@ module.exports = {
                             .send(errorMessages.noCollectionType);
                     }
 
+                    if (!(await checkPaymentMode(cartInDb, cartUpdateAtt.paymentType))) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidPaymentType);
+                    }
+
                     /* save final cart and orders*/
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await cartInDb.orders[i].save();
@@ -915,7 +932,7 @@ module.exports = {
             const cartInDb = await Cart.findById(cartId);
 
             if (cartInDb) {
-                if (cartInDb.status >= cartStatus.placed && cartInDb.status<cartStatus.completed) {
+                if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
                     await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
                     await PlacedCart.findOneAndUpdate({ cartId }, {
                         status: cartStatus.cancelled,
