@@ -16,7 +16,7 @@ passport.use(new JwtStrategy({
         const user = await User.findOne({ daiictId: payload.sub });
         const userInfo = await UserInfo.findOne({ user_email_id: payload.sub });
 
-        user.userInfo = userInfo;
+        user.userInfo = userInfo?userInfo:{};
         //user.userType = userInfo.user_type;
         //if user doesn't exist handle it
         if (!user) {
