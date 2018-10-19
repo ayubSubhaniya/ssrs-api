@@ -1,4 +1,5 @@
-const { defaultPermissionObject, adminTypes, userTypes } = require('../configuration');
+
+const { defaultPermissionObject } = require('../configuration');
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
@@ -66,12 +67,12 @@ const filterActiveData = (resourcesData) => {
 
         for (let i = 0; i < resourcesData.length; i++) {
             const resourceData = resourcesData[i];
-            
+
             if(resourceData.isActive === true)
                 filteredResourcesData.push(resourceData);
         }
         return filteredResourcesData;
-        
+
     } else if (resourcesData) {
         let filteredResourceData = {};
 

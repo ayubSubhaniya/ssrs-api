@@ -151,11 +151,8 @@ module.exports = {
                 name: Joi.string()
                     .required(),
                 description: Joi.string(),
-                department: Joi.string(),
-                isApplicationSpecific: Joi.boolean(),
                 isSpecialService: Joi.boolean(),
-                isAvailableForAlumni: Joi.boolean(),
-                isCourierAvailable: Joi.boolean(),
+                isApplicationSpecific: Joi.boolean(),
                 isActive: Joi.boolean(),
                 maxUnits: Joi.number(),
                 baseCharge: Joi.number(),
@@ -166,23 +163,25 @@ module.exports = {
                     .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
                 paymentModes: {
-                    debitCard: Joi.boolean(),
-                    netBanking: Joi.boolean(),
-                    paytm: Joi.boolean(),
-                    cashOnDelivery: Joi.boolean(),
+                    online: Joi.boolean(),
+                    offline: Joi.boolean(),
                 },
                 specialServiceUsers: Joi.array()
-                    .items(Joi.number()),
+                    .items(Joi.string()),
+                allowedUserTypes: Joi.array()
+                    .items(Joi.string()),
+                allowedProgrammes: Joi.array()
+                    .items(Joi.string()),
+                allowedBatches: Joi.array()
+                    .items(Joi.string()),
             }),
         serviceUpdateSchema: Joi.object()
             .keys({
                 name: Joi.string(),
                 description: Joi.string(),
-                department: Joi.string(),
-                isApplicationSpecific: Joi.boolean(),
                 isSpecialService: Joi.boolean(),
-                isAvailableForAlumni: Joi.boolean(),
-                isCourierAvailable: Joi.boolean(),
+                isApplicationSpecific: Joi.boolean(),
+                isActive: Joi.boolean(),
                 maxUnits: Joi.number(),
                 baseCharge: Joi.number(),
                 availableParameters: Joi.array()
@@ -192,13 +191,17 @@ module.exports = {
                     .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
                 paymentModes: {
-                    debitCard: Joi.boolean(),
-                    netBanking: Joi.boolean(),
-                    paytm: Joi.boolean(),
-                    cashOnDelivery: Joi.boolean(),
+                    online: Joi.boolean(),
+                    offline: Joi.boolean(),
                 },
                 specialServiceUsers: Joi.array()
-                    .items(Joi.number()),
+                    .items(Joi.string()),
+                allowedUserTypes: Joi.array()
+                    .items(Joi.string()),
+                allowedProgrammes: Joi.array()
+                    .items(Joi.string()),
+                allowedBatches: Joi.array()
+                    .items(Joi.string()),
             }),
         parameterSchema: Joi.object()
             .keys({

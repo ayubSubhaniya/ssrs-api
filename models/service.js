@@ -21,14 +21,6 @@ const serviceSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    isAvailableForAlumni: {
-        type: Boolean,
-        default: false,
-    },
-    isCourierAvailable: {
-        type: Boolean,
-        default: false,
-    },
     isSpecialService: {
         type: Boolean,
         default: false,
@@ -46,19 +38,11 @@ const serviceSchema = new Schema({
         default: 0,
     },
     paymentModes: {
-        debitCard: {
+        offline: {
             type: Boolean,
             default: false,
         },
-        netBanking: {
-            type: Boolean,
-            default: false,
-        },
-        paytm: {
-            type: Boolean,
-            default: false,
-        },
-        cashOnDelivery: {
+        online: {
             type: Boolean,
             default: false,
         },
@@ -74,6 +58,15 @@ const serviceSchema = new Schema({
     specialServiceUsers: [{
         type: String,
     }],
+    allowedUserTypes:[{
+        type:String,
+    }],
+    allowedProgrammes:[{
+        type:String,
+    }],
+    allowedBatches:[{
+        type:String,
+    }]
 });
 
 const Service = moongose.model('service', serviceSchema);

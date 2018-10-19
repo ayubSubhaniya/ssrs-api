@@ -16,19 +16,6 @@ router.route('/')
         serviceController.addService
     );
 
-router.route('/special')
-    .get(
-        passport.authenticate('jwt', { session: false }),
-        serviceController.getAllSpecialServices
-    );
-
-router.route('/special/:serviceId')
-    .get(
-        passport.authenticate('jwt', { session: false }),
-        validateParam(schemas.idSchema, 'serviceId'),
-        serviceController.getSpecialService
-    );
-
 router.route('/changeStatus/:serviceId')
     .patch(
         passport.authenticate('jwt', { session: false }),

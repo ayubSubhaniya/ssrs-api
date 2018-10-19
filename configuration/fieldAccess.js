@@ -286,8 +286,6 @@ module.exports = {
                 'createdOn',
                 'createdBy',
                 'isApplicationSpecific',
-                'isAvailableForAlumni',
-                'isCourierAvailable',
                 'isSpecialService',
                 'isActive',
                 'maxUnits',
@@ -296,6 +294,9 @@ module.exports = {
                 'specialServiceUsers',
                 'paymentModes',
                 'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
             ],
             canCreate: [
                 'name',
@@ -311,6 +312,9 @@ module.exports = {
                 'specialServiceUsers',
                 'paymentModes',
                 'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
             ],
             canUpdate: [
                 'name',
@@ -326,6 +330,9 @@ module.exports = {
                 'specialServiceUsers',
                 'paymentModes',
                 'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
             ],
         },
         student: {
