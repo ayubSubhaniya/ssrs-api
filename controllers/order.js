@@ -460,17 +460,14 @@ module.exports = {
 
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
 
-            const readCollectionTypePermission = accessControl.can(user.userType)
-                .readAny(resources.collectionType);
-
             const cart = await Cart.findById(orderInDb.cartId)
                 .populate({
-                    'orders': {
-                        select: 'status'
-                    },
-                    'collectionType': {
-                        select: readCollectionTypePermission.attributes
-                    }
+                    path: 'orders',
+                    select: 'status'
+                })
+                .populate({
+                    path: 'collectionType',
+                    select: 'category'
                 });
 
             let allReady = true;
