@@ -9,8 +9,7 @@ const userInfoSchema = new Schema({
     },
     user_id: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     user_type: {
         type: String,
