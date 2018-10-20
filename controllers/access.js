@@ -106,7 +106,7 @@ const grantDefaultAccess = () => {
                 .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate']);
         });
 
-    resourceType = resources.courier;
+    resourceType = resources.delivery;
     Object.keys(userTypes)
         .forEach(userType => {
             accessControl.grant(userType)
