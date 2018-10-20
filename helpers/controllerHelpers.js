@@ -28,6 +28,9 @@ const constructPermissionObject = (permissions, role) => {
 
 
 const filterResourceData = (resourcesData, attributes) => {
+    if (!attributes){
+        return resourcesData;
+    }
 
     if (resourcesData instanceof Array) {
         let filteredResourcesData = [];
@@ -49,7 +52,7 @@ const filterResourceData = (resourcesData, attributes) => {
         let filteredResourceData = {};
 
         attributes.forEach(attribute => {
-            if (resourcesData[attribute] != undefined) {
+            if (resourcesData[attribute] !== undefined) {
                 filteredResourceData[attribute] = resourcesData[attribute];
             }
         });

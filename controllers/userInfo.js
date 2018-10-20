@@ -14,7 +14,7 @@ module.exports = {
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.userInfo);
 
-        if(readPermission.granted) {
+        if (readPermission.granted) {
             const userInfoData = await UserInfo.find({});
             const filteredUserInfoData = filterResourceData(userInfoData, readPermission.attributes);
             res.status(HttpStatus.OK)
@@ -35,15 +35,17 @@ module.exports = {
         const updatePermission = accessControl.can(user.userType)
             .updateAny(resources.userInfo);
 
-        if(readPermission.granted && createPermission.granted && updatePermission.granted) {
+        if (readPermission.granted && createPermission.granted && updatePermission.granted) {
 
             const { userInfo } = req.value.body;
             let bulk = UserInfo.collection.initializeUnorderedBulkOp();
 
-            for(let i=0; i<userInfo.length; i++) {
+            for (let i = 0; i < userInfo.length; i++) {
                 const { user_email_id } = userInfo[i];
                 // await UserInfo.findOneAndUpdate({user_inst_id: user_inst_id}, userInfo[i], {upsert: true});
-                bulk.find( {user_email_id: user_email_id} ).upsert().updateOne(userInfo[i]);
+                bulk.find({ user_email_id: user_email_id })
+                    .upsert()
+                    .updateOne(userInfo[i]);
             }
 
             await bulk.execute();
@@ -55,13 +57,17 @@ module.exports = {
     },
 
     getDistinctValues: async (req, res, next) => {
-        const batches = await UserInfo.find().distinct('user_batch');
-        const programmes = await UserInfo.find().distinct('user_programme');
-        const userTypes = await UserInfo.find().distinct('user_type');
-        res.status(HttpStatus.OK).json({
-            batches,
-            programmes,
-            userTypes
-        })
+        const batches = await UserInfo.find()
+            .distinct('user_batch');
+        const programmes = await UserInfo.find()
+            .distinct('user_programme');
+        const userTypes = await UserInfo.find()
+            .distinct('user_type');
+        res.status(HttpStatus.OK)
+            .json({
+                batches,
+                programmes,
+                userTypes
+            });
     },
 };

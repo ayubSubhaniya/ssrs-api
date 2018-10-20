@@ -24,6 +24,7 @@ module.exports = {
                 'primaryEmail',
                 'createdOn',
                 'addresses',
+                'userInfo',
             ],
             canCreate: [
                 'name',
@@ -61,6 +62,7 @@ module.exports = {
                 'primaryEmail',
                 'createdOn',
                 'addresses',
+                'userInfo',
             ],
             canCreate: [
                 'name',
@@ -708,7 +710,6 @@ module.exports = {
         },
         student: {
             canRead: [
-                '_id',
                 'user_inst_id',
                 'user_type',
                 'user_first_name',

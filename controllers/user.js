@@ -62,8 +62,11 @@ module.exports = {
 
         const readPermission = accessControl.can(user.userType)
             .readOwn(resources.user);
+        const readUserInfoPermission = accessControl.can(user.userType)
+            .readOwn(resources.userInfo);
 
         if (readPermission.granted) {
+            user.userInfo = filterResourceData(user.userInfo, readUserInfoPermission.attributes);
             const filteredUser = filterResourceData(user, readPermission.attributes);
             res.status(HttpStatus.OK)
                 .json({ user: filteredUser });
@@ -331,7 +334,7 @@ module.exports = {
             }
             await CourierInfo.findByIdAndRemove(requestedCourierInfoId);
             res.sendStatus(HttpStatus.OK);
-            
+
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
