@@ -53,4 +53,15 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+
+    getDistinctValues: async (req, res, next) => {
+        const batches = await UserInfo.find().distinct('user_batch');
+        const programmes = await UserInfo.find().distinct('user_programme');
+        const userTypes = await UserInfo.find().distinct('user_type');
+        res.status(HttpStatus.OK).json({
+            batches,
+            programmes,
+            userTypes
+        })
+    },
 };

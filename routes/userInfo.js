@@ -15,4 +15,9 @@ router.route('/')
         userInfoController.addUpdateUserInfo
     );
 
+router.route('/distinct')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        userInfoController.getDistinctValues
+    );
 module.exports = router;
