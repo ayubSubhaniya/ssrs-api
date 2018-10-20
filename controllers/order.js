@@ -460,10 +460,17 @@ module.exports = {
 
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
 
+            const readCollectionTypePermission = accessControl.can(user.userType)
+                .readAny(resources.collectionType);
+
             const cart = await Cart.findById(orderInDb.cartId)
                 .populate({
-                    path: 'orders',
-                    select: 'status'
+                    'orders': {
+                        select: 'status'
+                    },
+                    'collectionType': {
+                        select: readCollectionTypePermission.attributes
+                    }
                 });
 
             let allReady = true;
@@ -474,7 +481,7 @@ module.exports = {
             }
 
             if (allReady) {
-                if (cart.collectionType === collectionTypes.delivery) {
+                if (cart.collectionType.category === collectionTypes.delivery) {
                     cart.status = cartStatus.readyToDeliver;
                 } else {
                     cart.status = cartStatus.readyToPickup;
