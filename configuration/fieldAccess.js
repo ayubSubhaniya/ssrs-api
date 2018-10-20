@@ -144,7 +144,7 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
@@ -176,7 +176,7 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
@@ -192,7 +192,7 @@ module.exports = {
                 'comment',
                 'collectionType',
                 'unitsRequested',
-                'courier',
+                'delivery',
                 'pickup',
             ],
             canUpdate: [
@@ -200,7 +200,7 @@ module.exports = {
                 'isPaymentDone',
                 'paymentId',
                 'comment',
-                'courier',
+                'delivery',
                 'pickup',
                 'unitsRequested',
             ]
@@ -224,7 +224,7 @@ module.exports = {
                 'isPaymentDone',
                 'paymentId',
                 'paymentCode',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
@@ -253,7 +253,7 @@ module.exports = {
                 'isPaymentDone',
                 'paymentId',
                 'paymentCode',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
@@ -264,7 +264,7 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
             ],
@@ -272,7 +272,7 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
             ]
         },
@@ -579,19 +579,22 @@ module.exports = {
                 'baseCharge',
                 'createdOn',
                 'createdBy',
-                'isActive'
+                'isActive',
+                'category'
             ],
             canCreate: [
                 '_id',
                 'name',
                 'description',
                 'baseCharge',
+                'category'
             ],
             canUpdate: [
                 'name',
                 'description',
                 'baseCharge',
-                'isActive'
+                'isActive',
+                'category'
             ],
         },
         student: {
@@ -600,6 +603,7 @@ module.exports = {
                 'name',
                 'description',
                 'baseCharge',
+                'category'
             ],
             canCreate: [],
             canUpdate: []
@@ -651,7 +655,9 @@ module.exports = {
                 'user_adr_pincode',
                 'user_adr_telno',
                 'user_adr_mobileno',
-                'user_adr_emailid'
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
             ],
             canCreate: [
                 'user_inst_id',
@@ -672,7 +678,9 @@ module.exports = {
                 'user_adr_pincode',
                 'user_adr_telno',
                 'user_adr_mobileno',
-                'user_adr_emailid'
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
             ],
             canUpdate: [
                 'user_inst_id',
@@ -693,11 +701,36 @@ module.exports = {
                 'user_adr_pincode',
                 'user_adr_telno',
                 'user_adr_mobileno',
-                'user_adr_emailid'
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
             ],
         },
         student: {
-            canRead: [],
+            canRead: [
+                '_id',
+                'user_inst_id',
+                'user_type',
+                'user_first_name',
+                'user_last_name',
+                'user_sex',
+                'user_email_id',
+                'user_status',
+                'user_adr_contact_name',
+                'user_adr_line1',
+                'user_adr_line2',
+                'user_adr_line3',
+                'user_adr_city',
+                'user_adr_district',
+                'user_adr_state',
+                'user_adr_country',
+                'user_adr_pincode',
+                'user_adr_telno',
+                'user_adr_mobileno',
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
+            ],
             canCreate: [],
             canUpdate: [],
         }

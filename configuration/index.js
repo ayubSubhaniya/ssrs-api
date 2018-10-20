@@ -10,14 +10,12 @@ module.exports = {
     NEWS_EXPIRY_TIME: 8,
     NOTIFICATION_EXPIRY_TIME: 8,
     collectionTypes: {
-        courier: 'Courier',
+        delivery: 'Delivery',
         pickup: 'Pickup',
     },
     paymentTypes: {
-        offline: 0,
-        payTm: 1,
-        creditCard: 2,
-        debitCard: 3
+        offline: "offline",
+        online: "online"
     },
     permissions: {
         readAny: 'readAny',
@@ -44,7 +42,7 @@ module.exports = {
         changeResourceStatus: 'changeResourceStatus',
         news: 'News',
         notification: 'Notification',
-        courier: 'Courier',
+        delivery: 'Courier',
         collector: 'Collector',
         accessLevel: 'AccessLevel',
         role: 'Role',
@@ -94,7 +92,8 @@ module.exports = {
         pendingPayment: 10,
         processing: 20,
         ready: 30,
-        completed: 40
+        completed: 40,
+        cancel:50
     },
 
     placedOrderServiceAttributes: [
@@ -132,7 +131,7 @@ module.exports = {
         'paymentType',
         'paymentId',
         'paymentCode',
-        'courier',
+        'delivery',
         'pickup',
         'collectionType',
         'cancelReason'
