@@ -17,11 +17,11 @@ router.route('/all')
         cartController.getAllCart
     );
 
-router.route('/courier/')
+router.route('/delivery/:collectionType')
     .post(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.addCourierSchema),
-        cartController.addCourier
+        cartController.addDelivery
     )
     .patch(
         passport.authenticate('jwt', { session: false }),
@@ -29,7 +29,7 @@ router.route('/courier/')
         cartController.updateCourier
     );
 
-router.route('/pickup/')
+router.route('/pickup/:collectionType')
     .post(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.addPickupSchema),
