@@ -70,7 +70,6 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-
         const readInActiveService = accessControl.can(user.userType)
             .readAny(resources.inActiveResource);
         const readOwnInActiveService = accessControl.can(user.userType)
@@ -81,7 +80,6 @@ module.exports = {
             .readAny(resources.parameter);
         const readCollectionTypePermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
-
 
         if (readServicePermission.granted) {
             let services;

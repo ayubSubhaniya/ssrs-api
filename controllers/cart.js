@@ -1,7 +1,7 @@
 const httpStatusCodes = require('http-status-codes');
 
 const Service = require('../models/service');
-const Courier = require('../models/courier');
+const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
@@ -20,13 +20,17 @@ const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
 
-const calculateCollectionTypeCost = async (collectionType, orders) => {
+const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory) => {
     if (collectionType === undefined) {
         return 0;
     }
-    const collectionTypeDoc = await CollectionType.findOne({ name: collectionType });
+    const collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
 
     if (!collectionTypeDoc.isActive) {
+        return -1;
+    }
+
+    if (collectionTypeCategory!==undefined && collectionTypeDoc.category !== collectionTypeCategory) {
         return -1;
     }
 
@@ -59,7 +63,7 @@ const checkPaymentMode = async (cart, paymentMode) => {
     //paymentMode = paymentMode.toLowerCase();
     const { orders } = cart;
     for (let i = 0; i < orders.length; i++) {
-        const service = await Service.findById(orders.service);
+        const service = await Service.findById(orders[i].service);
         if (!service.availablePaymentModes.includes(paymentMode)) {
             return false;
         }
@@ -82,19 +86,19 @@ module.exports = {
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
 
         if (readOwnCartPermission.granted) {
 
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
                         },
-                        'courier': {
+                        'delivery': {
                             select: readOwnCourierPermission.attributes
                         },
                         'pickup': {
@@ -156,22 +160,22 @@ module.exports = {
         const readAnyParameterPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
         const readAnyCourierPermission = accessControl.can(user.userType)
-            .readAny(resources.courier);
+            .readAny(resources.delivery);
         const readAnyPickupPermission = accessControl.can(user.userType)
             .readAny(resources.collector);
 
         if (readAnyCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readAnyOrderPermission.attributes
                         },
-                        'courier': {
+                        'delivery': {
                             select: readAnyCourierPermission.attributes
                         },
                         'pickup': {
@@ -194,12 +198,12 @@ module.exports = {
             }
         } else if (readOwnCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
                         },
-                        'courier': {
+                        'delivery': {
                             select: readOwnCourierPermission.attributes
                         },
                         'pickup': {
@@ -264,7 +268,7 @@ module.exports = {
             orderAttributesPermission = accessControl.can(user.userType)
                 .readAny(resources.order).attributes;
             courierAttributesPermission = accessControl.can(user.userType)
-                .readAny(resources.courier).attributes;
+                .readAny(resources.delivery).attributes;
             pickupAttributesPermission = accessControl.can(user.userType)
                 .readAny(resources.collector).attributes;
 
@@ -277,7 +281,7 @@ module.exports = {
             orderAttributesPermission = accessControl.can(user.userType)
                 .readOwn(resources.order).attributes;
             courierAttributesPermission = accessControl.can(user.userType)
-                .readOwn(resources.courier).attributes;
+                .readOwn(resources.delivery).attributes;
             pickupAttributesPermission = accessControl.can(user.userType)
                 .readOwn(resources.collector).attributes;
 
@@ -287,12 +291,12 @@ module.exports = {
 
         const cart = await Cart.find(query)
             .sort(sortQuery)
-            .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+            .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                 populate: {
                     'orders': {
                         select: orderAttributesPermission
                     },
-                    'courier': {
+                    'delivery': {
                         select: courierAttributesPermission
                     },
                     'pickup': {
@@ -337,24 +341,25 @@ module.exports = {
             .json({ cart: filteredCart });
     },
 
-    addCourier: async (req, res, next) => {
+    addDelivery: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
         const timeStamp = new Date();
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
-            const courier = new Courier(req.value.body);
-            courier.createdOn = timeStamp;
-            courier.createdBy = daiictId;
+            const delivery = new Delivery(req.value.body);
+            delivery.createdOn = timeStamp;
+            delivery.createdBy = daiictId;
 
             const cart = await Cart.findById(cartId)
                 .populate({
@@ -376,7 +381,7 @@ module.exports = {
                     cart.ordersCost = ordersCost;
                 }
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.courier, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.delivery);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
@@ -389,19 +394,20 @@ module.exports = {
 
                 cart.pickup = undefined;
 
-                cart.collectionType = collectionTypes.courier;
-                cart.courier = courier._id;
-                courier.cartId = cart._id;
+                cart.collectionType = collectionType;
+                cart.collectionTypeCategory = collectionTypes.delivery;
+                cart.delivery = delivery._id;
+                delivery.cartId = cart._id;
 
-                const newCourier = await courier.save();
+                const newDelivery = await delivery.save();
                 const newCart = await cart.save();
 
-                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
+                const filteredDelivery = filterResourceData(newDelivery, readOwnCourierPermission.attributes);
                 const filteredCart = filterResourceData(newCart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.CREATED)
                     .json({
                         cart: filteredCart,
-                        courier: filteredCourier
+                        delivery: filteredDelivery
                     });
 
             } else {
@@ -416,18 +422,19 @@ module.exports = {
     updateCourier: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
-            const courier = req.value.body;
+            const delivery = req.value.body;
 
             const cart = await Cart.findById(cartId)
                 .populate({
@@ -435,7 +442,7 @@ module.exports = {
                     select: readOwnOrderPermission.attributes
                 });
 
-            if (!cart || !cart.courier) {
+            if (!cart || !cart.delivery) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
@@ -450,26 +457,27 @@ module.exports = {
                 }
 
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.courier, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.delivery);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
 
+                cart.collectionType = collectionType;
                 cart.collectionTypeCost = cost;
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
-                const newCourier = await Courier.findByIdAndUpdate(cart.courier, courier, { new: true });
-                /* check if courier is present*/
+                const newDelivery = await Delivery.findByIdAndUpdate(cart.delivery, delivery, { new: true });
+                /* check if delivery is present*/
                 const newCart = await cart.save();
 
-                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
+                const filteredDelivery = filterResourceData(newDelivery, readOwnCourierPermission.attributes);
                 const filteredCart = filterResourceData(newCart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
                     .json({
                         cart: filteredCart,
-                        courier: filteredCourier
+                        delivery: filteredDelivery
                     });
 
             } else {
@@ -485,6 +493,7 @@ module.exports = {
     addPickup: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
 
         const timeStamp = new Date();
 
@@ -523,7 +532,7 @@ module.exports = {
                 }
 
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.pickup, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.pickup);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
@@ -533,7 +542,8 @@ module.exports = {
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
                 cart.courier = undefined;
 
-                cart.collectionType = collectionTypes.pickup;
+                cart.collectionType = collectionType;
+                cart.collectionTypeCategory = collectionTypes.pickup;
                 cart.pickup = pickup._id;
                 pickup.cartId = cart._id;
 
@@ -560,6 +570,7 @@ module.exports = {
     updatePickup: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
@@ -595,13 +606,14 @@ module.exports = {
                 }
 
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.pickup, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.pickup);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
 
+                cart.collectionType = collectionType;
                 cart.collectionTypeCost = cost;
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
@@ -685,7 +697,7 @@ module.exports = {
                             .send(errorMessages.invalid);
                     }
 
-                    if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
+                    if (cartInDb.delivery === undefined && cartInDb.pickup === undefined) {
                         return res.status(httpStatusCodes.PRECONDITION_FAILED)
                             .send(errorMessages.noCollectionType);
                     }
@@ -707,10 +719,10 @@ module.exports = {
 
                     if (cartUpdateAtt.status === cartStatus.paymentComplete) {
 
-                        if (cartInDb.collectionType === collectionTypes.pickup) {
+                        if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
                             await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                        } else if (cartInDb.collectionType === collectionTypes.courier) {
-                            await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
+                        } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
                         }
 
                         for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -797,10 +809,10 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
 
-                    if (cartInDb.collectionType === collectionTypes.pickup) {
+                    if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
                         await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                    } else if (cartInDb.collectionType === collectionTypes.courier) {
-                        await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -864,20 +876,20 @@ module.exports = {
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
-                        if (cartInDb.collectionType === collectionTypes.courier) {
+                        if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
                             if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
                                 return res.status(httpStatusCodes.PRECONDITION_FAILED)
                                     .send(errorMessages.courierInformationRequired);
                             }
 
-                            await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.completed });
+                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.completed });
 
-                            const updatedCourier = await Courier.findByIdAndUpdate(cartInDb.courier, {
+                            const updatedDelivery = await Delivery.findByIdAndUpdate(cartInDb.delivery, {
                                 courierServiceName: cartUpdateAtt.courierServiceName,
                                 trackingId: cartUpdateAtt.trackingId
                             });
 
-                            if (!updatedCourier) {
+                            if (!updatedDelivery) {
                                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
                             }
 
@@ -938,6 +950,12 @@ module.exports = {
                         status: cartStatus.cancelled,
                         cancelReason: cartUpdateAtt.cancelReason
                     });
+
+                    if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.cancel });
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
+                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.cancel });
+                    }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndUpdate(cartInDb.orders[i], {

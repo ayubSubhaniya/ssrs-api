@@ -162,10 +162,8 @@ module.exports = {
                 collectionTypes: Joi.array()
                     .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
-                paymentModes: {
-                    online: Joi.boolean(),
-                    offline: Joi.boolean(),
-                },
+                availablePaymentModes: Joi.array()
+                    .items(Joi.string()),
                 specialServiceUsers: Joi.array()
                     .items(Joi.string()),
                 allowedUserTypes: Joi.array()
@@ -190,10 +188,8 @@ module.exports = {
                 collectionTypes: Joi.array()
                     .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
-                paymentModes: {
-                    online: Joi.boolean(),
-                    offline: Joi.boolean(),
-                },
+                availablePaymentModes: Joi.array()
+                    .items(Joi.string()),
                 specialServiceUsers: Joi.array()
                     .items(Joi.string()),
                 allowedUserTypes: Joi.array()
@@ -224,12 +220,14 @@ module.exports = {
                 description: Joi.string(),
                 baseCharge: Joi.number(),
                 isActive: Joi.boolean(),
+                category: Joi.string(),
             }),
         collectionTypeUpdateSchema: Joi.object()
             .keys({
                 name: Joi.string(),
                 description: Joi.string(),
                 baseCharge: Joi.number(),
+                category: Joi.string(),
             }),
         notificationSchema: Joi.object()
             .keys({
@@ -287,7 +285,7 @@ module.exports = {
             }),
         addPaymentSchema: Joi.object()
             .keys({
-                paymentType: Joi.number()
+                paymentType: Joi.string()
                     .required(),
                 paymentId: Joi.string(),
             }),

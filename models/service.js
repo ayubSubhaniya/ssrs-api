@@ -37,16 +37,6 @@ const serviceSchema = new Schema({
         type: Number,
         default: 0,
     },
-    paymentModes: {
-        offline: {
-            type: Boolean,
-            default: false,
-        },
-        online: {
-            type: Boolean,
-            default: false,
-        },
-    },
     availablePaymentModes: [{
         type: String
     }],

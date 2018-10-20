@@ -13,7 +13,7 @@ module.exports = {
 
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.userInfo);
-        
+
         if(readPermission.granted) {
             const userInfoData = await UserInfo.find({});
             const filteredUserInfoData = filterResourceData(userInfoData, readPermission.attributes);
@@ -27,14 +27,14 @@ module.exports = {
     addUpdateUserInfo: async (req, res, next) => {
 
         const { user } = req;
-        
+
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.userInfo);
         const createPermission = accessControl.can(user.userType)
             .createAny(resources.userInfo);
         const updatePermission = accessControl.can(user.userType)
             .updateAny(resources.userInfo);
-        
+
         if(readPermission.granted && createPermission.granted && updatePermission.granted) {
 
             const { userInfo } = req.value.body;
@@ -46,11 +46,11 @@ module.exports = {
                 bulk.find( {user_email_id: user_email_id} ).upsert().updateOne(userInfo[i]);
             }
 
-            bulk.execute();
+            await bulk.execute();
             res.sendStatus(HttpStatus.OK);
 
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
-}
+};

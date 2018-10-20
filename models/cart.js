@@ -16,7 +16,7 @@ const cartSchema = new Schema({
         ref: 'order'
     }],
     paymentType: {
-        type: Number,
+        type: String,
     },
     paymentId: {
         type: String,
@@ -25,6 +25,10 @@ const cartSchema = new Schema({
         type: String,
     },
     collectionType: {
+        type: Schema.Types.ObjectId,
+        ref: 'collectionType'
+    },
+    collectionTypeCategory: {
         type: String,
     },
     collectionTypeCost: {
@@ -39,9 +43,9 @@ const cartSchema = new Schema({
         type: Number,
         default: 0,
     },
-    courier: {
+    delivery: {
         type: Schema.Types.ObjectId,
-        ref: 'courier'
+        ref: 'delivery'
     },
     pickup: {
         type: Schema.Types.ObjectId,

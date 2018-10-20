@@ -4,6 +4,9 @@ const Service = require('../models/service');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const Cart = require('../models/cart');
+const PlacedCart = require('../models/placedCart');
+const Delivery = require('../models/delivery');
+const Collector = require('../models/collector');
 const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
@@ -18,7 +21,7 @@ const calculateServiceCost = async (service, requiredUnits, user) => {
 
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
     //const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
-      //  (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
+    //  (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
     const useServiceValidation = true;
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
@@ -124,7 +127,7 @@ const validateOrder = async (orders, user) => {
 
 const validateAddedOrder = async (cartId, service, unitsRequested) => {
     const cart = await Cart.findById(cartId)
-        .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup']);
+        .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup']);
     const { orders } = cart;
     let count = unitsRequested;
     for (let i = 0; i < orders.length; i++) {
@@ -194,7 +197,7 @@ module.exports = {
     },
 
     getOrder: async (req, res, next) => {
-        const { user} = req;
+        const { user } = req;
         const { daiictId } = user;
         const { orderId } = req.params;
 
@@ -226,7 +229,7 @@ module.exports = {
     },
 
     addOrder: async (req, res, next) => {
-        const { user} = req;
+        const { user } = req;
         const { daiictId, cartId } = user;
         const timeStamp = new Date();
 
@@ -471,7 +474,7 @@ module.exports = {
             }
 
             if (allReady) {
-                if (cart.collectionType === collectionTypes.courier) {
+                if (cart.collectionType === collectionTypes.delivery) {
                     cart.status = cartStatus.readyToDeliver;
                 } else {
                     cart.status = cartStatus.readyToPickup;
@@ -528,17 +531,38 @@ module.exports = {
                         });
 
                     let allReady = true;
+                    let allCancel = true;
                     for (let i = 0; i < cart.orders.length; i++) {
                         if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !== orderStatus.cancelled) {
                             allReady = false;
                         }
+                        if (cart.orders[i].status !== orderStatus.cancelled) {
+                            allCancel = false;
+                        }
                     }
 
                     if (allReady) {
-                        if (cart.collectionType = collectionTypes.courier) {
+                        if (cart.collectionType = collectionTypes.delivery) {
                             cart.status = cartStatus.readyToDeliver;
                         } else {
                             cart.status = cartStatus.readyToPickup;
+                        }
+                    }
+
+                    if (allCancel) {
+                        await Cart.findByIdAndUpdate(cartId, {
+                            status: cartStatus.cancelled,
+                            cancelReason: 'All orders cancelled'
+                        });
+                        await PlacedCart.findOneAndUpdate({ cartId }, {
+                            status: cartStatus.cancelled,
+                            cancelReason: 'All orders cancelled'
+                        });
+
+                        if (cart.collectionTypeCategory === collectionTypes.delivery) {
+                            await Delivery.findByIdAndUpdate(cart.delivery, { status: collectionStatus.cancel });
+                        } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
+                            await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
                         }
                     }
                     await cart.save();
