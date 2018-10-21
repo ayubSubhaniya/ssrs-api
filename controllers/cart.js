@@ -531,16 +531,17 @@ module.exports = {
                     cart.ordersCost = ordersCost;
                 }
 
-
                 const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.pickup);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
+
                 cart.collectionTypeCost = cost;
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
-                cart.courier = undefined;
+
+                cart.delivery = undefined;
 
                 cart.collectionType = collectionType;
                 cart.collectionTypeCategory = collectionTypes.pickup;
