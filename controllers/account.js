@@ -5,6 +5,7 @@ const randomstring = require('randomstring');
 const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
+const UserInfo = require('../models/userInfo');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName, homePage } = require('../configuration');
@@ -61,10 +62,15 @@ module.exports = {
         const createdOn = new Date();
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
+        const userInDB = await UserInfo.findOne({ user_email_id: daiictId });
 
         //user already exist
         if (foundUser) {
-            return res.sendStatus(HttpStatus.FORBIDDEN);
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userAlreadyExist);
+        }
+
+        if (!userInDB){
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.invalidDaiictUser);
         }
 
         const randomHash = randomstring.generate();
@@ -127,7 +133,7 @@ module.exports = {
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
-        if (!foundUser){
+        if (!foundUser) {
             return res.sendStatus(HttpStatus.FORBIDDEN);
         }
 
@@ -155,9 +161,9 @@ module.exports = {
 
     verifyResetPasswordLink: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await User.findOne({daiictId});
+        const user = await User.findOne({ daiictId });
         //user already exist
-        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+        if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect(homePage);
         }
@@ -170,9 +176,9 @@ module.exports = {
     resetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
-        const user = await User.findOne({daiictId});
+        const user = await User.findOne({ daiictId });
 
-        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+        if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect('/');
         }
@@ -196,7 +202,7 @@ module.exports = {
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
-        res.redirect(homePage)
+        res.redirect(homePage);
     },
 
 
@@ -258,6 +264,9 @@ module.exports = {
 
         const filteredUser = filterResourceData(user, permission.attributes);
 
+        if (!user.isActive){
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userDeactivated);
+        }
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,
             expires: new Date(Date.now() + JWT_EXPIRY_TIME * 24 * 60 * 60 * 1000),
