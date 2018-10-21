@@ -75,6 +75,56 @@ const cartSchema = new Schema({
     cancelReason: {
         type: String
     },
+    statusChangeTime:{
+        failed:{
+            time:Date,
+            by:String,
+        },
+        invalid:{
+            time:Date,
+            by:String,
+        },
+        unplaced:{
+            time:Date,
+            by:String,
+        },
+        placed:{
+            time:Date,
+            by:String,
+        },
+        paymentComplete:{
+            time:Date,
+            by:String,
+        },
+        processing:{
+            time:Date,
+            by:String,
+        },
+        readyToDeliver:{
+            time:Date,
+            by:String,
+        },
+        readyToPickup:{
+            time:Date,
+            by:String,
+        },
+        completed:{
+            time:Date,
+            by:String,
+        },
+        onHold:{
+            time:Date,
+            by:String,
+        },
+        cancelled:{
+            time:Date,
+            by:String,
+        },
+        refunded:{
+            time:Date,
+            by:String,
+        }
+    }
 });
 
 cartSchema.pre('validate', function (next) {

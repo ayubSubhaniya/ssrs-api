@@ -15,7 +15,7 @@ const paymentCodeGenerator = require('shortid');
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
+const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
@@ -30,7 +30,7 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
         return -1;
     }
 
-    if (collectionTypeCategory!==undefined && collectionTypeDoc.category !== collectionTypeCategory) {
+    if (collectionTypeCategory !== undefined && collectionTypeDoc.category !== collectionTypeCategory) {
         return -1;
     }
 
@@ -113,7 +113,7 @@ module.exports = {
                     }
                 });
 
-            cart.orders = await validateOrder(cart.orders);
+            cart.orders = await validateOrder(cart.orders, user);
 
             const ordersCost = await calculateOrdersCost(cart);
             if (ordersCost === -1) {
@@ -313,7 +313,7 @@ module.exports = {
 
         for (let i = 0; i < cart.length; i++) {
             if (cart[i].status < cartStatus.placed) {
-                cart[i].orders = await validateOrder(cart[i].orders);
+                cart[i].orders = await validateOrder(cart[i].orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart[i]);
                 if (ordersCost === -1) {
@@ -371,7 +371,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -446,7 +446,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -521,7 +521,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -595,7 +595,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -661,14 +661,34 @@ module.exports = {
                     if (cartUpdateAtt.paymentType === paymentTypes.offline) {
                         cartUpdateAtt.status = cartStatus.placed;
                         cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                        cartUpdateAtt['$set'] = {
+                            "statusChangeTime.placed": {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        };
                     } else {
                         cartUpdateAtt.status = cartStatus.paymentComplete;
+                        cartUpdateAtt['$set'] = {
+                            "statusChangeTime.placed": {
+                                time: new Date(),
+                                by: systemAdmin
+                            },
+                            "statusChangeTime.paymentComplete": {
+                                time: new Date(),
+                                by: systemAdmin
+                            },
+                            "statusChangeTime.processing": {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        };
                     }
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
 
-                    cartInDb.orders = await validateOrder(cartInDb.orders);
+                    cartInDb.orders = await validateOrder(cartInDb.orders, user);
 
                     const ordersCost = await calculateOrdersCost(cartInDb);
                     if (ordersCost === -1) {
@@ -726,7 +746,19 @@ module.exports = {
                         }
 
                         for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing }, { new: true })
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                status: orderStatus.processing,
+                                "$set": {
+                                    "statusChangeTime.placed": {
+                                        time: new Date(),
+                                        by: systemAdmin
+                                    },
+                                    "statusChangeTime.processing": {
+                                        time: new Date(),
+                                        by: systemAdmin
+                                    },
+                                }
+                            }, { new: true })
                                 .populate('service');
 
                             const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
@@ -740,7 +772,15 @@ module.exports = {
                         cartUpdateAtt.status = cartStatus.processing;
                     } else {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.placed }, { new: true })
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                status: orderStatus.placed,
+                                "$set": {
+                                    "statusChangeTime.placed": {
+                                        time: new Date(),
+                                        by: systemAdmin
+                                    },
+                                }
+                            }, { new: true })
                                 .populate('service');
                             const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                             placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
@@ -756,7 +796,7 @@ module.exports = {
                     const placedCart = new PlacedCart(placedCartDoc);
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, 'System', cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -803,6 +843,16 @@ module.exports = {
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.status = cartStatus.paymentComplete;
+            cartUpdateAtt['$set'] = {
+                "statusChangeTime.paymentComplete": {
+                    time: new Date(),
+                    by: daiictId
+                },
+                "statusChangeTime.processing": {
+                    time: new Date(),
+                    by: daiictId
+                }
+            };
 
             const cartInDb = await Cart.findOne({ paymentCode });
 
@@ -816,7 +866,15 @@ module.exports = {
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing });
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.processing,
+                            "$set": {
+                                "statusChangeTime.processing": {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        });
                     }
 
                     cartUpdateAtt.status = cartStatus.processing;
@@ -876,6 +934,12 @@ module.exports = {
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
+                        updateAtt["$set"] = {
+                            "statusChangeTime.completed": {
+                                time: new Date(),
+                                by: daiictId
+                            }
+                        };
                         if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
                             if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
                                 return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -899,7 +963,15 @@ module.exports = {
                         }
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             if (cartInDb.orders[i].status !== orderStatus.cancelled) {
-                                await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
+                                await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                    status: orderStatus.completed,
+                                    "$set": {
+                                        "statusChangeTime.completed": {
+                                            time: new Date(),
+                                            by: systemAdmin
+                                        },
+                                    }
+                                });
                                 await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, { status: orderStatus.completed });
                             }
 
@@ -940,6 +1012,12 @@ module.exports = {
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.status = cartStatus.cancelled;
+            cartUpdateAtt["$set"] = {
+                "statusChangeTime.cancelled": {
+                    time: new Date(),
+                    by: daiictId
+                }
+            };
 
             const cartInDb = await Cart.findById(cartId);
 
@@ -962,7 +1040,13 @@ module.exports = {
                             status: orderStatus.cancelled,
                             lastModified: cartUpdateAtt.lastModified,
                             lastModifiedBy: daiictId,
-                            cancelReason: cartUpdateAtt.cancelReason
+                            cancelReason: cartUpdateAtt.cancelReason,
+                            "$set": {
+                                "statusChangeTime.cancelled": {
+                                    time: new Date(),
+                                    by: daiictId
+                                }
+                            }
                         });
 
                         await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, {

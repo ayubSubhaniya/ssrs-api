@@ -151,12 +151,14 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'unitsRequested',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
             canCreate: [],
             canUpdate: [
                 'status',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
         },
         student: {
@@ -183,7 +185,8 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'unitsRequested',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
             canCreate: [
                 'service',
@@ -230,12 +233,14 @@ module.exports = {
                 'pickup',
                 'collectionType',
                 'validityErrors',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
             canCreate: [],
             canUpdate: [
                 'status',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
         },
         student: {
@@ -259,7 +264,8 @@ module.exports = {
                 'pickup',
                 'collectionType',
                 'validityErrors',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
             canCreate: [
                 'orders',
@@ -276,6 +282,7 @@ module.exports = {
                 'paymentId',
                 'delivery',
                 'pickup',
+                'statusChangeTime'
             ]
         },
     },

@@ -1,4 +1,5 @@
 module.exports = {
+    systemAdmin:"system",
     homePage:'http://student-service-request-system.herokuapp.com/',
     sortQueryName: 'sort',
     httpProtocol: 'http',

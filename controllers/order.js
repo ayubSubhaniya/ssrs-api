@@ -11,7 +11,7 @@ const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes } = require('../configuration');
+const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
 
@@ -20,9 +20,9 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
-    //const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
-    //  (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
-    const useServiceValidation = true;
+    const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
+        (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
+    //const useServiceValidation = true;
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
     }
@@ -347,7 +347,13 @@ module.exports = {
                         status: orderStatus.processing,
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
-                        lastModified: new Date()
+                        lastModified: new Date(),
+                        '$set': {
+                            'statusChangeTime.processing': {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        }
                     }, { new: true })
                         .populate({
                             path: 'parameters',
@@ -448,10 +454,22 @@ module.exports = {
             switch (orderUpdateAtt.status) {
                 case orderStatus.ready:
                     updateAtt.status = orderStatus.ready;
+                    updateAtt['$set'] = {
+                        'statusChangeTime.ready': {
+                            time: new Date(),
+                            by: daiictId
+                        }
+                    };
                     break;
                 case orderStatus.onHold:
                     updateAtt.status = orderStatus.onHold;
                     updateAtt.holdReason = orderUpdateAtt.reason;
+                    updateAtt['$set'] = {
+                        'statusChangeTime.onHold': {
+                            time: new Date(),
+                            by: daiictId
+                        }
+                    };
                     /*generate notification for hold order*/
                     break;
                 default :
@@ -476,8 +494,16 @@ module.exports = {
             if (allReady) {
                 if (cart.collectionType === collectionTypes.delivery) {
                     cart.status = cartStatus.readyToDeliver;
+                    cart.statusChangeTime.readyToDeliver = {
+                        time: new Date(),
+                        by: systemAdmin
+                    };
                 } else {
                     cart.status = cartStatus.readyToPickup;
+                    cart.statusChangeTime.readyToPickup = {
+                        time: new Date(),
+                        by: systemAdmin
+                    };
                 }
             }
             await cart.save();
@@ -512,6 +538,12 @@ module.exports = {
             updatedOrder.lastModified = new Date();
             updatedOrder.lastModifiedBy = daiictId;
             updatedOrder.status = orderStatus.cancelled;
+            updatedOrder['$set'] = {
+                'statusChangeTime.cancelled': {
+                    time: new Date(),
+                    by: daiictId
+                }
+            };
 
             const orderInDB = await Order.findById(orderId);
             if (orderInDB) {
@@ -520,7 +552,7 @@ module.exports = {
 
                     const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
                     const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
-                        status: orderStatus.failed,
+                        status: orderStatus.cancelled,
                         cancelReason: updatedOrder.cancelReason
                     });
 
@@ -542,18 +574,29 @@ module.exports = {
                     }
 
                     if (allReady) {
-                        if (cart.collectionType = collectionTypes.delivery) {
+                        if (cart.collectionType === collectionTypes.delivery) {
                             cart.status = cartStatus.readyToDeliver;
+                            cart.statusChangeTime.readyToDeliver = {
+                                time: new Date(),
+                                by: systemAdmin
+                            };
                         } else {
                             cart.status = cartStatus.readyToPickup;
+                            cart.statusChangeTime.readyToPickup = {
+                                time: new Date(),
+                                by: systemAdmin
+                            };
                         }
                     }
 
                     if (allCancel) {
-                        await Cart.findByIdAndUpdate(cartId, {
-                            status: cartStatus.cancelled,
-                            cancelReason: 'All orders cancelled'
-                        });
+                        cart.status = cartStatus.cancelled;
+                        cart.cancelReason = 'All orders cancelled';
+                        cart.statusChangeTime.cancelled = {
+                            time: new Date(),
+                            by: systemAdmin
+                        };
+
                         await PlacedCart.findOneAndUpdate({ cartId }, {
                             status: cartStatus.cancelled,
                             cancelReason: 'All orders cancelled'
