@@ -464,10 +464,6 @@ module.exports = {
                 .populate({
                     path: 'orders',
                     select: 'status'
-                })
-                .populate({
-                    path: 'collectionType',
-                    select: 'category'
                 });
 
             let allReady = true;
@@ -478,7 +474,7 @@ module.exports = {
             }
 
             if (allReady) {
-                if (cart.collectionType.category === collectionTypes.delivery) {
+                if (cart.collectionTypeCategory === collectionTypes.delivery) {
                     cart.status = cartStatus.readyToDeliver;
                 } else {
                     cart.status = cartStatus.readyToPickup;
