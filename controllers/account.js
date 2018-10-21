@@ -210,7 +210,12 @@ module.exports = {
         const { daiictId } = req.params;
         const user = await tempUser.findOne({ daiictId });
 
-        if (req.query.id === user.randomHash) {
+        // if user has been verified already
+        if(!user) {
+            res.end('<h2>This link has been used already and is now invalid.</h2>');
+        }
+
+        else if (req.query.id === user.randomHash) {
             //crete new Cart
             const cart = new Cart({
                 requestedBy: daiictId,
@@ -227,7 +232,7 @@ module.exports = {
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
-            req.flash('user sucessfully verified');
+            req.flash('User sucessfully verified');
             res.redirect(homePage);
         }
         else {

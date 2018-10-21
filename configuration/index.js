@@ -1,6 +1,6 @@
 module.exports = {
     systemAdmin:"system",
-    homePage:'http://student-service-request-system.herokuapp.com/',
+    homePage:'http://ssrs-daiict.herokuapp.com/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',

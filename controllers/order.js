@@ -492,7 +492,7 @@ module.exports = {
             }
 
             if (allReady) {
-                if (cart.collectionType === collectionTypes.delivery) {
+                if (cart.collectionTypeCategory === collectionTypes.delivery) {
                     cart.status = cartStatus.readyToDeliver;
                     cart.statusChangeTime.readyToDeliver = {
                         time: new Date(),
