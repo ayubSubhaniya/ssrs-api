@@ -42,13 +42,13 @@ module.exports = {
 
             for (let i = 0; i < userInfo.length; i++) {
                 const { user_email_id } = userInfo[i];
-                // await UserInfo.findOneAndUpdate({user_inst_id: user_inst_id}, userInfo[i], {upsert: true});
                 bulk.find({ user_email_id: user_email_id })
                     .upsert()
                     .updateOne(userInfo[i]);
             }
 
             await bulk.execute();
+
             res.sendStatus(HttpStatus.OK);
 
         } else {

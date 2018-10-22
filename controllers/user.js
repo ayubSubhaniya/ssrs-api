@@ -111,7 +111,8 @@ module.exports = {
                 daiictId: {
                     $nin: [daiictId]
                 }
-            });
+            })
+                .populate('userInfo');
             const filteredUsers = filterResourceData(requestedUsers, readPermission.attributes);
             res.status(HttpStatus.OK)
                 .json({ user: filteredUsers });
@@ -328,7 +329,7 @@ module.exports = {
 
             // Removing requestedCourierInfoId from user.addresses array
             var idx = user.addresses.indexOf(requestedCourierInfoId);
-            if(idx >= 0){
+            if (idx >= 0) {
                 user.addresses.splice(idx, 1);
                 await user.save();
             }

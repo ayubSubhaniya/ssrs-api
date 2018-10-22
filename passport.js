@@ -13,10 +13,9 @@ passport.use(new JwtStrategy({
 }, async (req, payload, done) => {
     try {
         //find the user specified in token
-        const user = await User.findOne({ daiictId: payload.sub });
-        const userInfo = await UserInfo.findOne({ user_email_id: payload.sub });
+        const user = await User.findOne({ daiictId: payload.sub })
+            .populate('userInfo');
 
-        user.userInfo = userInfo?userInfo:{};
         //user.userType = userInfo.user_type;
 
         //if user doesn't exist handle it

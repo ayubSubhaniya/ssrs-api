@@ -222,13 +222,16 @@ module.exports = {
                 createdOn: user.createdOn,
             });
             await cart.save();
+
+            const userInfo = await UserInfo.findOne({user_email_id:daiictId});
             //create new user
             const newUser = new User({
                 daiictId: user.daiictId,
                 primaryEmail: user.primaryEmail,
                 password: user.password,
                 createdOn: user.createdOn,
-                cartId: cart._id
+                cartId: cart._id,
+                userInfo:userInfo._id
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
