@@ -284,6 +284,15 @@ module.exports = {
 
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
+            if (query.status !== undefined) {
+                if (query.status < cartStatus.placed) {
+                    query.status = -1;
+                }
+            } else {
+                query.status = {
+                    $gte: cartStatus.placed
+                };
+            }
             sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
             query.requestedBy = daiictId;
 
@@ -321,7 +330,7 @@ module.exports = {
                 }
             });
 
-        for (let i = 0; i < cart.length; i++) {
+        /*for (let i = 0; i < cart.length; i++) {
             if (cart[i].status < cartStatus.placed) {
                 cart[i].orders = await validateOrder(cart[i].orders, user);
 
@@ -344,7 +353,7 @@ module.exports = {
 
                 cart[i].totalCost = cart[i].collectionTypeCost + cart[i].ordersCost;
             }
-        }
+        }*/
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
