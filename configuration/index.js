@@ -1,5 +1,6 @@
 module.exports = {
-    homePage:'http://student-service-request-system.herokuapp.com/',
+    systemAdmin:"system",
+    homePage:'http://ssrs-daiict.herokuapp.com/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
@@ -10,14 +11,12 @@ module.exports = {
     NEWS_EXPIRY_TIME: 8,
     NOTIFICATION_EXPIRY_TIME: 8,
     collectionTypes: {
-        courier: 'Courier',
+        delivery: 'Delivery',
         pickup: 'Pickup',
     },
     paymentTypes: {
-        offline: 0,
-        payTm: 1,
-        creditCard: 2,
-        debitCard: 3
+        offline: "offline",
+        online: "online"
     },
     permissions: {
         readAny: 'readAny',
@@ -44,14 +43,15 @@ module.exports = {
         changeResourceStatus: 'changeResourceStatus',
         news: 'News',
         notification: 'Notification',
-        courier: 'Courier',
+        delivery: 'Courier',
         collector: 'Collector',
         accessLevel: 'AccessLevel',
         role: 'Role',
         parameter: 'Parameter',
         collectionType: 'CollectionType',
         cart: 'Cart',
-        courierInfo: 'CourierInfo'
+        courierInfo: 'CourierInfo',
+        userInfo: 'UserInfo'
     },
     validityErrors: {
         permissionDenied: 'Permission Denied',
@@ -93,7 +93,8 @@ module.exports = {
         pendingPayment: 10,
         processing: 20,
         ready: 30,
-        completed: 40
+        completed: 40,
+        cancel:50
     },
 
     placedOrderServiceAttributes: [
@@ -131,7 +132,7 @@ module.exports = {
         'paymentType',
         'paymentId',
         'paymentCode',
-        'courier',
+        'delivery',
         'pickup',
         'collectionType',
         'cancelReason'
@@ -150,6 +151,111 @@ module.exports = {
         'processing': ['ready', 'cancelled'],
         'ready': ['completed', 'cancelled'],
     },
+
+    defaultPermissionObject: {
+        User:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Order:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Service:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        SpecialService:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        InActiveResource:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        changeResourceStatus:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        News:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Notification:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Courier:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Collector:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        AccessLevel:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Role:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Parameter:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        CollectionType:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        Cart:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        CourierInfo:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        UserInfo:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        }
+    }
 }
 ;
 

@@ -1,6 +1,6 @@
 const HttpStatus = require('http-status-codes');
 
-const courierModel = require('../models/courier');
+const deliveryModel = require('../models/delivery');
 const { resources } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData, parseFilterQuery } = require('../helpers/controllerHelpers');
@@ -12,30 +12,30 @@ module.exports = {
         const {daiictId} = user;
 
         const readAnyPermission = accessControl.can(user.userType)
-            .readAny(resources.courier);
+            .readAny(resources.delivery);
         const readOwnPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
 
         if(readAnyPermission.granted) {
             const query = parseFilterQuery(req.query, readAnyPermission.attributes);
-            const requestedCouriers = await courierModel.find(query);
+            const requestedCouriers = await deliveryModel.find(query);
 
             if(requestedCouriers) {
                 const filteredCouriers = filterResourceData(requestedCouriers, readAnyPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ courier: filteredCouriers });
+                    .json({ delivery: filteredCouriers });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
         }else if(readOwnPermission.granted) {
             const query = parseFilterQuery(req.query, readAnyPermission.attributes);
             query.createdBy = daiictId;
-            const requestedCouriers = await courierModel.find(query);
+            const requestedCouriers = await deliveryModel.find(query);
 
             if(requestedCouriers) {
                 const filteredCouriers = filterResourceData(requestedCouriers, readOwnPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ courier: filteredCouriers });
+                    .json({ delivery: filteredCouriers });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -50,22 +50,22 @@ module.exports = {
         const { requestedCourierId } = req.params;
 
         const readAnyPermission = accessControl.can(user.userType)
-            .readAny(resources.courier);
+            .readAny(resources.delivery);
         const readOwnPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
 
         if(readAnyPermission.granted) {
-            const requestedCourier = await courierModel.findById(requestedCourierId);
+            const requestedCourier = await deliveryModel.findById(requestedCourierId);
 
             if(requestedCourier) {
                 const filteredCourier = filterResourceData(requestedCourier, readAnyPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ courier: filteredCourier });
+                    .json({ delivery: filteredCourier });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else if(readOwnPermission.granted) {
-            const requestedCourier = await courierModel.findOne({
+            const requestedCourier = await deliveryModel.findOne({
                 _id:requestedCourierId,
                 createdBy: daiictId
             });
@@ -73,7 +73,7 @@ module.exports = {
             if(requestedCourier) {
                 const filteredCourier = filterResourceData(requestedCourier, readOwnPermission.attributes);
                 res.status(HttpStatus.OK)
-                    .json({ courier: filteredCourier });
+                    .json({ delivery: filteredCourier });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

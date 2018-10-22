@@ -1,176 +1,227 @@
-<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title></title>
-        <style>
-            body {
-                padding: 50px;
-            }
-            div.container {
-                max-width: 1150px;
-                margin: 0 auto;
-                font-family: "Open Sans";
-            }
-            div.container p {
-                margin: 0;
-            }
-            .container h1,
-            .container h2 {
-                margin: 0px;
-                color: #2980b9;
-            }
-            .container h1 {
-                font-size: 50px
-            }
-            hr {
-                border: 1px solid #2980b9;
-                margin: 30px 0;
-            }
-            table.bordered {
-                border-collapse: collapse;
-            }
-            table.bordered td,
-            table.bordered th,
-            table.bordered {
-                border: 2px solid #2980b9;
-            }
-            .full-width { width: 100%; }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .text-left { text-align: left; }
-            .text-top * { vertical-align: top; }
-            .monospaced {
-                font-family: "Monaco", monospace;
-            }
-            table.padded th,
-            table.padded td {
-                padding: 5px;
-            }
-            table th {
-                font-weight: normal;
-            }
-            .mt-s { margin-top: 23px; }
-            .mb-s { margin-bottom: 23px; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
 
-            <!-- Seller Fields -->
-            <div>
-                <h1>DA-IICT</h1>
-                <p>Address: <strong>DA-IICT, Near Indroda Circle, Ahmedabad-Gandhinagar Highway,
-                        Gandhinagar - 382009, Gujarat, India</strong></p>
-                <p>Phone: <strong>079 30520000</strong></p>
-                <p>Email: <strong>info@daiict.ac.in</strong></p>
+<head>
+    <title>
+        Invoice SSRS
+    </title>
+    <style>
+        .img-cls {
+            height: 10em;
+            width: 10em;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        .header {
+            width: 100%;
+            display: inline-flex;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+
+        .sub-header {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+           
+        }
+
+        .invoice-box {
+            height:15em;
+            width : 30em;
+            background-color: #e4e2e2ce;
+            margin-left: 10em;
+            margin-top: 2em;
+            padding-left: 20px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            max-width: 30em;
+        }
+
+        .mb-s {
+            margin-bottom: 23px;
+        }
+
+        .bb-s {
+            border: 2px rgb(80, 79, 79) solid;
+            border-collapse: collapse;
+            padding: 4px;
+        }
+
+        .bb-l {
+            border-left: 2px rgb(80, 79, 79) solid;
+            border-collapse: collapse;
+            padding: 4px;
+        }
+        .f-box{
+            display: inline-flex;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="sub-header">
+                <img class="img-cls" src="dalogo.jpg" alt="DAIICT LOGO">
+                <div>
+                    <h4>Dhirubhai Ambani
+                        <br> Institute of Information and Communication Technology
+                        <br>
+                    </h4>
+                    <h4>
+                        Near Indroda Circle, Gandhinagar, Gujarat, India 382007,
+                        <br> Tel: +91 79 3052 0000 | Fax : +91 79 3052 0010 | web : www.daiict.ac.in
+                    </h4>
+                </div>
             </div>
-            
-            <hr>
-
-            <!-- Invoice data -->
-            <h2>INVOICE</h2>
-            <table class="mb-s">
-                <tbody>
+            <div>
+                <h4>
+                    Invoice no : {{invoice.number}}
+                </h4>
+                <h4>
+                    Invoice date : {{invoice.date}}
+                </h4>
+            </div>
+        </div>
+        <div class="f-box" >
+            <div class="invoice-box">
+                <h2>INVOICE</h2>
+                <table class="mb-s">
+                    <tbody>
+                        <tr>
+                            <td style="width: 10em;">Invoice-Number:</td>
+                            <td>{{invoice.number}}</td>
+                        </tr>
+                        <tr>
+                            <td> Invoice-Date</td>
+                            <td> {{invoice.date}}</td>
+                        </tr>
+                        <tr>
+                            <td>DA-IICT ID:</td>
+                            <td>{{buyer.daiictId}}</td>
+                        </tr>
+                        <tr>
+                            <td>Customer name:</td>
+                            <td>{{buyer.firstName}} {{buyer.lastName}}</td>
+                        </tr>
+                        <tr>
+                            <td>Payment type:</td>
+                            <td>{{invoice.paymentType}}</td>
+                        </tr>
+                        <tr>
+                            <td>Payment ID:</td>
+                            <td>{{invoice.paymentID}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="invoice-box">
+                <table class="mb-s">
+                    <thead>
+                        <tr>
+                            
+                              <h2>  Collection type - {{invoice.collectionType}} </h2>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="width: 10em;">
+                                Name:
+                            </td>
+                            <td>
+                                {{invoice.info.name}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Contact no:
+                            </td>
+                            <td>
+                                {{invoice.info.contactNo}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Address:
+                            </td>
+                            <td>
+                                {{invoice.info.address.line1}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                City:
+                            </td>
+                            <td>
+                                {{invoice.info.city}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                State:
+                            </td>
+                            <td>
+                                {{invoice.info.state}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Country:
+                            </td>
+                            <td>
+                                {{invoice.info.country}}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="invoice-body">
+            <table class="bb-s" style="margin-left: 27em; margin-top : 2em;">
+                <thead>
                     <tr>
-                        <td style="width: 230px;">Invoice-Number:</td>
-                        <td>{{invoice.number}}</td>
-                    </tr>
-                    <tr>
-                        <td>Invoice-Date:</td>
-                        <td>{{invoice.date}}</td>
-                    </tr>
-                    <tr><td> </td><td> </td></tr>
-                    <tr>
-                        <td>DA-IICT ID:</td>
-                        <td>{{buyer.daiictId}}</td>
-                    </tr>
-                    <tr>
-                        <td>Customer name:</td>
-                        <td>{{buyer.firstName}} {{buyer.lastName}}</td>
-                    </tr>
-                    <tr><td> </td><td> </td></tr>
-                    <tr>
-                        <td>Payment type:</td>
-                        <td>{{invoice.paymentType}}</td>
-                    </tr>
-                    <tr>
-                        <td>Payment ID:</td>
-                        <td>{{invoice.paymentID}}</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <table class="bordered full-width padded mt-s mb-s monospaced">
-                <thead id = "table">
-                    <tr>
-                        <th style="width: 30px;"><strong>No.</strong></th>
-                        <th style="max-width: 2%;">
-                            <strong>Service Name</strong>
-                        </th>
-                        <th>
-                            <strong>Qty.</strong>
-                        </th>
-                        <th>
-                            <strong>Service cost (₹)</strong>
-                        </th>
-                        <th>
-                            <strong>Parameter(s) cost (₹)</strong>
-                        </th>
-                        <th>
-                            <strong>Sub-total (₹)</strong>
-                        </th>
+                        <th class="bb-s">No.</th>
+                        <th class="bb-s">Service Name</th>
+                        <th class="bb-s">Qty.</th>
+                        <th class="bb-s">Service cost(₹)</th>
+                        <th class="bb-s">Parameter(s) cost(₹)</th>
+                        <th class="bb-s">Sub-total(₹)</th>
                     </tr>
                 </thead>
-                <tbody class="text-top">
+                <tbody class="">
                     {{{description_rows}}}
                     <tr>
-                        <td colspan="5" class="text-right">
-                            <strong>Invoice Sub-total (₹) </strong>
+                        <td colspan="5" class="bb-l">
+                            Invoice Sub-total (₹)
                         </td>
-                        <td class="text-right">
-                            <strong>{{invoice.subTotal}}</strong>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="5" class="text-right">
-                            <strong>Collection Cost (₹) </strong>
-                        </td>
-                        <td class="text-right">
-                            <strong>+ {{invoice.collectionCost}}</strong>
+                        <td class="bb-l">
+                            {{invoice.subTotal}}
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="text-right">
+                        <td colspan="5" class="bb-l">
+                            Collection Cost (₹)
+                        </td>
+                        <td class="bb-l">
+                            + {{invoice.collectionCost}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="bb-l">
                             <strong>Grand Total (₹) </strong>
                         </td>
-                        <td class="text-right">
+                        <td class="bb-l">
                             <strong>= {{invoice.totalCost}}</strong>
                         </td>
                     </tr>
                 </tbody>
             </table>
-
-            <table class="bordered padded mt-s mb-s monospaced">
-                <thead>
-                    <tr>
-                        <th style="max-width: 15%"><strong>Collection type - {{invoice.collectionType}}</strong></td>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <strong>Name:</strong> {{invoice.info.name}} <br>
-                            <strong>Contact No:</strong> {{invoice.info.contactNo}} <br>
-                            <strong>Address:</strong> {{invoice.info.address.line1}} <br>
-                            <strong>City:</strong> {{invoice.info.city}} <br>
-                            <strong>State:</strong> {{invoice.info.state}} <br>
-                            <strong>Country:</strong> {{invoice.info.country}} <br>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
-    </body>
-</html>
+    </div>
+</body>
 
+</html>

@@ -3,7 +3,7 @@ const HttpStatus = require('http-status-codes');
 const Service = require('../models/service');
 const News = require('../models/news');
 const Notification = require('../models/notification');
-const { filterResourceData } = require('../helpers/controllerHelpers');
+const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources } = require('../configuration');
 
@@ -51,6 +51,16 @@ const generateServiceUpdatedMessage = async (service, daiictId) => {
     }
 };
 
+const generateServiceChangeStatusMessage = async (service, daiictId) => {
+    let message = 'Service ' + service.name + ' is now ' + (service.isActive ? 'active' : 'inactive');
+
+    if (service.isSpecialService) {
+        await generateNotification(message, daiictId, service.specialServiceUsers);
+    } else {
+        await generateNews(message, daiictId, service._id);
+    }
+};
+
 const deleteCurrServiceNews = async (currServiceId) => {
     await News.deleteMany({ serviceId: currServiceId });
 };
@@ -60,7 +70,7 @@ module.exports = {
         const { user } = req;
         const { daiictId } = user;
 
-        const readAnyInActiveService = accessControl.can(user.userType)
+        const readInActiveService = accessControl.can(user.userType)
             .readAny(resources.inActiveResource);
         const readOwnInActiveService = accessControl.can(user.userType)
             .readOwn(resources.inActiveResource);
@@ -71,11 +81,10 @@ module.exports = {
         const readCollectionTypePermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 
-
         if (readServicePermission.granted) {
             let services;
-            if (readAnyInActiveService.granted) {
-                services = await Service.find({ isSpecialService: false })
+            if (readInActiveService.granted) {
+                services = await Service.find()
                     .populate({
                         path: 'collectionTypes',
                         select: readCollectionTypePermission.attributes
@@ -83,11 +92,9 @@ module.exports = {
                     .populate({
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
-                    })
-                    .exec();
+                    });
             } else if (readOwnInActiveService.granted) {
                 services = await Service.find({
-                    isSpecialService: false,
                     $or: [{ createdBy: daiictId }, { isActive: true }]
                 })
                     .populate({
@@ -97,12 +104,19 @@ module.exports = {
                     .populate({
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
-                    })
-                    .exec();
+                    });
             } else {
                 services = await Service.find({
-                    isSpecialService: false,
-                    isActive: true
+                    isActive: true,
+                    $or: [{
+                        isSpecialService: false,
+                        allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
+                        allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
+                    }, {
+                        isSpecialService: true,
+                        specialServiceUsers: daiictId
+                    }]
                 })
                     .populate({
                         path: 'collectionTypes',
@@ -111,8 +125,12 @@ module.exports = {
                     .populate({
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
-                    })
-                    .exec();
+                    });
+
+                // Allowing only those parameters which are active
+                for (let i = 0; i < services.length; i++) {
+                    services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                }
             }
 
             if (services) {
@@ -191,6 +209,11 @@ module.exports = {
                             select: readParameterPermission.attributes
                         })
                         .exec();
+
+                    // Allowing only those parameters which are active
+                    for (let i = 0; i < services.length; i++) {
+                        services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                    }
                 }
             } else if (readOwnSpecialService.granted) {
                 if (readOwnInActiveService.granted) {
@@ -222,6 +245,11 @@ module.exports = {
                             select: readParameterPermission.attributes
                         })
                         .exec();
+
+                    // Allowing only those parameters which are active
+                    for (let i = 0; i < services.length; i++) {
+                        services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                    }
                 }
             } else {
                 services = await Service.find({
@@ -238,6 +266,11 @@ module.exports = {
                         select: readParameterPermission.attributes
                     })
                     .exec();
+
+                // Allowing only those parameters which are active
+                for (let i = 0; i < services.length; i++) {
+                    services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                }
             }
 
             if (services) {
@@ -281,10 +314,9 @@ module.exports = {
                     .populate({
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
-                    })
-                    .exec();
+                    });
             } else if (readOwnInActiveService.granted) {
-                service = await Service.findOne({
+                service = await Service.find({
                     _id: serviceId,
                     $or: [{ createdBy: daiictId }, { isActive: true }]
                 })
@@ -295,12 +327,20 @@ module.exports = {
                     .populate({
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
-                    })
-                    .exec();
+                    });
             } else {
                 service = await Service.findOne({
                     _id: serviceId,
-                    isActive: true
+                    isActive: true,
+                    $or: [{
+                        isSpecialService: false,
+                        allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
+                        allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
+                    }, {
+                        isSpecialService: true,
+                        specialServiceUsers: daiictId
+                    }]
                 })
                     .populate({
                         path: 'collectionTypes',
@@ -309,8 +349,13 @@ module.exports = {
                     .populate({
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
-                    })
-                    .exec();
+                    });
+
+                if (!service) {
+                    return res.sendStatus(HttpStatus.NOT_FOUND);
+                }
+                // Allowing only those parameters which are active
+                service.availableParameters = filterActiveData(service.availableParameters);
             }
 
             if (service) {
@@ -394,6 +439,9 @@ module.exports = {
                             select: readParameterPermission.attributes
                         })
                         .exec();
+
+                    // Allowing only those parameters which are active
+                    service.availableParameters = filterActiveData(service.availableParameters);
                 }
             } else if (readOwnSpecialService.granted) {
                 if (readAnyInActiveService.granted || readOwnInActiveService.granted) {
@@ -426,6 +474,9 @@ module.exports = {
                             select: readParameterPermission.attributes
                         })
                         .exec();
+
+                    // Allowing only those parameters which are active
+                    service.availableParameters = filterActiveData(service.availableParameters);
                 }
             } else {
                 service = await Service.find({
@@ -441,6 +492,9 @@ module.exports = {
                         select: readParameterPermission.attributes
                     })
                     .exec();
+
+                // Allowing only those parameters which are active
+                service.availableParameters = filterActiveData(service.availableParameters);
             }
 
             if (service) {
@@ -469,7 +523,7 @@ module.exports = {
 
         if (createPermission.granted) {
             const currentTimestamp = new Date();
-            let newServiceAtt = req.value.body;
+            const newServiceAtt = req.value.body;
             newServiceAtt.createdOn = currentTimestamp;
             newServiceAtt.createdBy = daiictId;
 
@@ -508,7 +562,7 @@ module.exports = {
 
         if (updateAnyPermission.granted) {
 
-            let newService = req.value.body;
+            const newService = req.value.body;
 
             const service = await Service.findByIdAndUpdate(serviceId, newService, { new: true })
                 .populate({
@@ -518,8 +572,7 @@ module.exports = {
                 .populate({
                     path: 'availableParameters',
                     select: readParameterPermission.attributes
-                })
-                .exec();
+                });
             if (service) {
                 const filteredService = filterResourceData(service, readPermission.attributes);
                 await generateServiceUpdatedMessage(service, daiictId);
@@ -547,10 +600,9 @@ module.exports = {
                 .populate({
                     path: 'availableParameters',
                     select: readParameterPermission.attributes
-                })
-                .exec();
+                });
 
-            if (service){
+            if (service) {
                 const filteredService = filterResourceData(service, readPermission.attributes);
                 await generateServiceUpdatedMessage(service, daiictId);
 
@@ -567,6 +619,7 @@ module.exports = {
 
     changeStatus: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user;
         const { serviceId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
@@ -579,6 +632,8 @@ module.exports = {
             const updatedService = await Service.findByIdAndUpdate(serviceId, serviceUpdateAtt, { new: true });
             if (updatedService) {
                 const filteredService = filterResourceData(updatedService, readPermission.attributes);
+                await generateServiceChangeStatusMessage(filteredService, daiictId);
+
                 res.status(HttpStatus.OK)
                     .json({ service: filteredService });
             } else {
@@ -599,18 +654,18 @@ module.exports = {
             .deleteOwn(resources.service);
 
         if (deleteAnyPermission.granted) {
-            deleteCurrServiceNews(serviceId);
-            
+            await deleteCurrServiceNews(serviceId);
+
             const service = await Service.findByIdAndRemove(serviceId);
-            
+
             if (service) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
-            
+
         } else if (deleteOwnPermission.granted) {
-            deleteCurrServiceNews(serviceId);
+            await deleteCurrServiceNews(serviceId);
 
             const service = await Service.findOneAndRemove({
                 _id: serviceId,
@@ -618,7 +673,7 @@ module.exports = {
             });
 
             if (service) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

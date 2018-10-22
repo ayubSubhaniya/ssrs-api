@@ -5,6 +5,7 @@ const randomstring = require('randomstring');
 const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
+const UserInfo = require('../models/userInfo');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
 const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName, homePage } = require('../configuration');
@@ -61,10 +62,15 @@ module.exports = {
         const createdOn = new Date();
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
+        const userInDB = await UserInfo.findOne({ user_email_id: daiictId });
 
         //user already exist
         if (foundUser) {
-            return res.sendStatus(HttpStatus.FORBIDDEN);
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userAlreadyExist);
+        }
+
+        if (!userInDB){
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.invalidDaiictUser);
         }
 
         const randomHash = randomstring.generate();
@@ -127,6 +133,10 @@ module.exports = {
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
+        if (!foundUser) {
+            return res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+
         const randomHash = randomstring.generate();
         const linkExpiryTime = new Date();
         linkExpiryTime.setHours(linkExpiryTime.getHours() + RESET_PASSWORD_EXPIRY_TIME);
@@ -151,9 +161,9 @@ module.exports = {
 
     verifyResetPasswordLink: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await User.findOne({daiictId});
+        const user = await User.findOne({ daiictId });
         //user already exist
-        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+        if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect(homePage);
         }
@@ -166,9 +176,9 @@ module.exports = {
     resetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
         const primaryEmail = daiictId + '@' + daiictMailDomainName;
-        const user = await User.findOne({daiictId});
+        const user = await User.findOne({ daiictId });
 
-        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+        if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect('/');
         }
@@ -188,11 +198,11 @@ module.exports = {
             to: primaryEmail,
             subject: 'Password successfully changed',
             text: 'Hello,\n' +
-                '\tThis is a confirmation mail for successful change in password for your account ' + user.email + '.\n',
+                '\tThis is a confirmation mail for successful change in password for your account ' + user.daiictId + '.\n',
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
-        res.redirect(homePage)
+        res.redirect(homePage);
     },
 
 
@@ -200,24 +210,32 @@ module.exports = {
         const { daiictId } = req.params;
         const user = await tempUser.findOne({ daiictId });
 
-        if (req.query.id === user.randomHash) {
+        // if user has been verified already
+        if(!user) {
+            res.end('<h2>This link has been used already and is now invalid.</h2>');
+        }
+
+        else if (req.query.id === user.randomHash) {
             //crete new Cart
             const cart = new Cart({
                 requestedBy: daiictId,
                 createdOn: user.createdOn,
             });
             await cart.save();
+
+            const userInfo = await UserInfo.findOne({user_email_id:daiictId});
             //create new user
             const newUser = new User({
                 daiictId: user.daiictId,
                 primaryEmail: user.primaryEmail,
                 password: user.password,
                 createdOn: user.createdOn,
-                cartId: cart._id
+                cartId: cart._id,
+                userInfo:userInfo._id
             });
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
-            req.flash('user sucessfully verified');
+            req.flash('User sucessfully verified');
             res.redirect(homePage);
         }
         else {
@@ -233,9 +251,8 @@ module.exports = {
 
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
-        res.sendStatus(HttpStatus.OK);
-    }
-    ,
+        res.status(HttpStatus.OK).json({});
+    },
 
     signIn: async (req, res, next) => {
 
@@ -245,6 +262,7 @@ module.exports = {
 
         //get User Id
         const { user } = req;
+        console.log(user);
         if (user.resetPasswordToken !== undefined) {
             user.resetPasswordRandomHash = undefined;
             await user.save();
@@ -254,6 +272,9 @@ module.exports = {
 
         const filteredUser = filterResourceData(user, permission.attributes);
 
+        if (!user.isActive){
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userDeactivated);
+        }
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,
             expires: new Date(Date.now() + JWT_EXPIRY_TIME * 24 * 60 * 60 * 1000),
@@ -265,6 +286,6 @@ module.exports = {
     signOut: async (req, res, next) => {
         res.clearCookie('jwt');
         res.status(HttpStatus.OK)
-            .end();
+            .json({});
     },
 };

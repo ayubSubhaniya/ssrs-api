@@ -41,9 +41,9 @@ const placedCartSchema = new Schema({
         type: Number,
         default: 0,
     },
-    courier: {
+    delivery: {
         type: Schema.Types.ObjectId,
-        ref: 'courier'
+        ref: 'delivery'
     },
     pickup: {
         type: Schema.Types.ObjectId,

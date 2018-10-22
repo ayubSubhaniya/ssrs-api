@@ -7,7 +7,7 @@ const userSchema = new Schema({
 
     /*User supplied field*/
     daiictId: {
-        type: Number,
+        type: String,
         required: true,
         unique: true,
     },

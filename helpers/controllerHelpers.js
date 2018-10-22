@@ -1,26 +1,36 @@
+
+const { defaultPermissionObject } = require('../configuration');
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
 const aggregations = ['gte', 'gt', 'lte', 'lt'];
 
-const constructPermissionObject = (permissions) => {
-    let permissionData = {};
+const constructPermissionObject = (permissions, role) => {
+    let permissionData = defaultPermissionObject;
 
-    Object.keys(permissions).forEach(role=>{
-        permissionData[role]={};
-        Object.keys(permissions[role]).forEach(resource=>{
-            permissionData[role][resource]={};
-            Object.keys(permissions[role][resource]).forEach(permission=>{
-                permissionData[role][resource][permission] = permissions[role][resource][permission].length > 0;
-            });
+    Object.keys(permissions[role])
+        .forEach(resource => {
+
+            Object.keys(permissions[role][resource])
+                .forEach(permission => {
+
+                    if (permissions[role][resource][permission].length > 0) {
+
+                        const permissionInfo = permission.split(':');
+                        permissionData[resource][permissionInfo[0]] = permissionInfo[1];
+
+                    }
+                });
         });
-    });
+
     return permissionData;
 };
 
 
-
 const filterResourceData = (resourcesData, attributes) => {
+    if (!attributes){
+        return resourcesData;
+    }
 
     if (resourcesData instanceof Array) {
         let filteredResourcesData = [];
@@ -42,10 +52,35 @@ const filterResourceData = (resourcesData, attributes) => {
         let filteredResourceData = {};
 
         attributes.forEach(attribute => {
-            if (resourcesData[attribute] != undefined) {
+            if (resourcesData[attribute] !== undefined) {
                 filteredResourceData[attribute] = resourcesData[attribute];
             }
         });
+
+        return filteredResourceData;
+    } else {
+        return {};
+    }
+};
+
+const filterActiveData = (resourcesData) => {
+
+    if (resourcesData instanceof Array) {
+        let filteredResourcesData = [];
+
+        for (let i = 0; i < resourcesData.length; i++) {
+            const resourceData = resourcesData[i];
+
+            if(resourceData.isActive === true)
+                filteredResourcesData.push(resourceData);
+        }
+        return filteredResourcesData;
+
+    } else if (resourcesData) {
+        let filteredResourceData = {};
+
+        if (resourcesData.isActive == true)
+            filteredResourceData = resourcesData;
 
         return filteredResourceData;
     } else {
@@ -121,6 +156,7 @@ const convertToStringArray = (array) => {
 
 module.exports = {
     filterResourceData,
+    filterActiveData,
     parseSortQuery,
     parseFilterQuery,
     convertToStringArray,
