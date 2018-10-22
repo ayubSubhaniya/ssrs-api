@@ -49,7 +49,7 @@ module.exports = {
 
             await bulk.execute();
 
-            res.sendStatus(HttpStatus.OK);
+            res.status(HttpStatus.OK).json({});
 
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);

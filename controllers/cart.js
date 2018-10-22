@@ -1074,7 +1074,7 @@ module.exports = {
                             cancelReason: cartUpdateAtt.cancelReason
                         });
                     }
-                    res.sendStatus(httpStatusCodes.OK);
+                    res.status(httpStatusCodes.OK).json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
