@@ -451,7 +451,7 @@ module.exports = {
                 lastModified: new Date()
             };
 
-            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.completed;
+            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.ready;
 
             if (!holdOrder && orderInDb.status !== orderStatus.processing) {
                 return res.status(httpStatusCodes.BAD_REQUEST)
