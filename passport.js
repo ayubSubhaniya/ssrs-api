@@ -42,7 +42,8 @@ passport.use(new LocalStrategy({
 
     try {
         //find the user with given email
-        const user = await User.findOne({ daiictId });
+        const user = await User.findOne({ daiictId })
+            .populate('userInfo');
         //if not handle it
         if (!user) {
             return done(null, false);

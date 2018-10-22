@@ -263,6 +263,7 @@ module.exports = {
 
         //get User Id
         const { user } = req;
+        console.log(user);
         if (user.resetPasswordToken !== undefined) {
             user.resetPasswordRandomHash = undefined;
             await user.save();

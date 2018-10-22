@@ -83,7 +83,8 @@ module.exports = {
             .readAny(resources.user);
 
         if (readPermission.granted) {
-            const requestedUser = await User.findOne({ daiictId: requestedUserId });
+            const requestedUser = await User.findOne({ daiictId: requestedUserId })
+                .populate('userInfo');
 
             if (requestedUser) {
                 const filteredUser = filterResourceData(requestedUser, readPermission.attributes);
