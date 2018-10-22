@@ -116,6 +116,7 @@ const parseFilterQuery = (query, allowedAttributes) => {
     }
     return filterQuery;
 };
+
 const parseSortQuery = (query, allowedAttributes) => {
     const sortQuery = {};
     if (query) {

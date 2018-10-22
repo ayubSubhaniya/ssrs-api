@@ -145,7 +145,6 @@ const getOrders = async (user, query, readableAttributes, parameterReadableAtt, 
             path: 'parameters',
             select: parameterReadableAtt
         });
-
     const validatedOrder = await validateOrder(orders, user);
     return filterResourceData(validatedOrder, readableAttributes);
 };
@@ -222,7 +221,6 @@ module.exports = {
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
-
         const filteredOrders = await getOrders(user, query, orderAttributes, readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
@@ -341,6 +339,7 @@ module.exports = {
                 _id: orderId,
                 requestedBy: daiictId
             });
+
             if (orderInDB) {
                 if (orderInDB.status === orderStatus.onHold) {
 
