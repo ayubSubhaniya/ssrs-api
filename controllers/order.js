@@ -22,7 +22,7 @@ const calculateServiceCost = async (service, requiredUnits, user) => {
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
     const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
         (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
-    //const useServiceValidation = true;
+
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
     }
@@ -46,7 +46,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
             }
 
             const parameter = await Parameter.findById(parameterId);
-            if (!parameter.isActive || !availableParameters.includes(parameterId.toString())) {
+            if (!parameter || !parameter.isActive || !availableParameters.includes(parameterId.toString())) {
                 return -1;
             }
 
@@ -61,7 +61,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
                 parameterId = parameters[i];
             }
             const parameter = await Parameter.findById(parameterId);
-            if (!parameter.isActive) {
+            if (!parameter || !parameter.isActive) {
                 return -1;
             }
 
@@ -247,6 +247,10 @@ module.exports = {
             newOrder.status = orderStatus.unplaced;
 
             const service = await Service.findById(newOrder.service);
+
+            if (!service){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
             newOrder.serviceName = service.name;
 
             const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested, user);

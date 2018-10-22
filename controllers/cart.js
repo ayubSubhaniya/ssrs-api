@@ -22,11 +22,11 @@ const { validateOrder } = require('./order');
 
 const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory) => {
     if (collectionType === undefined) {
-        return 0;
+        return -1;
     }
     const collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
 
-    if (!collectionTypeDoc.isActive) {
+    if (!collectionTypeDoc || !collectionTypeDoc.isActive) {
         return -1;
     }
 
