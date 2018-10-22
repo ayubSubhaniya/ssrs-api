@@ -110,9 +110,9 @@ module.exports = {
                     isActive: true,
                     $or: [{
                         isSpecialService: false,
-                        allowedProgrammes: user.userInfo.user_programme,
-                        allowedBatches: user.userInfo.user_batch,
-                        allowedUserTypes: user.userInfo.user_type
+                        allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
+                        allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -328,15 +328,15 @@ module.exports = {
                         path: 'availableParameters',
                         select: readParameterPermission.attributes
                     });
-            }  else {
+            } else {
                 service = await Service.findOne({
                     _id: serviceId,
                     isActive: true,
                     $or: [{
                         isSpecialService: false,
-                        allowedProgrammes: user.userInfo.user_programme,
-                        allowedBatches: user.userInfo.user_batch,
-                        allowedUserTypes: user.userInfo.user_type
+                        allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
+                        allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
