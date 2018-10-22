@@ -376,7 +376,7 @@ module.exports = {
 
                     if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.service);
-                        const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
+                        const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested, user);
 
                         if (serviceCost === -1) {
                             res.status(httpStatusCodes.PRECONDITION_FAILED)
