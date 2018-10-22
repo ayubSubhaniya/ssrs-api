@@ -263,7 +263,17 @@ module.exports = {
 
         //get User Id
         const { user } = req;
-        console.log(user);
+
+        if (user.userType!=="superAdmin"){
+            if (user.userInfo.user_type === "STUDENT"){
+                user.userType = userTypes.student;
+            } else if (user.userInfo.user_type === "EMPLOYEE"){
+                user.userType = adminTypes.admin;
+            } else if (user.userInfo.user_type === "FACULTY"){
+                user.userType = userTypes.student;
+            }
+        }
+
         if (user.resetPasswordToken !== undefined) {
             user.resetPasswordRandomHash = undefined;
             await user.save();

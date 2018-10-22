@@ -32,7 +32,8 @@ module.exports = {
         student: 'student'
     },
     adminTypes: {
-        superAdmin: 'superAdmin'
+        superAdmin: 'superAdmin',
+        admin: 'admin'
     },
     resources: {
         user: 'User',

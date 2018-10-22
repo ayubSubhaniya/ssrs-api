@@ -1,7 +1,7 @@
 const passport = require('passport');
 const JwtStrategy = require('passport-jwt').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
-const { JWT_SECRET, validityErrors } = require('./configuration');
+const { JWT_SECRET, validityErrors, userTypes, adminTypes } = require('./configuration');
 const User = require('./models/user');
 const UserInfo = require('./models/userInfo');
 
@@ -15,6 +15,16 @@ passport.use(new JwtStrategy({
         //find the user specified in token
         const user = await User.findOne({ daiictId: payload.sub })
             .populate('userInfo');
+
+        if (user.userType!=="superAdmin"){
+            if (user.userInfo.user_type === "STUDENT"){
+                user.userType = userTypes.student;
+            } else if (user.userInfo.user_type === "EMPLOYEE"){
+                user.userType = adminTypes.admin;
+            } else if (user.userInfo.user_type === "FACULTY"){
+                user.userType = userTypes.student;
+            }
+        }
 
         //user.userType = userInfo.user_type;
 
