@@ -442,6 +442,10 @@ module.exports = {
 
             const orderInDb = await Order.findById(orderId);
 
+            if (!orderInDb){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
             let updateAtt = {
                 lastModifiedBy: daiictId,
                 lastModified: new Date()
