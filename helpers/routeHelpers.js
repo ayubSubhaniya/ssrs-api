@@ -248,7 +248,8 @@ module.exports = {
         changeOrderStatusSchema: Joi.object()
             .keys({
                 status: Joi.number()
-                    .required()
+                    .required(),
+                reason: Joi.string()
             }),
         cancelSchema: Joi.object()
             .keys({
