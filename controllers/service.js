@@ -659,7 +659,7 @@ module.exports = {
             const service = await Service.findByIdAndRemove(serviceId);
 
             if (service) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -673,7 +673,7 @@ module.exports = {
             });
 
             if (service) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

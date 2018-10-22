@@ -313,7 +313,7 @@ module.exports = {
                         'orders': order._id
                     }
                 });
-                res.sendStatus(httpStatusCodes.OK);
+                res.status(httpStatusCodes.OK).json({});
             } else {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
@@ -618,7 +618,7 @@ module.exports = {
                     }
                     await cart.save();
 
-                    res.sendStatus(httpStatusCodes.OK);
+                    res.status(httpStatusCodes.OK).json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }

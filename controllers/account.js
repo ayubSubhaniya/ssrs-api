@@ -251,9 +251,8 @@ module.exports = {
 
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
-        res.sendStatus(HttpStatus.OK);
-    }
-    ,
+        res.status(HttpStatus.OK).json({});
+    },
 
     signIn: async (req, res, next) => {
 
@@ -287,6 +286,6 @@ module.exports = {
     signOut: async (req, res, next) => {
         res.clearCookie('jwt');
         res.status(HttpStatus.OK)
-            .end();
+            .json({});
     },
 };
