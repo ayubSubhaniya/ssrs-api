@@ -11,7 +11,7 @@ const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin } = require('../configuration');
+const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
 
@@ -601,7 +601,7 @@ module.exports = {
                             by: systemAdmin
                         };
 
-                        await PlacedCart.findOneAndUpdate({ cartId }, {
+                        await PlacedCart.findOneAndUpdate({ cartId: cart._id }, {
                             status: cartStatus.cancelled,
                             cancelReason: 'All orders cancelled'
                         });

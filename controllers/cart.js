@@ -189,6 +189,11 @@ module.exports = {
                         }
                     }
                 });
+
+            if (!cart){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
             if (cart.status >= cartStatus.placed) {
                 const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
@@ -217,6 +222,11 @@ module.exports = {
                         }
                     }
                 });
+
+            if (!cart){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
             if (cart.status >= cartStatus.placed) {
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
