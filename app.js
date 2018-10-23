@@ -26,9 +26,9 @@ internetAvailable()
         console.log('No internet');
     });
 
-//if (isInternetAvaliable){
+if (isInternetAvaliable) {
     Sentry.init({ dsn: 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
-//}
+}
 
 const app = express();
 
@@ -78,8 +78,8 @@ const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
 
-const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
-*/
+const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;*/
+
 /* Online Database */
 const dbURI = process.env.DB_URI;
 
@@ -107,15 +107,16 @@ const collectionType = require('./routes/collectionType');
 const courier = require('./routes/courier');
 const collector = require('./routes/collector');
 const userInfo = require('./routes/userInfo');
+const dashBoard = require('./routes/dashboard');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 
 //Middlewares
-//if (isInternetAvaliable){
+if (isInternetAvaliable) {
     app.use(Sentry.Handlers.requestHandler());
-//}
+}
 
 if (app.get('env') === 'development') {
     app.use(morgan('dev'));
@@ -146,15 +147,16 @@ app.use('/parameter', parameter);
 app.use('/notification', notification);
 app.use('/collectionType', collectionType);
 app.use('/order', order);
-app.use('/courier', courier);
+app.use('/delivery', courier);
 app.use('/collector', collector);
 app.use('/cart', cart);
-app.use('/userInfo',userInfo);
+app.use('/userInfo', userInfo);
+app.use('/dashboard', dashBoard);
 
 
-//if (isInternetAvaliable){
+if (isInternetAvaliable) {
     app.use(Sentry.Handlers.errorHandler());
-//}
+}
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
