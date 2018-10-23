@@ -20,8 +20,8 @@ const { generateOrderStatusChangeNotification } = require('../helpers/notificati
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
-    const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
-        (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
+    const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes("*")||service.allowedBatches.includes(user.userInfo.user_batch)) &&
+        (!user.userInfo.user_programme || (service.allowedProgrammes.includes("*")||service.allowedProgrammes.includes(user.userInfo.user_programme))));
 
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
@@ -351,12 +351,12 @@ module.exports = {
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
                         lastModified: new Date(),
-                        '$set': {
-                            'statusChangeTime.processing': {
-                                time: new Date(),
-                                by: systemAdmin
-                            }
-                        }
+                        // '$set': {
+                        //     'statusChangeTime.processing': {
+                        //         time: new Date(),
+                        //         by: systemAdmin
+                        //     }
+                        // }
                     }, { new: true })
                         .populate({
                             path: 'parameters',
