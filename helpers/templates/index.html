@@ -15,7 +15,7 @@
         .header {
             width: 100%;
             display: inline-flex;
-            justify-content: space-evenly;
+            justify-content: center;
             align-items: center;
         }
 
@@ -28,14 +28,13 @@
 
         .invoice-box {
             height:15em;
-            width : 30em;
+            max-width : 30em;
             background-color: #e4e2e2ce;
-            margin-left: 10em;
             margin-top: 2em;
             padding-left: 20px;
+            margin-left : 2em;
             padding-top: 5px;
             padding-bottom: 5px;
-            max-width: 30em;
         }
 
         .mb-s {
@@ -54,9 +53,15 @@
             padding: 4px;
         }
         .f-box{
+            width : 100%;
             display: inline-flex;
-            justify-content: space-evenly;
+            justify-content: center;
             align-items: center;
+        }
+        .invoice-body{
+            margin-top : 2em;
+            display: flex;
+            justify-content : center;
         }
     </style>
 </head>
@@ -181,40 +186,40 @@
             </div>
         </div>
         <div class="invoice-body">
-            <table class="bb-s" style="margin-left: 27em; margin-top : 2em;">
+            <table class="bb-s">
                 <thead>
                     <tr>
-                        <th class="bb-s">No.</th>
-                        <th class="bb-s">Service Name</th>
-                        <th class="bb-s">Qty.</th>
-                        <th class="bb-s">Service cost(₹)</th>
-                        <th class="bb-s">Parameter(s) cost(₹)</th>
-                        <th class="bb-s">Sub-total(₹)</th>
+                        <th class="bb-s" style="text-align : center;" >No.</th>
+                        <th class="bb-s" style="text-align : center;" >Service Name</th>
+                        <th class="bb-s"style="text-align : center;" >Qty.</th>
+                        <th class="bb-s" style="text-align : center;" >Service cost(₹)</th>
+                        <th class="bb-s" style="text-align : center;" >Parameter(s) cost(₹)</th>
+                        <th class="bb-s" style="text-align : center;" >Sub-total(₹)</th>
                     </tr>
                 </thead>
                 <tbody class="">
                     {{{description_rows}}}
                     <tr>
-                        <td colspan="5" class="bb-l">
+                        <td colspan="5" class="bb-l" style="border-top : 1px solid black;  text-align : right;">
                             Invoice Sub-total (₹)
                         </td>
-                        <td class="bb-l">
+                        <td class="bb-l"  style="border-top : 1px solid black; text-align : right;">
                             {{invoice.subTotal}}
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="bb-l">
+                        <td colspan="5" class="bb-l" style="text-align : right;">
                             Collection Cost (₹)
                         </td>
-                        <td class="bb-l">
+                        <td class="bb-l" style="text-align : right;">
                             + {{invoice.collectionCost}}
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="bb-l">
+                        <td colspan="5" class="bb-l" style="text-align : right;">
                             <strong>Grand Total (₹) </strong>
                         </td>
-                        <td class="bb-l">
+                        <td class="bb-l" style="text-align : right;">
                             <strong>= {{invoice.totalCost}}</strong>
                         </td>
                     </tr>
