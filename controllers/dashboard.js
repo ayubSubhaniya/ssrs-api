@@ -19,14 +19,14 @@ module.exports = {
                 startDate = new Date(0);
             } else {
                 let startDateArray = startDate.split('-');
-                startDate = new Date(Number(startDateArray[0]), Number(startDateArray[1]) - 1, Number(startDateArray[2]) + 1);
+                startDate = new Date(Number(startDateArray[0]), Number(startDateArray[1]) - 1, Number(startDateArray[2]),0,0,0);
             }
 
             if (!endDate) {
                 endDate = new Date();
             } else {
                 let endDateArray = endDate.split('-');
-                endDate = new Date(Number(endDateArray[0]), Number(endDateArray[1]) - 1, Number(endDateArray[2]) + 1);
+                endDate = new Date(Number(endDateArray[0]), Number(endDateArray[1]) - 1, Number(endDateArray[2]),23,59,59);
             }
 
             const totalStats = await Cart.aggregate([
