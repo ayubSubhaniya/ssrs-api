@@ -7,7 +7,7 @@ const { validateBody, schemas } = require('../helpers/routeHelpers');
 router.route('/cart')
     .get(
         passport.authenticate('jwt', { session: false }),
-        DashboardController.getCartDetails
+        DashboardController.getDetails
     );
 
 

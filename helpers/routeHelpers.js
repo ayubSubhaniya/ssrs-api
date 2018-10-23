@@ -120,7 +120,7 @@ module.exports = {
                 city: Joi.string(),
                 state: Joi.string(),
                 country: Joi.string(),
-                pinCode: Joi.number(),
+                pinCode: Joi.string(),
             }),
         updateUserSchema: Joi.object()
             .keys({
