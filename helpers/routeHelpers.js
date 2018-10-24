@@ -367,36 +367,23 @@ module.exports = {
                         user_first_name: Joi.string()
                             .required(),
                         user_middle_name: Joi.string(),
-                        user_last_name: Joi.string()
-                            .required(),
-                        user_sex: Joi.string()
-                            .required(),
+                        user_last_name: Joi.string(),
+                        user_sex: Joi.string(),
                         user_email_id: Joi.string()
                             .required(),
-                        user_status: Joi.string()
-                            .required(),
-                        user_adr_contact_name: Joi.string()
-                            .required(),
-                        user_adr_line1: Joi.string()
-                            .required(),
+                        user_status: Joi.string(),
+                        user_adr_contact_name: Joi.string(),
+                        user_adr_line1: Joi.string(),
                         user_adr_line2: Joi.string(),
                         user_adr_line3: Joi.string(),
-                        user_adr_city: Joi.string()
-                            .required(),
-                        user_adr_district: Joi.string()
-                            .required(),
-                        user_adr_state: Joi.string()
-                            .required(),
-                        user_adr_country: Joi.string()
-                            .required(),
-                        user_adr_pincode: Joi.string()
-                            .required(),
-                        user_adr_telno: Joi.string()
-                            .required(),
-                        user_adr_mobileno: Joi.string()
-                            .required(),
-                        user_adr_emailid: Joi.string()
-                            .required(),
+                        user_adr_city: Joi.string(),
+                        user_adr_district: Joi.string(),
+                        user_adr_state: Joi.string(),
+                        user_adr_country: Joi.string(),
+                        user_adr_pincode: Joi.string(),
+                        user_adr_telno: Joi.string(),
+                        user_adr_mobileno: Joi.string(),
+                        user_adr_emailid: Joi.string(),
                         user_batch: Joi.string(),
                         user_programme: Joi.string()
                     }))
