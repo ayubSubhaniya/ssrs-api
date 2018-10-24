@@ -13,7 +13,7 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 
 
 /*return -1 when invalid*/
@@ -477,7 +477,6 @@ module.exports = {
                             by: daiictId
                         }
                     };
-                    /*generate notification for hold order*/
                     break;
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -512,6 +511,9 @@ module.exports = {
                         by: systemAdmin
                     };
                 }
+
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                await notification.save();
             }
             await cart.save();
 
@@ -563,6 +565,9 @@ module.exports = {
                         cancelReason: updatedOrder.cancelReason
                     });
 
+                    const notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    await notification.save();
+
                     const cart = await Cart.findById(orderInDB.cartId)
                         .populate({
                             path: 'orders',
@@ -594,6 +599,9 @@ module.exports = {
                                 by: systemAdmin
                             };
                         }
+
+                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
                     }
 
                     if (allCancel) {
@@ -614,6 +622,9 @@ module.exports = {
                         } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
                             await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
                         }
+
+                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
                     }
                     await cart.save();
 

@@ -1004,6 +1004,9 @@ module.exports = {
                 await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
                 if (updatedCart) {
+                    const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, daiictId, updatedCart.orders.length, updatedCart.status);
+                    await notification.save();
+
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
@@ -1074,6 +1077,10 @@ module.exports = {
                             cancelReason: cartUpdateAtt.cancelReason
                         });
                     }
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled);
+                    await notification.save();
+
                     res.status(httpStatusCodes.OK).json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
