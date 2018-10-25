@@ -368,7 +368,8 @@ module.exports = {
                             .required(),
                         user_middle_name: Joi.string(),
                         user_last_name: Joi.string(),
-                        user_sex: Joi.string(),
+                        user_sex: Joi.string()
+                            .required(),
                         user_email_id: Joi.string()
                             .required(),
                         user_status: Joi.string(),
