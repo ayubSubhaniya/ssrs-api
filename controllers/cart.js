@@ -26,7 +26,10 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
     }
     const collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
 
-    if (!collectionTypeDoc || !collectionTypeDoc.isActive) {
+    if (!collectionTypeDoc){
+        return -1;
+    }
+    if (!collectionTypeDoc.isActive) {
         return -1;
     }
 

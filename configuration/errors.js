@@ -19,5 +19,9 @@ module.exports = {
     invalidToken: 'Invalid Token',
     sessionExpired: 'Session Expired',
     invalidDaiictUser: 'Invalid DA-IICT user',
-    userDeactivated: 'User is deactivated'
+    userDeactivated: 'User is deactivated',
+    inactiveCollectionType: 'Requested collection type is currently inactive',
+    notFoundCollectionType: 'Requested collection type doesn\'t exist',
+    notBelongToCollectionTypeCategory: 'Requested category and collection type doesn\'t match',
+    collectionTypeNotInUnion: 'Requested collection type is not allowed for all service',
 };
