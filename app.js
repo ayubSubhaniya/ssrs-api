@@ -1,3 +1,4 @@
+
 const express = require('express');
 const morgan = require('morgan');
 const db = require('mongoose');
@@ -14,6 +15,7 @@ const session = require('express-session');
 const Sentry = require('@sentry/node');
 const winston = require('winston');
 const internetAvailable = require('internet-available');
+const https = require("https");
 
 let isInternetAvaliable = false;
 internetAvailable()
@@ -72,16 +74,17 @@ const accessLogStream = rfs('access.log', {
 /* CONNECTING TO MongoDB */
 
 /* Local Database */
-/*const DB_HOST = process.env.DB_HOST;
+const DB_HOST = process.env.DB_HOST;
+const DB_PORT = process.env.DB_PORT;
 const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
 
-const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;*/
+const dbURI = 'mongodb://ssrsDaiict:ssrsDaiict123@localhost:27017/ssrs-daiict';
 
 /* Online Database */
-const dbURI = process.env.DB_URI;
+// const dbURI = process.env.DB_URI;
 
 db.connect(dbURI)
     .then(
@@ -179,4 +182,8 @@ app.use((err, req, res, next) => {
 // start server
 const port = process.env.PORT || 3001;
 
-app.listen(port, () => console.log(`Server is listnening on port ${port}`));
+https.createServer({
+    key: fs.readFileSync('../SSL/commercial.key'),
+    cert: fs.readFileSync('../SSL/f2e066dddbc1a42e.crt'),
+    ca: [fs.readFileSync('../SSL/gd1.crt'), fs.readFileSync('../SSL/gd2.crt'), fs.readFileSync('../SSL/gd3.crt')]
+}, app).listen(port, () => console.log(`Server is listnening on port ${port}`));

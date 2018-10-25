@@ -35,6 +35,7 @@
     "express-promise-router": "^3.0.1",
     "express-session": "^1.15.6",
     "http-status-codes": "^1.3.0",
+    "https": "^1.0.0",
     "internet-available": "^1.0.0",
     "jade": "^1.11.0",
     "joi": "^13.1.2",
