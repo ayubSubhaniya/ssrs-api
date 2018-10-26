@@ -4,6 +4,8 @@ const Schema = moongose.Schema;
 const userInfoSchema = new Schema({
     user_inst_id: {
         type: String,
+        required: true,
+        unique: true
     },
     user_id: {
         type: String,

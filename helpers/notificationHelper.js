@@ -71,7 +71,7 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
             cartStatusMsg += 'has been completed';
             break;
 
-        case cartStatus.invalidOrder:
+        case cartStatus.invalid:
             cartStatusMsg += 'is invalid';
             break;
         case cartStatus.cancelled:

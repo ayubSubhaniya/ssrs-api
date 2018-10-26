@@ -80,8 +80,8 @@ const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
-
 const dbURI = 'mongodb://ssrsDaiict:ssrsDaiict123@localhost:27017/ssrs-daiict';
+
 
 /* Online Database */
 // const dbURI = process.env.DB_URI;
@@ -182,8 +182,10 @@ app.use((err, req, res, next) => {
 // start server
 const port = process.env.PORT || 3001;
 
+// app.listen(port, () => console.log(`Server is listnening on port ${port}`));
 https.createServer({
     key: fs.readFileSync('../SSL/commercial.key'),
     cert: fs.readFileSync('../SSL/f2e066dddbc1a42e.crt'),
     ca: [fs.readFileSync('../SSL/gd1.crt'), fs.readFileSync('../SSL/gd2.crt'), fs.readFileSync('../SSL/gd3.crt')]
 }, app).listen(port, () => console.log(`Server is listnening on port ${port}`));
+
