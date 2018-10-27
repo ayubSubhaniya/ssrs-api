@@ -13,11 +13,30 @@ const CollectionType = require('../models/collectionType');
 const paymentCodeGenerator = require('shortid');
 
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
+const {encryptUrl,decryptUrl} = require('../helpers/crypto');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
+
+const getMandatoryEasyPayFields = (totalCost) => {
+    return process.env.submerchantid|totalCost|process.env.returnurl|process.env.paymode;
+};
+
+const getEasyPayUrl = (cart) => {
+    let url = process.env.url + "?";
+    url += "merchantid="+process.env.merchantid;
+    url += "&mandatoryfields="+getMandatoryEasyPayFields(cart.totalCost);
+    //url += "&optionalfields="+optionalFileds;
+    url +="&returnurl="+process.env.returnurl;
+    url += "&ReferenceNo="+cart.paymentCode;
+    url += "&submerchantid="+process.env.submerchantid;
+    url += "&transactionamount="+cart.totalCost;
+    url +="&paymode="+process.env.paymode;
+
+    return encryptUrl(url);
+};
 
 
 const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory) => {
@@ -691,17 +710,10 @@ module.exports = {
                             }
                         };
                     } else {
-                        cartUpdateAtt.status = cartStatus.paymentComplete;
+                        cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                        cartUpdateAtt.status = cartStatus.processingPayment;
                         cartUpdateAtt['$set'] = {
-                            "statusChangeTime.placed": {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
-                            "statusChangeTime.paymentComplete": {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
-                            "statusChangeTime.processing": {
+                            "statusChangeTime.processingPayment": {
                                 time: new Date(),
                                 by: systemAdmin
                             }
@@ -755,9 +767,13 @@ module.exports = {
                         await cartInDb.orders[i].save();
                     }
 
-                    await cartInDb.save();
+                    const currentCart = await cartInDb.save();
 
-                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
+                    if (cartUpdateAtt.status === cartStatus.processingPayment){
+                        return res.redirect(getEasyPayUrl(currentCart));
+                    }
+
+                    const placedCartDoc = filterResourceData(currentCart, placedCartAttributes);
                     placedCartDoc.cartId = cartInDb._id;
 
                     if (cartUpdateAtt.status === cartStatus.paymentComplete) {
@@ -793,7 +809,7 @@ module.exports = {
                             placedCartDoc.orders[i] = placedOrder._id;
                         }
                         cartUpdateAtt.status = cartStatus.processing;
-                    } else {
+                    } else if (cartUpdateAtt.status = cartStatus.placed) {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
                                 status: orderStatus.placed,
@@ -845,6 +861,69 @@ module.exports = {
             }
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    acceptEasyPayPayment: async (req, res, next) => {
+
+        console.log(req.params);
+        return;
+        const cartUpdateAtt = {
+            paymentId: paymentCode
+        };
+        cartUpdateAtt.lastModifiedBy = daiictId;
+        cartUpdateAtt.lastModified = new Date();
+        cartUpdateAtt.status = cartStatus.paymentComplete;
+        cartUpdateAtt['$set'] = {
+            "statusChangeTime.paymentComplete": {
+                time: new Date(),
+                by: daiictId
+            },
+            "statusChangeTime.processing": {
+                time: new Date(),
+                by: daiictId
+            }
+        };
+
+        const cartInDb = await Cart.findOne({ paymentCode });
+
+        if (cartInDb) {
+            if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
+
+                if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
+                    await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
+                } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                    await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
+                }
+
+                for (let i = 0; i < cartInDb.orders.length; i++) {
+                    await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                        status: orderStatus.processing,
+                        "$set": {
+                            "statusChangeTime.processing": {
+                                time: new Date(),
+                                by: systemAdmin
+                            },
+                        }
+                    });
+                }
+
+                cartUpdateAtt.status = cartStatus.processing;
+
+                const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
+
+                const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
+                await notification.save();
+
+                const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
+
+                res.status(httpStatusCodes.OK)
+                    .json({ cart: filteredCart });
+            } else {
+                res.sendStatus(httpStatusCodes.BAD_REQUEST);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.NOT_FOUND);
         }
     },
 

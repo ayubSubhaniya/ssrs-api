@@ -88,6 +88,10 @@ const cartSchema = new Schema({
             time:Date,
             by:String,
         },
+        processingPayment:{
+            time:Date,
+            by:String,
+        },
         placed:{
             time:Date,
             by:String,
