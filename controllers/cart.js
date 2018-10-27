@@ -71,6 +71,8 @@ const checkPaymentMode = async (cart, paymentMode) => {
     return true;
 };
 
+paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#?');
+
 module.exports = {
     getMyCart: async (req, res, next) => {
 
