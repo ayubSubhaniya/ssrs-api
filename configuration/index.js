@@ -67,6 +67,7 @@ module.exports = {
         failed: 0,
         invalid: 10,
         unplaced: 20,
+        processingPayment:25,
         placed: 30,
         paymentComplete: 40,
         processing: 50,
