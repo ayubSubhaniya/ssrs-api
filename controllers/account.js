@@ -8,7 +8,8 @@ const User = require('../models/user');
 const UserInfo = require('../models/userInfo');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
-const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName, homePage } = require('../configuration');
+const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, 
+    userTypes, adminTypes, resources, cookiesName, homePage } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -87,7 +88,6 @@ module.exports = {
 
         };
 
-
         //create new temp user
         const newUser = {
             daiictId,
@@ -145,6 +145,7 @@ module.exports = {
             await cart.save();
 
             const userInfo = await UserInfo.findOne({user_inst_id:daiictId});
+
             //create new user
             const newUser = new User({
                 daiictId: user.daiictId,
@@ -154,8 +155,10 @@ module.exports = {
                 cartId: cart._id,
                 userInfo:userInfo._id
             });
+
             const savedUser = await newUser.save();
             await tempUser.findByIdAndRemove(user._id);
+
             req.flash('User sucessfully verified');
             res.redirect(homePage);
         }
@@ -267,11 +270,10 @@ module.exports = {
         const { user } = req;
 
         if (user.userType!=="superAdmin"){
-            if (user.userInfo.user_type === "STUDENT"){
-                user.userType = userTypes.student;
-            } else if (user.userInfo.user_type === "EMPLOYEE"){
+            if ((user.userInfo.user_type === 'EMPLOYEE' || user.userInfo.user_type === 'FACULTY') 
+                    && user.userInfo.user_status && user.userInfo.user_status === 'R') {
                 user.userType = adminTypes.admin;
-            } else if (user.userInfo.user_type === "FACULTY"){
+            } else {
                 user.userType = userTypes.student;
             }
         }
