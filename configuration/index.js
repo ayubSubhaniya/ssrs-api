@@ -1,6 +1,6 @@
 module.exports = {
     systemAdmin:"system",
-    homePage:'https://ssrs.daiict.ac.in:443/',
+    homePage:'https://ssrs.daiict.ac.in:8080/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
