@@ -13,15 +13,15 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 
 
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
-    const useServiceValidation = (!user.userInfo.user_batch || service.allowedBatches.includes(user.userInfo.user_batch)) &&
-        (!user.userInfo.user_programme || service.allowedProgrammes.includes(user.userInfo.user_programme));
+    const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes("*")||service.allowedBatches.includes(user.userInfo.user_batch)) &&
+        (!user.userInfo.user_programme || (service.allowedProgrammes.includes("*")||service.allowedProgrammes.includes(user.userInfo.user_programme))));
 
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
@@ -145,7 +145,6 @@ const getOrders = async (user, query, readableAttributes, parameterReadableAtt, 
             path: 'parameters',
             select: parameterReadableAtt
         });
-
     const validatedOrder = await validateOrder(orders, user);
     return filterResourceData(validatedOrder, readableAttributes);
 };
@@ -222,7 +221,6 @@ module.exports = {
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
-
         const filteredOrders = await getOrders(user, query, orderAttributes, readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
@@ -341,6 +339,7 @@ module.exports = {
                 _id: orderId,
                 requestedBy: daiictId
             });
+
             if (orderInDB) {
                 if (orderInDB.status === orderStatus.onHold) {
 
@@ -352,12 +351,12 @@ module.exports = {
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
                         lastModified: new Date(),
-                        '$set': {
-                            'statusChangeTime.processing': {
-                                time: new Date(),
-                                by: systemAdmin
-                            }
-                        }
+                        // '$set': {
+                        //     'statusChangeTime.processing': {
+                        //         time: new Date(),
+                        //         by: systemAdmin
+                        //     }
+                        // }
                     }, { new: true })
                         .populate({
                             path: 'parameters',
@@ -451,7 +450,7 @@ module.exports = {
                 lastModified: new Date()
             };
 
-            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.completed;
+            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.ready;
 
             if (!holdOrder && orderInDb.status !== orderStatus.processing) {
                 return res.status(httpStatusCodes.BAD_REQUEST)
@@ -478,7 +477,6 @@ module.exports = {
                             by: daiictId
                         }
                     };
-                    /*generate notification for hold order*/
                     break;
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -513,6 +511,9 @@ module.exports = {
                         by: systemAdmin
                     };
                 }
+
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                await notification.save();
             }
             await cart.save();
 
@@ -564,6 +565,9 @@ module.exports = {
                         cancelReason: updatedOrder.cancelReason
                     });
 
+                    const notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    await notification.save();
+
                     const cart = await Cart.findById(orderInDB.cartId)
                         .populate({
                             path: 'orders',
@@ -595,6 +599,9 @@ module.exports = {
                                 by: systemAdmin
                             };
                         }
+
+                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
                     }
 
                     if (allCancel) {
@@ -615,6 +622,9 @@ module.exports = {
                         } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
                             await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
                         }
+
+                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
                     }
                     await cart.save();
 

@@ -8,7 +8,8 @@ const User = require('../models/user');
 const UserInfo = require('../models/userInfo');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
-const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName, homePage } = require('../configuration');
+const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, 
+    userTypes, adminTypes, resources, cookiesName, homePage } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -57,12 +58,11 @@ module.exports = {
     signUp: async (req, res, next) => {
 
         const { daiictId, password } = req.value.body;
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
 
         const createdOn = new Date();
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
-        const userInDB = await UserInfo.findOne({ user_email_id: daiictId });
+        const userInDB = await UserInfo.findOne({ user_inst_id: daiictId });
 
         //user already exist
         if (foundUser) {
@@ -72,6 +72,8 @@ module.exports = {
         if (!userInDB){
             return res.status(HttpStatus.FORBIDDEN).send(errorMessages.invalidDaiictUser);
         }
+
+        const primaryEmail = userInDB.user_email_id + '@' + daiictMailDomainName;
 
         const randomHash = randomstring.generate();
         const host = req.get('host');
@@ -85,7 +87,6 @@ module.exports = {
                 '<br><a href=' + link + '>Click here to verify</a>',
 
         };
-
 
         //create new temp user
         const newUser = {
@@ -107,7 +108,7 @@ module.exports = {
     resendVerificationLink: async (req, res, next) => {
         const { daiictId } = req.params;
         const user = await tempUser.findOne({ daiictId });
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
+        const primaryEmail = user.primaryEmail;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
         const mailOptions = {
@@ -126,16 +127,57 @@ module.exports = {
             .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
     },
 
+    verifyAccount: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const user = await tempUser.findOne({ daiictId });
+
+        // if user has been verified already
+        if(!user) {
+            res.end('<h2>This link has been used already and is now invalid.</h2>');
+        }
+
+        else if (req.query.id === user.randomHash) {
+            //crete new Cart
+            const cart = new Cart({
+                requestedBy: daiictId,
+                createdOn: user.createdOn,
+            });
+            await cart.save();
+
+            const userInfo = await UserInfo.findOne({user_inst_id:daiictId});
+
+            //create new user
+            const newUser = new User({
+                daiictId: user.daiictId,
+                primaryEmail: user.primaryEmail,
+                password: user.password,
+                createdOn: user.createdOn,
+                cartId: cart._id,
+                userInfo:userInfo._id
+            });
+
+            const savedUser = await newUser.save();
+            await tempUser.findByIdAndRemove(user._id);
+
+            req.flash('User sucessfully verified');
+            res.redirect(homePage);
+        }
+        else {
+            res.end('<h2>Bad Request</h2>');
+        }
+    },
+
     forgetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
-
+        
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
         if (!foundUser) {
             return res.sendStatus(HttpStatus.FORBIDDEN);
         }
+
+        const primaryEmail = foundUser.primaryEmail;
 
         const randomHash = randomstring.generate();
         const linkExpiryTime = new Date();
@@ -162,6 +204,7 @@ module.exports = {
     verifyResetPasswordLink: async (req, res, next) => {
         const { daiictId } = req.params;
         const user = await User.findOne({ daiictId });
+
         //user already exist
         if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
@@ -175,7 +218,6 @@ module.exports = {
 
     resetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
         const user = await User.findOne({ daiictId });
 
         if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
@@ -187,11 +229,13 @@ module.exports = {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect('back');
         }
+
         user.password = await hashPassword(req.body.password);
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 
         await user.save();
+        const primaryEmail = user.primaryEmail;
 
         const mailOptions = {
             from: mailAccountUserName,
@@ -203,44 +247,6 @@ module.exports = {
         };
         const info = await smtpTransport.sendMail(mailOptions);
         res.redirect(homePage);
-    },
-
-
-    verifyAccount: async (req, res, next) => {
-        const { daiictId } = req.params;
-        const user = await tempUser.findOne({ daiictId });
-
-        // if user has been verified already
-        if(!user) {
-            res.end('<h2>This link has been used already and is now invalid.</h2>');
-        }
-
-        else if (req.query.id === user.randomHash) {
-            //crete new Cart
-            const cart = new Cart({
-                requestedBy: daiictId,
-                createdOn: user.createdOn,
-            });
-            await cart.save();
-
-            const userInfo = await UserInfo.findOne({user_email_id:daiictId});
-            //create new user
-            const newUser = new User({
-                daiictId: user.daiictId,
-                primaryEmail: user.primaryEmail,
-                password: user.password,
-                createdOn: user.createdOn,
-                cartId: cart._id,
-                userInfo:userInfo._id
-            });
-            const savedUser = await newUser.save();
-            await tempUser.findByIdAndRemove(user._id);
-            req.flash('User sucessfully verified');
-            res.redirect(homePage);
-        }
-        else {
-            res.end('<h2>Bad Request</h2>');
-        }
     },
 
     changePassword: async (req, res, next) => {
@@ -262,7 +268,16 @@ module.exports = {
 
         //get User Id
         const { user } = req;
-        console.log(user);
+
+        if (user.userType!=="superAdmin"){
+            if ((user.userInfo.user_type === 'EMPLOYEE' || user.userInfo.user_type === 'FACULTY') 
+                    && user.userInfo.user_status && user.userInfo.user_status === 'R') {
+                user.userType = adminTypes.admin;
+            } else {
+                user.userType = userTypes.student;
+            }
+        }
+
         if (user.resetPasswordToken !== undefined) {
             user.resetPasswordRandomHash = undefined;
             await user.save();
