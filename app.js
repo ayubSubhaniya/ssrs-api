@@ -129,7 +129,7 @@ app.use(flash());
 app.use(favicon());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: "10mb"}));
 app.use(cookieParser());
 app.use(session({ secret: 'Shh, its a secret!' }));
 app.use(bodyParser.urlencoded({ extended: true }));
