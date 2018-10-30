@@ -38,7 +38,7 @@ const encryptUrl = (url)=>{
 
 const decryptUrl = (url)=>{
     const routeAndQueryPair = url.split("?");
-
+    const excludedParams = ["merchantid","optional fields"];
     const urlParams = routeAndQueryPair[1].split("&");
 
     const decryptedParams = [];
@@ -47,7 +47,7 @@ const decryptUrl = (url)=>{
     {
         const keyValPair=urlParams[i].split("=");
 
-        if (keyValPair[0]==="merchantid"){
+        if (excludedParams.includes(keyValPair[0])){
             decryptedParams[i]=urlParams[i];
         } else {
             decryptedParams[i]=keyValPair[0]+"="+ decrypt(keyValPair[1]);
