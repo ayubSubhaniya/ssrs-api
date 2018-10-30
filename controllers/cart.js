@@ -977,9 +977,9 @@ module.exports = {
 
         const referenceNo = params.referenceNo;
         const cart = await Cart.findOne({paymentCode:referenceNo});
-        const cartUpdateAtt = {
-            paymentId:
-        };
+        // const cartUpdateAtt = {
+        //     paymentId:
+        // };
         cartUpdateAtt.lastModifiedBy = daiictId;
         cartUpdateAtt.lastModified = new Date();
         cartUpdateAtt.status = cartStatus.paymentComplete;
