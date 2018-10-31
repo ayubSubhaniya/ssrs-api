@@ -139,6 +139,11 @@ app.use(cors({
     credentials: true,
 }));
 
+app.get('/SSRS/user/accept_payment',function(req,res,next){
+    const cartController = require('./controllers/cart');
+    cartController.acceptEasyPayPayment(req,res,next);
+});
+
 // Routes
 app.use('/account', account);
 app.use('/news', news);

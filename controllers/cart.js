@@ -13,7 +13,7 @@ const CollectionType = require('../models/collectionType');
 const paymentCodeGenerator = require('shortid');
 
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
-const {encryptUrl,decryptUrl} = require('../helpers/crypto');
+const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
@@ -21,20 +21,20 @@ const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
 const getMandatoryEasyPayFields = (cart) => {
-    return cart.paymentCode|process.env.submerchantid|cart.totalCost;
+    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost};`;
 };
 
 const getEasyPayUrl = (cart) => {
-    let url = process.env.url + "?";
-    url += "merchantid="+process.env.merchantid;
-    url += "&mandatory fields="+getMandatoryEasyPayFields(cart);
-    url += "&optional fields=";
-    url +="&returnurl="+process.env.returnurl;
-    url += "&Reference No="+cart.paymentCode;
-    url += "&submerchantid="+process.env.submerchantid;
-    url += "&transaction amount="+cart.totalCost;
-    url +="&paymode="+process.env.paymode;
-
+    let url = process.env.url + '?';
+    url += 'merchantid=' + process.env.merchantid;
+    url += '&mandatory fields=' + getMandatoryEasyPayFields(cart);
+    url += '&optional fields=';
+    url += '&returnurl=' + process.env.returnurl;
+    url += '&Reference No=' + cart.paymentCode;
+    url += '&submerchantid=' + process.env.submerchantid;
+    url += '&transaction amount=' + cart.totalCost;
+    url += '&paymode=' + process.env.paymode;
+    console.log(url);
     return encryptUrl(url);
 };
 
@@ -45,7 +45,7 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
     }
     const collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
 
-    if (!collectionTypeDoc){
+    if (!collectionTypeDoc) {
         return -1;
     }
     if (!collectionTypeDoc.isActive) {
@@ -214,7 +214,7 @@ module.exports = {
                     }
                 });
 
-            if (!cart){
+            if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
@@ -247,7 +247,7 @@ module.exports = {
                     }
                 });
 
-            if (!cart){
+            if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
@@ -706,7 +706,7 @@ module.exports = {
                         cartUpdateAtt.status = cartStatus.placed;
                         cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
                         cartUpdateAtt['$set'] = {
-                            "statusChangeTime.placed": {
+                            'statusChangeTime.placed': {
                                 time: new Date(),
                                 by: systemAdmin
                             }
@@ -714,15 +714,15 @@ module.exports = {
                     } else {
                         cartUpdateAtt.status = cartStatus.paymentComplete;
                         cartUpdateAtt['$set'] = {
-                            "statusChangeTime.placed": {
+                            'statusChangeTime.placed': {
                                 time: new Date(),
                                 by: systemAdmin
                             },
-                            "statusChangeTime.paymentComplete": {
+                            'statusChangeTime.paymentComplete': {
                                 time: new Date(),
                                 by: systemAdmin
                             },
-                            "statusChangeTime.processing": {
+                            'statusChangeTime.processing': {
                                 time: new Date(),
                                 by: systemAdmin
                             }
@@ -792,12 +792,12 @@ module.exports = {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
                                 status: orderStatus.processing,
-                                "$set": {
-                                    "statusChangeTime.placed": {
+                                '$set': {
+                                    'statusChangeTime.placed': {
                                         time: new Date(),
                                         by: systemAdmin
                                     },
-                                    "statusChangeTime.processing": {
+                                    'statusChangeTime.processing': {
                                         time: new Date(),
                                         by: systemAdmin
                                     },
@@ -818,8 +818,8 @@ module.exports = {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
                                 status: orderStatus.placed,
-                                "$set": {
-                                    "statusChangeTime.placed": {
+                                '$set': {
+                                    'statusChangeTime.placed': {
                                         time: new Date(),
                                         by: systemAdmin
                                     },
@@ -892,10 +892,10 @@ module.exports = {
                 if (cartInDb.status === cartStatus.unplaced) {
                     const cartUpdateAtt = req.value.body;
                     if (cartUpdateAtt.paymentType === paymentTypes.online) {
-                        cartUpdateAtt.status = cartStatus.placed;
+                        cartUpdateAtt.status = cartStatus.unplaced;
                         cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
                         cartUpdateAtt['$set'] = {
-                            "statusChangeTime.processingPayment": {
+                            'statusChangeTime.processingPayment': {
                                 time: new Date(),
                                 by: systemAdmin
                             }
@@ -959,7 +959,10 @@ module.exports = {
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
 
                     res.status(httpStatusCodes.OK)
-                        .json({ cart: filteredCart, url:getEasyPayUrl(updatedCart) });
+                        .json({
+                            cart: filteredCart,
+                            url: getEasyPayUrl(updatedCart)
+                        });
                 }
                 else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -973,66 +976,86 @@ module.exports = {
     },
 
     acceptEasyPayPayment: async (req, res, next) => {
-        const params = parseFilterQuery(req.query);
+        const responseCode = req.query['Response Code'];
+        const uniqueRefNo = req.query['Unique Ref Number'];
+        const serviceTaxAmount = req.query['Service Tax Amount'];
+        const processingFeeAmount = req.query['Processing Fee Amount'];
+        const totalAmount = req.query['Total Amount'];
+        const transactionAmount = req.query['Transaction Amount'];
+        const transactionDate = req.query['Transaction Date'];
+        const interchangeValue = req.query['Interchange Value'];
+        const tdr = req.query['TDR'];
+        const paymentMode = req.query['Payment Mode'];
+        const subMerchantId = req.query['SubmerchantId'];
+        const referenceNo = req.query['ReferenceNo'];
+        const tps = req.query['TPS'];
+        const id = req.query['ID'];
+        const rs = req.query['RS'];
 
-        const referenceNo = params.referenceNo;
-        const cart = await Cart.findOne({paymentCode:referenceNo});
-        // const cartUpdateAtt = {
-        //     paymentId:
-        // };
-        cartUpdateAtt.lastModifiedBy = daiictId;
-        cartUpdateAtt.lastModified = new Date();
-        cartUpdateAtt.status = cartStatus.paymentComplete;
-        cartUpdateAtt['$set'] = {
-            "statusChangeTime.paymentComplete": {
-                time: new Date(),
-                by: daiictId
-            },
-            "statusChangeTime.processing": {
-                time: new Date(),
-                by: daiictId
-            }
-        };
+        const signatureStr = `${responseCode}|${uniqueRefNo}|${serviceTaxAmount}|${processingFeeAmount}|${totalAmount}|${transactionAmount}|${transactionDate}|${interchangeValue}|${tdr}|${paymentMode}|${subMerchantId}|${referenceNo}|${tps}|${id}|${process.env.aeskey}`;
+        const SHA512Sig = createSHASig(signatureStr);
 
-        const cartInDb = await Cart.findOne({ paymentCode });
+        if (SHA512Sig === rs) {
+            const cartInDb = await Cart.findOne({ paymentCode: referenceNo });
 
-        if (cartInDb) {
-            if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
+            if (cartInDb) {
+                if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && transactionAmount === cartInDb.totalCost) {
 
-                if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
-                    await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
-                    await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
-                }
+                    const cartUpdateAtt = {
+                        paymentId: uniqueRefNo
+                    };
 
-                for (let i = 0; i < cartInDb.orders.length; i++) {
-                    await Order.findByIdAndUpdate(cartInDb.orders[i], {
-                        status: orderStatus.processing,
-                        "$set": {
-                            "statusChangeTime.processing": {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
+                    cartUpdateAtt.status = cartStatus.paymentComplete;
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.placed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        },
+                        'statusChangeTime.paymentComplete': {
+                            time: new Date(),
+                            by: systemAdmin
+                        },
+                        'statusChangeTime.processing': {
+                            time: new Date(),
+                            by: systemAdmin
                         }
-                    });
+                    };
+
+                    if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
+                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
+                    }
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.processing,
+                            '$set': {
+                                'statusChangeTime.processing': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        });
+                    }
+
+                    cartUpdateAtt.status = cartStatus.processing;
+
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode:referenceNo }, cartUpdateAtt, { new: true });
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
+
+                    res.status(httpStatusCodes.OK);
+
+                } else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
-
-                cartUpdateAtt.status = cartStatus.processing;
-
-                const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
-
-                const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
-                await notification.save();
-
-                const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
-
-                res.status(httpStatusCodes.OK)
-                    .json({ cart: filteredCart });
             } else {
-                res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
         } else {
-            res.sendStatus(httpStatusCodes.NOT_FOUND);
+            res.sendStatus(httpStatusCodes.BAD_REQUEST);
         }
     },
 
@@ -1055,11 +1078,11 @@ module.exports = {
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.status = cartStatus.paymentComplete;
             cartUpdateAtt['$set'] = {
-                "statusChangeTime.paymentComplete": {
+                'statusChangeTime.paymentComplete': {
                     time: new Date(),
                     by: daiictId
                 },
-                "statusChangeTime.processing": {
+                'statusChangeTime.processing': {
                     time: new Date(),
                     by: daiictId
                 }
@@ -1079,8 +1102,8 @@ module.exports = {
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.processing,
-                            "$set": {
-                                "statusChangeTime.processing": {
+                            '$set': {
+                                'statusChangeTime.processing': {
                                     time: new Date(),
                                     by: systemAdmin
                                 },
@@ -1145,8 +1168,8 @@ module.exports = {
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
-                        updateAtt["$set"] = {
-                            "statusChangeTime.completed": {
+                        updateAtt['$set'] = {
+                            'statusChangeTime.completed': {
                                 time: new Date(),
                                 by: daiictId
                             }
@@ -1176,8 +1199,8 @@ module.exports = {
                             if (cartInDb.orders[i].status !== orderStatus.cancelled) {
                                 await Order.findByIdAndUpdate(cartInDb.orders[i], {
                                     status: orderStatus.completed,
-                                    "$set": {
-                                        "statusChangeTime.completed": {
+                                    '$set': {
+                                        'statusChangeTime.completed': {
                                             time: new Date(),
                                             by: systemAdmin
                                         },
@@ -1226,8 +1249,8 @@ module.exports = {
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.status = cartStatus.cancelled;
-            cartUpdateAtt["$set"] = {
-                "statusChangeTime.cancelled": {
+            cartUpdateAtt['$set'] = {
+                'statusChangeTime.cancelled': {
                     time: new Date(),
                     by: daiictId
                 }
@@ -1255,8 +1278,8 @@ module.exports = {
                             lastModified: cartUpdateAtt.lastModified,
                             lastModifiedBy: daiictId,
                             cancelReason: cartUpdateAtt.cancelReason,
-                            "$set": {
-                                "statusChangeTime.cancelled": {
+                            '$set': {
+                                'statusChangeTime.cancelled': {
                                     time: new Date(),
                                     by: daiictId
                                 }
@@ -1272,7 +1295,8 @@ module.exports = {
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled);
                     await notification.save();
 
-                    res.status(httpStatusCodes.OK).json({});
+                    res.status(httpStatusCodes.OK)
+                        .json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }

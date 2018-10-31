@@ -16,18 +16,25 @@ function decrypt(text){
     return dec;
 }
 
+const createSHASig=(text)=>{
+    const hash = crypto.createHmac('sha512', process.env.aeskey);
+    hash.update(text);
+    const value = hash.digest('hex');
+    return value;
+};
+
 const encryptUrl = (url)=>{
     const routeAndQueryPair = url.split("?");
 
     const urlParams = routeAndQueryPair[1].split("&");
-
+    const excludedParams = ["merchantid","optional fields"];
     const encryptedParams = [];
 
     for (let i=0;i<urlParams.length;i++)
     {
         const keyValPair=urlParams[i].split("=");
 
-        if (keyValPair[0]==="merchantid"){
+        if (excludedParams.includes(keyValPair[0])){
             encryptedParams[i]=urlParams[i];
         } else {
             encryptedParams[i]=keyValPair[0]+"="+ encrypt(keyValPair[1]);
@@ -46,7 +53,6 @@ const decryptUrl = (url)=>{
     for (let i=0;i<urlParams.length;i++)
     {
         const keyValPair=urlParams[i].split("=");
-
         if (excludedParams.includes(keyValPair[0])){
             decryptedParams[i]=urlParams[i];
         } else {
@@ -64,5 +70,6 @@ const decryptUrl = (url)=>{
 
 module.exports = {
     encryptUrl,
-    decryptUrl
-}
+    decryptUrl,
+    createSHASig
+};
