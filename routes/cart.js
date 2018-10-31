@@ -83,6 +83,12 @@ router.route('/cancelCart/:cartId')
         cartController.cancelCart
     );
 
+router.route('/invoice/:cartId')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        cartController.getInvoice
+    );
+    
 router.route('/:cartId')
     .get(
         passport.authenticate('jwt', { session: false }),

@@ -7,13 +7,14 @@ const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
-const Notification = require('../models/notification');
+const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
 
 const paymentCodeGenerator = require('shortid');
 
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
+const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
@@ -1165,6 +1166,7 @@ module.exports = {
                     lastModifiedBy: daiictId,
                     lastModified: new Date()
                 };
+
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
@@ -1217,9 +1219,15 @@ module.exports = {
 
                 await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
+
                 if (updatedCart) {
+
+                    // Generating notification
                     const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, daiictId, updatedCart.orders.length, updatedCart.status);
                     await notification.save();
+
+                    // Generating invoice
+                    generateInvoice(cartId);
 
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
                     res.status(httpStatusCodes.OK)
@@ -1308,4 +1316,42 @@ module.exports = {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
     },
+
+    getInvoice: async (req, res, next) => {
+
+        const { user } = req;
+        const { cartId } = req.params;
+
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        
+        if(readOwnCartPermission.granted) {
+            const cart = await Cart.findById(cartId);
+            // const invoiceFile = './data/invoice_pdf/' + cart.orderId + '.pdf';
+            // res.attachment(invoiceFile);          // sends 200 OK alongwith invoiceFile
+            // res.sendStatus(httpStatusCodes.OK);
+
+            let options = {
+                root: './data/invoice_pdf/',
+                dotfiles: 'deny',
+                headers: {
+                    'x-timestamp': Date.now(),
+                    'x-sent': true,
+                    'Content-type': 'application/pdf'
+                }
+              };
+            
+            let fileName = cart.orderId + '.pdf';
+            res.sendFile(fileName, options, function (err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('Sent: ', fileName);
+                }
+            });
+
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    }
 };
