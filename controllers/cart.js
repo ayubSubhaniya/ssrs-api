@@ -7,22 +7,54 @@ const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
-const Notification = require('../models/notification');
+const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
 
 const paymentCodeGenerator = require('shortid');
+paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#?');
 
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
+const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
+const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
 const getMandatoryEasyPayFields = (cart) => {
-    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost};`;
+    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
 };
+
+const dayToMilliSec = 86400000;
+const checkForOfflinePayment = async () => {
+    const failedOrderTime = new Date();
+    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT);
+
+    const carts = await Cart.find({
+        status: cartStatus.placed,
+    });
+
+    for (let i = 0; i < carts.length; i++) {
+        if (carts[i].statusChangeTime.placed<=failedOrderTime){
+            await Cart.findByIdAndUpdate(carts[i]._id, {
+                status: cartStatus.cancelled,
+                cancelReason: 'Payment delay',
+                "$set":{
+                    'statusChangeTime.cancelled': {
+                        time: new Date(),
+                        by: systemAdmin
+                    }
+                }
+            });
+            /*Generate notification for cancel*/
+        } else {
+            /*Generate notification for payment*/
+        }
+    }
+};
+
+setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT*dayToMilliSec);
 
 const getEasyPayUrl = (cart) => {
     let url = process.env.url + '?';
@@ -34,7 +66,6 @@ const getEasyPayUrl = (cart) => {
     url += '&submerchantid=' + process.env.submerchantid;
     url += '&transaction amount=' + cart.totalCost;
     url += '&paymode=' + process.env.paymode;
-    console.log(url);
     return encryptUrl(url);
 };
 
@@ -92,8 +123,6 @@ const checkPaymentMode = async (cart, paymentMode) => {
     }
     return true;
 };
-
-paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#?');
 
 module.exports = {
     getMyCart: async (req, res, next) => {
@@ -712,21 +741,7 @@ module.exports = {
                             }
                         };
                     } else {
-                        cartUpdateAtt.status = cartStatus.paymentComplete;
-                        cartUpdateAtt['$set'] = {
-                            'statusChangeTime.placed': {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
-                            'statusChangeTime.paymentComplete': {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
-                            'statusChangeTime.processing': {
-                                time: new Date(),
-                                by: systemAdmin
-                            }
-                        };
+                        res.sendStatus(httpStatusCodes.BAD_REQUEST);
                     }
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
@@ -857,6 +872,9 @@ module.exports = {
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
+                } else if (cartInDb.status === cartStatus.processingPayment) {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.paymentInProcessing);
                 }
                 else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -1041,7 +1059,7 @@ module.exports = {
 
                     cartUpdateAtt.status = cartStatus.processing;
 
-                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode:referenceNo }, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
@@ -1165,6 +1183,7 @@ module.exports = {
                     lastModifiedBy: daiictId,
                     lastModified: new Date()
                 };
+
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
@@ -1217,9 +1236,15 @@ module.exports = {
 
                 await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
+
                 if (updatedCart) {
+
+                    // Generating notification
                     const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, daiictId, updatedCart.orders.length, updatedCart.status);
                     await notification.save();
+
+                    // Generating invoice
+                    generateInvoice(cartId);
 
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
                     res.status(httpStatusCodes.OK)
@@ -1308,4 +1333,42 @@ module.exports = {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
     },
+
+    getInvoice: async (req, res, next) => {
+
+        const { user } = req;
+        const { cartId } = req.params;
+
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        
+        if(readOwnCartPermission.granted) {
+            const cart = await Cart.findById(cartId);
+            // const invoiceFile = './data/invoice_pdf/' + cart.orderId + '.pdf';
+            // res.attachment(invoiceFile);          // sends 200 OK alongwith invoiceFile
+            // res.sendStatus(httpStatusCodes.OK);
+
+            let options = {
+                root: './data/invoice_pdf/',
+                dotfiles: 'deny',
+                headers: {
+                    'x-timestamp': Date.now(),
+                    'x-sent': true,
+                    'Content-type': 'application/pdf'
+                }
+              };
+            
+            let fileName = cart.orderId + '.pdf';
+            res.sendFile(fileName, options, function (err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('Sent: ', fileName);
+                }
+            });
+
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    }
 };

@@ -10,6 +10,8 @@ module.exports = {
     RESET_PASSWORD_EXPIRY_TIME: 1,
     NEWS_EXPIRY_TIME: 8,
     NOTIFICATION_EXPIRY_TIME: 8,
+    ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT: 8,
+    CHECK_FOR_OFFLINE_PAYMENT:1,
     collectionTypes: {
         delivery: 'Delivery',
         pickup: 'Pickup',
