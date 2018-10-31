@@ -1,0 +1,21 @@
+{
+    "signUp": {
+        "subject": "Verify your Email account",
+        "html": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email."
+    },
+    
+    "resendVerificationLink": {
+        "subject": "Please confirm your Email account",
+        "html": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email."
+    },
+
+    "forgetPassword": {
+        "subject": "Password Reset Link",
+        "html": "Hello, <br>Please click on the link below to reset your password."
+    },
+
+    "passwordChanged": {
+        "subject": "Password successfully changed",
+        "body": "Hello,\n \tThis is a confirmation mail for successful change in password for your account - "
+    }
+}

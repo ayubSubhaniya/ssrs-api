@@ -13,6 +13,7 @@ const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EX
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
+const mailTemplates = require('../data/mailTemplates.json');
 
 const mailAccountUserName = process.env.MAIL_USER;
 const mailAccountPassword = process.env.MAIL_PASS;
@@ -81,9 +82,8 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Verify your Email account',
-            html: 'Welcome to Student Service Request System - DAIICT!' +
-                '<br><br> Please click on the below mentioned link to verify your email.' +
+            subject: mailTemplates.signUp.subject,
+            html: mailTemplates.signUp.html +
                 '<br><a href=' + link + '>Click here to verify</a>',
 
         };
@@ -114,9 +114,8 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Please confirm your Email account',
-            html: 'Welcome to Student Service Request System - DAIICT!' +
-                '<br><br> Please click on the below mentioned link to verify your email.' +
+            subject: mailTemplates.resendVerificationLink.subject,
+            html: mailTemplates.resendVerificationLink.html +
                 '<br><a href=' + link + '>Click here to verify</a>'
 
         };
@@ -188,8 +187,9 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Password Reset Link',
-            html: 'Hello,<br> Please click on the link below to reset your password.<br><a href=' + link + '>Click here to reset password</a>',
+            subject: mailTemplates.forgetPassword.subject,
+            html:  mailTemplates.forgetPassword.html
+                    + '<br><a href=' + link + '>Click here to reset password</a>',
 
         };
         foundUser.resetPasswordToken = randomHash;
@@ -240,9 +240,8 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Password successfully changed',
-            text: 'Hello,\n' +
-                '\tThis is a confirmation mail for successful change in password for your account ' + user.daiictId + '.\n',
+            subject: mailTemplates.passwordChanged.subject,
+            text: mailTemplates.passwordChanged + user.daiictId + '.\n',
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
