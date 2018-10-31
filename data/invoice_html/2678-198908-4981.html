@@ -108,27 +108,27 @@
                     <tbody>
                         <tr>
                             <td style="width: 10em;">Invoice-Number:</td>
-                            <td>{{invoice.number}}</td>
+                            <td>2678-198908-4981</td>
                         </tr>
                         <tr>
                             <td> Invoice-Date</td>
-                            <td> {{invoice.date}}</td>
+                            <td> 29&#x2F;9&#x2F;2018</td>
                         </tr>
                         <tr>
                             <td>DA-IICT ID:</td>
-                            <td>{{buyer.daiictId}}</td>
+                            <td>201501405</td>
                         </tr>
                         <tr>
                             <td>Customer name:</td>
-                            <td>{{buyer.firstName}} {{buyer.lastName}}</td>
+                            <td>Harsh Vasoya</td>
                         </tr>
                         <tr>
                             <td>Payment type:</td>
-                            <td>{{invoice.paymentType}}</td>
+                            <td>online</td>
                         </tr>
                         <tr>
                             <td>Payment ID:</td>
-                            <td>{{invoice.paymentID}}</td>
+                            <td></td>
                         </tr>
                     </tbody>
                 </table>
@@ -139,7 +139,7 @@
                 <table class="mb-s">
                     <thead>
                         <tr>
-                              <h2>  Collection type - {{invoice.collectionType}} </h2>
+                              <h2>  Collection type - Pickup </h2>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,7 +148,7 @@
                                 Name:
                             </td>
                             <td>
-                                {{invoice.info.name}}
+                                
                             </td>
                         </tr>
                         <tr>
@@ -156,7 +156,7 @@
                                 Contact no:
                             </td>
                             <td>
-                                {{invoice.info.contactNo}}
+                                
                             </td>
                         </tr>
                         <tr>
@@ -164,7 +164,7 @@
                                 Address:
                             </td>
                             <td>
-                                {{invoice.info.address.line1}}
+                                
                             </td>
                         </tr>
                         <tr>
@@ -172,7 +172,7 @@
                                 City:
                             </td>
                             <td>
-                                {{invoice.info.city}}
+                                
                             </td>
                         </tr>
                         <tr>
@@ -180,7 +180,7 @@
                                 State:
                             </td>
                             <td>
-                                {{invoice.info.state}}
+                                
                             </td>
                         </tr>
                         <tr>
@@ -188,7 +188,7 @@
                                 Country:
                             </td>
                             <td>
-                                {{invoice.info.country}}
+                                
                             </td>
                         </tr>
                     </tbody>
@@ -211,13 +211,20 @@
                     </tr>
                 </thead>
                 <tbody class="">
-                    {{{description_rows}}}
+                    <tr>
+    <td class="bb-l" style="text-align : center;" >1</td>
+    <td class="bb-l" style="text-align : center;">Alumni Transcript<br/></td>
+    <td class="bb-l" style="text-align : center;">1</td>
+    <td class="bb-l" style="text-align : center;">500.00</td>
+    <td class="bb-l" style="text-align : center;">0.00</td>    
+    <td class="bb-l" style="text-align : center;">500.00</td>
+</tr>
                     <tr>
                         <td colspan="5" class="bb-l" style="border-top : 2px solid black;  text-align : right;">
                             Invoice Sub-total (₹)
                         </td>
                         <td class="bb-l"  style="border-top : 2px solid black; text-align : right;">
-                            {{invoice.subTotal}}
+                            500.00
                         </td>
                     </tr>
                     <tr>
@@ -225,7 +232,7 @@
                             Collection Cost (₹)
                         </td>
                         <td class="bb-l" style="text-align : right;">
-                            + {{invoice.collectionCost}}
+                            + 0.00
                         </td>
                     </tr>
                     <tr>
@@ -233,7 +240,7 @@
                             <strong>Grand Total (₹) </strong>
                         </td>
                         <td class="bb-l" style="text-align : right;">
-                            <strong>= {{invoice.totalCost}}</strong>
+                            <strong>= 500.00</strong>
                         </td>
                     </tr>
                 </tbody>
