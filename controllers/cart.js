@@ -892,7 +892,7 @@ module.exports = {
                 if (cartInDb.status === cartStatus.unplaced) {
                     const cartUpdateAtt = req.value.body;
                     if (cartUpdateAtt.paymentType === paymentTypes.online) {
-                        cartUpdateAtt.status = cartStatus.unplaced;
+                        cartUpdateAtt.status = cartStatus.processingPayment;
                         cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
                         cartUpdateAtt['$set'] = {
                             'statusChangeTime.processingPayment': {
