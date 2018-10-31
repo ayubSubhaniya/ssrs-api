@@ -24,4 +24,5 @@ module.exports = {
     notFoundCollectionType: 'Requested collection type doesn\'t exist',
     notBelongToCollectionTypeCategory: 'Requested category and collection type doesn\'t match',
     collectionTypeNotInUnion: 'Requested collection type is not allowed for all service',
+    paymentInProcessing: 'Payment already in process'
 };

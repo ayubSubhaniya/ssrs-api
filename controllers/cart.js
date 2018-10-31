@@ -713,21 +713,7 @@ module.exports = {
                             }
                         };
                     } else {
-                        cartUpdateAtt.status = cartStatus.paymentComplete;
-                        cartUpdateAtt['$set'] = {
-                            'statusChangeTime.placed': {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
-                            'statusChangeTime.paymentComplete': {
-                                time: new Date(),
-                                by: systemAdmin
-                            },
-                            'statusChangeTime.processing': {
-                                time: new Date(),
-                                by: systemAdmin
-                            }
-                        };
+                        res.sendStatus(httpStatusCodes.BAD_REQUEST);
                     }
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
@@ -858,6 +844,8 @@ module.exports = {
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
+                } else if (cartInDb.status === cartStatus.processingPayment){
+                    res.status(httpStatusCodes.BAD_REQUEST).send(errorMessages.paymentInProcessing);
                 }
                 else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
