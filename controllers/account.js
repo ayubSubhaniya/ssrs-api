@@ -13,7 +13,7 @@ const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EX
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
-const mailTemplates = require('../data/mailTemplates.json');
+const mailTemplates = require('../configuration/mailTemplates.json');
 
 const mailAccountUserName = process.env.MAIL_USER;
 const mailAccountPassword = process.env.MAIL_PASS;
