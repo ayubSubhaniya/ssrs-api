@@ -1362,6 +1362,7 @@ module.exports = {
             res.sendFile(fileName, options, function (err) {
                 if (err) {
                     console.log(err);
+                    res.sendStatus(httpStatusCodes.NOT_FOUND);
                 } else {
                     console.log('Sent: ', fileName);
                 }
