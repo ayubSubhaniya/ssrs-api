@@ -11,7 +11,7 @@ const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
 
 const paymentCodeGenerator = require('shortid');
-paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#?');
+paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-|');
 
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
