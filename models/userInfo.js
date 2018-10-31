@@ -16,8 +16,8 @@ const userInfoSchema = new Schema({
     user_first_name: {
         type: String,
     },
-    user_middle_name:{
-        type:String,
+    user_middle_name: {
+        type: String,
     },
     user_last_name: {
         type: String,
@@ -69,17 +69,17 @@ const userInfoSchema = new Schema({
     user_adr_emailid: {
         type: String,
     },
-    user_batch:{
-        type:String,
+    user_batch: {
+        type: String,
     },
-    user_programme:{
-        type:String,
+    user_programme: {
+        type: String,
     }
 });
 
 const UserInfo = moongose.model('userinfo', userInfoSchema);
 
-userInfoSchema.pre('save',function (next) {
+userInfoSchema.pre('save', function (next) {
     this.user_type = this.user_type.toUpperCase();
     this.user_status = this.user_status.toUpperCase();
     next();

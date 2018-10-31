@@ -6,17 +6,17 @@ const { collectionTypes } = require('../configuration/index');
 const Cart = require('../models/cart');
 const UserInfo = require('../models/userInfo');
 
-const indexFilePath = __dirname + "/templates/index.html";
-const rowFilePath = __dirname + "/templates/row.html";
-const invoiceHtmlDir = './data/invoice_html'
-const invoicePdfDir = './data/invoice_pdf'
+const indexFilePath = __dirname + '/templates/index.html';
+const rowFilePath = __dirname + '/templates/row.html';
+const invoiceHtmlDir = './data/invoice_html';
+const invoicePdfDir = './data/invoice_pdf';
 
 const generateInvoice = async (cartId) => {
 
     const cart = await Cart.findById(cartId)
-                    .populate('orders');
-    
-    const user = await UserInfo.findOne({user_inst_id: cart.requestedBy});
+        .populate('orders');
+
+    const user = await UserInfo.findOne({ user_inst_id: cart.requestedBy });
 
     let myInvoice = new Invoice({
         config: {
@@ -25,9 +25,9 @@ const generateInvoice = async (cartId) => {
         },
         seller: {},
         buyer: {
-            daiictId: "",
-            firstName: "",
-            lastName: ""
+            daiictId: '',
+            firstName: '',
+            lastName: ''
         },
         data: {
             currencyBalance: {
@@ -35,14 +35,14 @@ const generateInvoice = async (cartId) => {
                 secondary: 1
             },
             invoice: {
-                number: "",
-                date: "",
-                collectionType: "",
+                number: '',
+                date: '',
+                collectionType: '',
                 collectionCost: 0,
                 subTotal: 0,
                 totalCost: 0,
-                paymentType: "",
-                paymentID: "",
+                paymentType: '',
+                paymentID: '',
                 info: {}
             },
             tasks: []
@@ -52,13 +52,17 @@ const generateInvoice = async (cartId) => {
     // Setting buyer's fields
     myInvoice.options.buyer.daiictId = user.user_inst_id.toString();
     myInvoice.options.buyer.firstName = user.user_first_name;
-    if (user.user_last_name)
+    if (user.user_last_name) {
         myInvoice.options.buyer.lastName = user.user_last_name;
+    }
 
     // Setting invoice fields
     myInvoice.options.data.invoice.number = cart.orderId;
     const currdate = new Date();
-    myInvoice.options.data.invoice.date = currdate.getDate().toString() + '/' + currdate.getMonth().toString() + '/' + currdate.getFullYear().toString();
+    myInvoice.options.data.invoice.date = currdate.getDate()
+        .toString() + '/' + currdate.getMonth()
+        .toString() + '/' + currdate.getFullYear()
+        .toString();
     myInvoice.options.data.invoice.collectionType = cart.collectionTypeCategory;
     myInvoice.options.data.invoice.collectionCost = cart.collectionTypeCost.toFixed(2);
     myInvoice.options.data.invoice.paymentType = cart.paymentType;
@@ -74,10 +78,10 @@ const generateInvoice = async (cartId) => {
     // }
 
     for (let i = 0; i < cart.orders.length; i++) {
-        var subTask = {
+        const subTask = {
             unitPrice: 0,
-            servicename: "",
-            comment: "",
+            servicename: '',
+            comment: '',
             quantity: 0,
             serviceCost: 0,
             parameterCost: 0,
@@ -85,8 +89,9 @@ const generateInvoice = async (cartId) => {
         };
 
         subTask.servicename = cart.orders[i].serviceName;
-        if (cart.orders[i].comment)
+        if (cart.orders[i].comment) {
             subTask.comment = cart.orders[i].comment;
+        }
         subTask.quantity = cart.orders[i].unitsRequested;
         subTask.serviceCost = cart.orders[i].serviceCost.toFixed(2);
         subTask.parameterCost = cart.orders[i].parameterCost.toFixed(2);
@@ -100,22 +105,24 @@ const generateInvoice = async (cartId) => {
 
     // Render invoice as HTML and PDF
     myInvoice.toHtml(htmlFile, (err, data) => {
-        if (err)
+        if (err) {
             console.log(err);
-        else {
-            console.log("Saved HTML file");
+        } else {
+            console.log('Saved HTML file');
             const html = fs.readFileSync(htmlFile, 'utf8');
             const options = { format: 'A4' };
 
-            PdfMaker.create(html, options).toFile(pdfFile, (err, res) => {
-                if (err) 
-                    return console.log(err);
-                console.log(res);
-            });
+            PdfMaker.create(html, options)
+                .toFile(pdfFile, (err, res) => {
+                    if (err) {
+                        return console.log(err);
+                    }
+                    console.log(res);
+                });
         }
     })
 };
 
 module.exports = {
     generateInvoice,
-}
+};

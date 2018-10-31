@@ -31,6 +31,10 @@ const userSchema = new Schema({
         required: true
     },
 
+    totalRequestSent: {
+        type: Number
+    },
+
 });
 
 userSchema.methods.isValid = async function (newPassword) {

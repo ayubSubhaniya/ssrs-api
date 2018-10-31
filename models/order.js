@@ -7,7 +7,7 @@ const orderSchema = new Schema({
         type: String,
         required: true,
     },
-    cartId:{
+    cartId: {
         type: Schema.Types.ObjectId,
         ref: 'cart',
         required: true,
@@ -37,15 +37,15 @@ const orderSchema = new Schema({
     },
     serviceCost: {
         type: Number,
-        default:0,
+        default: 0,
     },
     parameterCost: {
         type: Number,
-        default:0,
+        default: 0,
     },
     totalCost: {
         type: Number,
-        default:0,
+        default: 0,
     },
     status: {
         type: Number,
@@ -59,54 +59,54 @@ const orderSchema = new Schema({
         ref: 'parameter',
     }],
     validityErrors: [{
-       type:String,
+        type: String,
     }],
     cancelReason: {
         type: String
     },
-    holdReason:{
-        type:String
+    holdReason: {
+        type: String
     },
-    statusChangeTime:{
-        failed:{
-            time:Date,
-            by:String,
+    statusChangeTime: {
+        failed: {
+            time: Date,
+            by: String,
         },
-        invalidOrder:{
-            time:Date,
-            by:String,
+        invalidOrder: {
+            time: Date,
+            by: String,
         },
-        unplaced:{
-            time:Date,
-            by:String,
+        unplaced: {
+            time: Date,
+            by: String,
         },
-        placed:{
-            time:Date,
-            by:String,
+        placed: {
+            time: Date,
+            by: String,
         },
-        processing:{
-            time:Date,
-            by:String,
+        processing: {
+            time: Date,
+            by: String,
         },
-        ready:{
-            time:Date,
-            by:String,
+        ready: {
+            time: Date,
+            by: String,
         },
-        completed:{
-            time:Date,
-            by:String,
+        completed: {
+            time: Date,
+            by: String,
         },
-        onHold:{
-            time:Date,
-            by:String,
+        onHold: {
+            time: Date,
+            by: String,
         },
-        cancelled:{
-            time:Date,
-            by:String,
+        cancelled: {
+            time: Date,
+            by: String,
         },
-        refunded:{
-            time:Date,
-            by:String,
+        refunded: {
+            time: Date,
+            by: String,
         }
     }
 });

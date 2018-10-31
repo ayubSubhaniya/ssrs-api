@@ -49,7 +49,7 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
 
 const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum) => {
     let cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
-    switch(cartStatusNum){
+    switch (cartStatusNum) {
         case cartStatus.unplaced:
             cartStatusMsg += 'is still unplaced';
             break;
@@ -58,8 +58,9 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
             break;
         case cartStatus.processing:
             cartStatusMsg += 'has completed payment and is in process';
-            if(adminId !== 'System')
+            if (adminId !== 'System') {
                 cartStatusMsg += '. Payment accepted by ' + adminId;
+            }
             break;
         case cartStatus.readyToDeliver:
             cartStatusMsg += 'is now ready to deliver';

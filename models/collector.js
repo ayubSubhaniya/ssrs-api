@@ -2,7 +2,7 @@ const db = require('mongoose');
 const Schema = db.Schema;
 const collectorIdGenerator = require('shortid');
 
-const {collectionStatus} = require('../configuration');
+const { collectionStatus } = require('../configuration');
 
 const collectorSchema = new Schema({
     name: {

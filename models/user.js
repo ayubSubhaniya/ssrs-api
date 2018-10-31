@@ -40,7 +40,7 @@ const userSchema = new Schema({
     programme: {
         type: String,
     },
-     addresses: [{
+    addresses: [{
         type: Schema.Types.ObjectId,
         ref: 'courierinfo'
     }],
@@ -62,9 +62,9 @@ const userSchema = new Schema({
     },
 
     cartId: {
-      type: Schema.Types.ObjectId,
-      ref:'cart',
-      required:true,
+        type: Schema.Types.ObjectId,
+        ref: 'cart',
+        required: true,
     },
 
     requestedServices: [{
@@ -72,15 +72,23 @@ const userSchema = new Schema({
         ref: 'order',
     }],
 
-    resetPasswordToken : {
-        type: String,
-    },
-
-    resetPasswordExpires : {
+    resetPasswordRequestTime: {
         type: Date,
     },
 
-    userInfo:{
+    resetPasswordToken: {
+        type: String,
+    },
+
+    resetPasswordExpires: {
+        type: Date,
+    },
+
+    resetPasswordRequest: {
+        type: Number
+    },
+
+    userInfo: {
         type: Schema.Types.ObjectId,
         ref: 'userinfo'
     }

@@ -1,7 +1,7 @@
 const moongose = require('mongoose');
 const Schema = moongose.Schema;
 
-const {collectionStatus} = require('../configuration');
+const { collectionStatus } = require('../configuration');
 
 const deliverySchema = new Schema({
     name: {
