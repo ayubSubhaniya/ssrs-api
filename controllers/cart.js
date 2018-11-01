@@ -17,7 +17,7 @@ const EasyPayPaymentInfo = require('../models/easyPayPaymentInfo');
 const paymentCodeGenerator = require('shortid');
 paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#!');
 
-const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateCartStatusChangeNotification, generatePendingPaymentNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
@@ -28,7 +28,7 @@ const { validateOrder } = require('./order');
 
 //const dayToMilliSec = 86400000;
 const checkForOfflinePayment = async () => {
-    console.log("check for offline payment");
+    
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
@@ -48,15 +48,21 @@ const checkForOfflinePayment = async () => {
                     }
                 }
             });
+
             /*Generate notification for cancel*/
+            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
+            await notification.save();
+
         } else {
             /*Generate notification for payment*/
+            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, "offline")
+            await notification.save();
         }
     }
 };
 
 const checkForFailedOnlinePayment = async () => {
-    console.log("check for online payment");
+    
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
@@ -76,9 +82,14 @@ const checkForFailedOnlinePayment = async () => {
                     }
                 }
             });
+
             /*Generate notification for cancel*/
+            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
+            await notification.save();
         } else {
             /*Generate notification for payment*/
+            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, "online")
+            await notification.save();
         }
     }
 };
@@ -1402,7 +1413,7 @@ module.exports = {
                         });
                     }
 
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled);
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason);
                     await notification.save();
 
                     res.status(httpStatusCodes.OK)

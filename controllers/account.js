@@ -72,6 +72,8 @@ const signToken = user => {
 };
 
 module.exports = {
+    smtpTransport,
+
     signUp: async (req, res, next) => {
 
         const { daiictId, password } = req.value.body;

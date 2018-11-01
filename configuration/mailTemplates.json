@@ -24,5 +24,13 @@
         "cc": [],
         "bcc": [],
         "body": "Hello,<br><p>This is a confirmation mail for successful change in password for your account - {{daiictId}}<p>"
+    },
+    "cancelCart": {
+        "templateId": "8ghfc7nc9mngj8krknz2584dh",
+        "templateName": "Cart Cancel",
+        "subject": "Order has been cancelled",
+        "cc": [],
+        "bcc": [],
+        "body": "Hello {{daiictId}},<br><p>Your order {{orderId}} has been cancelled due to {{cancelReason}}."
     }
 }

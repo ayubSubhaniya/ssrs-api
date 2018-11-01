@@ -47,7 +47,7 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
     return notification;
 };
 
-const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum) => {
+const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum, cancelReason) => {
     let cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
     switch (cartStatusNum) {
         case cartStatus.unplaced:
@@ -76,7 +76,7 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
             cartStatusMsg += 'is invalid';
             break;
         case cartStatus.cancelled:
-            cartStatusMsg += 'was cancelled';
+            cartStatusMsg += 'was cancelled due to ' + cancelReason;
             break;
         case cartStatus.paymentFailed:
             cartStatusMsg += 'has paymentFailed';
@@ -99,7 +99,19 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
     return notification;
 };
 
+const generatePendingPaymentNotification = (userId, adminId, cartLength, paymentType) => {
+    const notification = new Notification({
+        createdBy: adminId,
+        createdOn: new Date(),
+        message: "Your cart with " + cartLength + " order(s) has a pending " + paymentType + " payment. Pay fast or your order will get cancel.",
+        userId: userId
+    });
+
+    return notification;
+}
+
 module.exports = {
     generateOrderStatusChangeNotification,
     generateCartStatusChangeNotification,
+    generatePendingPaymentNotification,
 };
