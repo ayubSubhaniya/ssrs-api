@@ -3,7 +3,7 @@ module.exports = {
     maximumSignUpRequestBeforeBlocking: 5,
     easyPaySuccessResponse: 'E000',
     systemAdmin: 'system',
-    homePage: 'http://ssrs-daiict.herokuapp.com/',
+    homePage: 'http://ssrs.daiict.ac.in:8443/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
