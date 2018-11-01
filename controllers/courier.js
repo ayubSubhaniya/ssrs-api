@@ -7,32 +7,32 @@ const { filterResourceData, parseFilterQuery } = require('../helpers/controllerH
 
 module.exports = {
 
-    getAllCouriers: async(req, res, next) => {
+    getAllCouriers: async (req, res, next) => {
         const { user } = req;
-        const {daiictId} = user;
+        const { daiictId } = user;
 
         const readAnyPermission = accessControl.can(user.userType)
             .readAny(resources.delivery);
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.delivery);
 
-        if(readAnyPermission.granted) {
+        if (readAnyPermission.granted) {
             const query = parseFilterQuery(req.query, readAnyPermission.attributes);
             const requestedCouriers = await deliveryModel.find(query);
 
-            if(requestedCouriers) {
+            if (requestedCouriers) {
                 const filteredCouriers = filterResourceData(requestedCouriers, readAnyPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ delivery: filteredCouriers });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
-        }else if(readOwnPermission.granted) {
+        } else if (readOwnPermission.granted) {
             const query = parseFilterQuery(req.query, readAnyPermission.attributes);
             query.createdBy = daiictId;
             const requestedCouriers = await deliveryModel.find(query);
 
-            if(requestedCouriers) {
+            if (requestedCouriers) {
                 const filteredCouriers = filterResourceData(requestedCouriers, readOwnPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ delivery: filteredCouriers });
@@ -44,9 +44,9 @@ module.exports = {
         }
     },
 
-    getCourier: async(req, res, next) => {
+    getCourier: async (req, res, next) => {
         const { user } = req;
-        const {daiictId} = user;
+        const { daiictId } = user;
         const { requestedCourierId } = req.params;
 
         const readAnyPermission = accessControl.can(user.userType)
@@ -54,23 +54,23 @@ module.exports = {
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.delivery);
 
-        if(readAnyPermission.granted) {
+        if (readAnyPermission.granted) {
             const requestedCourier = await deliveryModel.findById(requestedCourierId);
 
-            if(requestedCourier) {
+            if (requestedCourier) {
                 const filteredCourier = filterResourceData(requestedCourier, readAnyPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ delivery: filteredCourier });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
-        } else if(readOwnPermission.granted) {
+        } else if (readOwnPermission.granted) {
             const requestedCourier = await deliveryModel.findOne({
-                _id:requestedCourierId,
+                _id: requestedCourierId,
                 createdBy: daiictId
             });
 
-            if(requestedCourier) {
+            if (requestedCourier) {
                 const filteredCourier = filterResourceData(requestedCourier, readOwnPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ delivery: filteredCourier });

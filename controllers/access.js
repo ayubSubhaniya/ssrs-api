@@ -257,7 +257,7 @@ module.exports = {
         const { role } = req.params;
 
         if (accessControl.can(user.userType)
-            .createAny(resources.accessLevel) && role!==adminTypes.superAdmin) {
+            .createAny(resources.accessLevel) && role !== adminTypes.superAdmin) {
             const { roleType, permissions } = req.body;
             if (roleType === 'admin') {
                 if (adminTypes[role] !== undefined) {
@@ -337,7 +337,7 @@ module.exports = {
                     return res.sendStatus(HttpStatus.NOT_FOUND);
                 }
                 saveAccessRoleInFile();
-            } else if (roleType === "user") {
+            } else if (roleType === 'user') {
 
                 if (userTypes[role] !== undefined) {
                     accessControl.removeRoles(role);
@@ -435,8 +435,8 @@ module.exports = {
             const admins = Object.keys(adminTypes);
             const index = admins.indexOf(adminTypes.superAdmin);
 
-            if (index>=0){
-                admins.splice(index,1);
+            if (index >= 0) {
+                admins.splice(index, 1);
             }
 
             res.status(HttpStatus.OK)
@@ -454,7 +454,7 @@ module.exports = {
 
         if (accessControl.can(user.userType)
             .createAny(resources.role)) {
-            const { role, roleType} = req.body;
+            const { role, roleType } = req.body;
 
             if (roleType === 'admin') {
                 if (adminTypes[role] === undefined) {
@@ -489,7 +489,7 @@ module.exports = {
         if (accessControl.can(user.userType)
             .deleteAny(resources.role)) {
 
-            const { role, roleType} = req.body;
+            const { role, roleType } = req.body;
 
             if (roleType === 'admin') {
                 adminTypes[role] = undefined;

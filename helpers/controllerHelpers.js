@@ -1,4 +1,3 @@
-
 const { defaultPermissionObject } = require('../configuration');
 const ascendingOrder = '+';
 const descendingOrder = '-';
@@ -28,7 +27,7 @@ const constructPermissionObject = (permissions, role) => {
 
 
 const filterResourceData = (resourcesData, attributes) => {
-    if (!attributes){
+    if (!attributes) {
         return resourcesData;
     }
 
@@ -71,16 +70,18 @@ const filterActiveData = (resourcesData) => {
         for (let i = 0; i < resourcesData.length; i++) {
             const resourceData = resourcesData[i];
 
-            if(resourceData.isActive === true)
+            if (resourceData.isActive === true) {
                 filteredResourcesData.push(resourceData);
+            }
         }
         return filteredResourcesData;
 
     } else if (resourcesData) {
         let filteredResourceData = {};
 
-        if (resourcesData.isActive == true)
+        if (resourcesData.isActive == true) {
             filteredResourceData = resourcesData;
+        }
 
         return filteredResourceData;
     } else {

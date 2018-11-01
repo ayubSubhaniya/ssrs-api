@@ -1,4 +1,8 @@
 const httpStatusCodes = require('http-status-codes');
+const nodeSchedule = require('node-cron');
+
+const { orderNoGeneratorSecret } = require('../configuration');
+const orderid = require('order-id')(orderNoGeneratorSecret);
 
 const Service = require('../models/service');
 const Delivery = require('../models/delivery');
@@ -7,8 +11,8 @@ const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
-const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
+const EasyPayPaymentInfo = require('../models/easyPayPaymentInfo');
 
 const paymentCodeGenerator = require('shortid');
 paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#!');
@@ -18,29 +22,25 @@ const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
+const { easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
-const getMandatoryEasyPayFields = (cart) => {
-    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
-};
-
-const dayToMilliSec = 86400000;
+//const dayToMilliSec = 86400000;
 const checkForOfflinePayment = async () => {
     const failedOrderTime = new Date();
-    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT);
+    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
     const carts = await Cart.find({
         status: cartStatus.placed,
     });
 
     for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.placed<=failedOrderTime){
+        if (carts[i].statusChangeTime.placed <= failedOrderTime) {
             await Cart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
-                "$set":{
+                '$set': {
                     'statusChangeTime.cancelled': {
                         time: new Date(),
                         by: systemAdmin
@@ -54,7 +54,41 @@ const checkForOfflinePayment = async () => {
     }
 };
 
-setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT*dayToMilliSec);
+const checkForFailedOnlinePayment = async () => {
+    const failedOrderTime = new Date();
+    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
+
+    const carts = await Cart.find({
+        status: cartStatus.processingPayment,
+    });
+
+    for (let i = 0; i < carts.length; i++) {
+        if (carts[i].statusChangeTime.processingPayment <= failedOrderTime) {
+            await Cart.findByIdAndUpdate(carts[i]._id, {
+                status: cartStatus.cancelled,
+                cancelReason: 'Payment delay',
+                '$set': {
+                    'statusChangeTime.cancelled': {
+                        time: new Date(),
+                        by: systemAdmin
+                    }
+                }
+            });
+            /*Generate notification for cancel*/
+        } else {
+            /*Generate notification for payment*/
+        }
+    }
+};
+
+nodeSchedule.schedule('0 0 * * *', checkForFailedOnlinePayment);
+
+// setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
+// setInterval(checkForFailedOnlinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
+
+const getMandatoryEasyPayFields = (cart) => {
+    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
+};
 
 const getEasyPayUrl = (cart) => {
     let url = process.env.url + '?';
@@ -198,6 +232,7 @@ module.exports = {
     getCart: async (req, res, next) => {
 
         const { user } = req;
+        const { daiictId } = user;
         const { cartId } = req.params;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
@@ -255,7 +290,10 @@ module.exports = {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
         } else if (readOwnCartPermission.granted) {
-            const cart = await Cart.findById(cartId)
+            const cart = await Cart.findOne({
+                _id: cartId,
+                requestedBy: daiictId
+            })
                 .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
@@ -280,7 +318,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
-            if (cart.status >= cartStatus.placed) {
+            if (cart.status > cartStatus.unplaced) {
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
                     .json({ cart: filteredCart });
@@ -338,12 +376,12 @@ module.exports = {
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
             if (query.status !== undefined) {
-                if (query.status < cartStatus.placed) {
+                if (query.status < cartStatus.unplaced) {
                     query.status = -1;
                 }
             } else {
                 query.status = {
-                    $gte: cartStatus.placed
+                    $gt: cartStatus.unplaced
                 };
             }
             sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
@@ -729,7 +767,7 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.unplaced) {
+                if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
                     if (cartUpdateAtt.paymentType === paymentTypes.offline) {
                         cartUpdateAtt.status = cartStatus.placed;
@@ -796,59 +834,24 @@ module.exports = {
                     const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
                     placedCartDoc.cartId = cartInDb._id;
 
-                    if (cartUpdateAtt.status === cartStatus.paymentComplete) {
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.placed,
+                            '$set': {
+                                'statusChangeTime.placed': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        }, { new: true })
+                            .populate('service');
+                        const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                        placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                        placedOrderDoc.orderId = order._id;
 
-                        if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
-                            await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                        } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
-                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
-                        }
-
-                        for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
-                                status: orderStatus.processing,
-                                '$set': {
-                                    'statusChangeTime.placed': {
-                                        time: new Date(),
-                                        by: systemAdmin
-                                    },
-                                    'statusChangeTime.processing': {
-                                        time: new Date(),
-                                        by: systemAdmin
-                                    },
-                                }
-                            }, { new: true })
-                                .populate('service');
-
-                            const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
-                            placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
-                            placedOrderDoc.orderId = order._id;
-
-                            const placedOrder = new PlacedOrder(placedOrderDoc);
-                            await placedOrder.save();
-                            placedCartDoc.orders[i] = placedOrder._id;
-                        }
-                        cartUpdateAtt.status = cartStatus.processing;
-                    } else {
-                        for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
-                                status: orderStatus.placed,
-                                '$set': {
-                                    'statusChangeTime.placed': {
-                                        time: new Date(),
-                                        by: systemAdmin
-                                    },
-                                }
-                            }, { new: true })
-                                .populate('service');
-                            const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
-                            placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
-                            placedOrderDoc.orderId = order._id;
-
-                            const placedOrder = new PlacedOrder(placedOrderDoc);
-                            await placedOrder.save();
-                            placedCartDoc.orders[i] = placedOrder._id;
-                        }
+                        const placedOrder = new PlacedOrder(placedOrderDoc);
+                        await placedOrder.save();
+                        placedCartDoc.orders[i] = placedOrder._id;
                     }
 
                     placedCartDoc.status = cartUpdateAtt.status;
@@ -907,11 +910,11 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.unplaced) {
+                if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
                     if (cartUpdateAtt.paymentType === paymentTypes.online) {
                         cartUpdateAtt.status = cartStatus.processingPayment;
-                        cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                        cartUpdateAtt.paymentCode = orderid.generate();
                         cartUpdateAtt['$set'] = {
                             'statusChangeTime.processingPayment': {
                                 time: new Date(),
@@ -976,11 +979,22 @@ module.exports = {
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
 
+                    const cart = new Cart({
+                        requestedBy: daiictId,
+                        createdOn: user.createdOn,
+                    });
+                    await cart.save();
+                    user.cartId = cart._id;
+                    await user.save();
+
                     res.status(httpStatusCodes.OK)
                         .json({
                             cart: filteredCart,
                             url: getEasyPayUrl(updatedCart)
                         });
+                } else if (cartInDb.status === cartStatus.processingPayment) {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.paymentInProcessing);
                 }
                 else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -994,36 +1008,74 @@ module.exports = {
     },
 
     acceptEasyPayPayment: async (req, res, next) => {
-        const responseCode = req.query['Response Code'];
-        const uniqueRefNo = req.query['Unique Ref Number'];
-        const serviceTaxAmount = req.query['Service Tax Amount'];
-        const processingFeeAmount = req.query['Processing Fee Amount'];
-        const totalAmount = req.query['Total Amount'];
-        const transactionAmount = req.query['Transaction Amount'];
-        const transactionDate = req.query['Transaction Date'];
-        const interchangeValue = req.query['Interchange Value'];
-        const tdr = req.query['TDR'];
-        const paymentMode = req.query['Payment Mode'];
-        const subMerchantId = req.query['SubmerchantId'];
-        const referenceNo = req.query['ReferenceNo'];
-        const tps = req.query['TPS'];
-        const id = req.query['ID'];
-        const rs = req.query['RS'];
+        const responseCode = req.body['Response Code'];
+        const uniqueRefNo = req.body['Unique Ref Number'];
+        const serviceTaxAmount = req.body['Service Tax Amount'];
+        const processingFeeAmount = req.body['Processing Fee Amount'];
+        const totalAmount = req.body['Total Amount'];
+        const transactionAmount = req.body['Transaction Amount'];
+        const transactionDate = req.body['Transaction Date'];
+        const interchangeValue = req.body['Interchange Value'];
+        const tdr = req.body['TDR'];
+        const paymentMode = req.body['Payment Mode'];
+        const subMerchantId = req.body['SubMerchantId'];
+        const referenceNo = req.body['ReferenceNo'];
+        const tps = req.body['TPS'];
+        const id = req.body['ID'];
+        const rs = req.body['RS'];
 
-        const signatureStr = `${responseCode}|${uniqueRefNo}|${serviceTaxAmount}|${processingFeeAmount}|${totalAmount}|${transactionAmount}|${transactionDate}|${interchangeValue}|${tdr}|${paymentMode}|${subMerchantId}|${referenceNo}|${tps}|${id}|${process.env.aeskey}`;
+        const paymentInfo = new EasyPayPaymentInfo({
+            responseCode,
+            uniqueRefNo,
+            serviceTaxAmount,
+            processingFeeAmount,
+            totalAmount,
+            transactionAmount,
+            transactionDate,
+            interchangeValue,
+            tdr,
+            paymentMode,
+            subMerchantId,
+            referenceNo,
+            tps,
+            id,
+            rs
+        });
+
+        await paymentInfo.save();
+
+        const signatureStr = `${id}|${responseCode}|${uniqueRefNo}|${serviceTaxAmount}|${processingFeeAmount}|${totalAmount}|${transactionAmount}|${transactionDate}|${interchangeValue}|${tdr}|${paymentMode}|${subMerchantId}|${referenceNo}|${tps}|${process.env.aeskey}`;
         const SHA512Sig = createSHASig(signatureStr);
 
         if (SHA512Sig === rs) {
+
             const cartInDb = await Cart.findOne({ paymentCode: referenceNo });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && transactionAmount === cartInDb.totalCost) {
+
+                if (responseCode !== easyPaySuccessResponse) {
+                    const cartUpdateAtt = {
+                        status: cartStatus.paymentFailed,
+                        '$set': {
+                            'statusChangeTime.paymentFailed': {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        }
+                    };
+                    await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
+                    return res.status(httpStatusCodes.BAD_REQUEST)
+                        .json({ error: errorMessages.paymentFailed });
+                }
+
+                const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
+                if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
 
                     const cartUpdateAtt = {
                         paymentId: uniqueRefNo
                     };
 
-                    cartUpdateAtt.status = cartStatus.paymentComplete;
+                    cartUpdateAtt.status = cartStatus.processing;
                     cartUpdateAtt['$set'] = {
                         'statusChangeTime.placed': {
                             time: new Date(),
@@ -1057,14 +1109,42 @@ module.exports = {
                         });
                     }
 
-                    cartUpdateAtt.status = cartStatus.processing;
+
+                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
+                    placedCartDoc.cartId = cartInDb._id;
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.processing,
+                            '$set': {
+                                'statusChangeTime.placed': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                                'statusChangeTime.processing': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        }, { new: true })
+                            .populate('service');
+
+                        const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                        placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                        placedOrderDoc.orderId = order._id;
+
+                        const placedOrder = new PlacedOrder(placedOrderDoc);
+                        await placedOrder.save();
+                        placedCartDoc.orders[i] = placedOrder._id;
+                    }
 
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
-                    res.status(httpStatusCodes.OK);
+                    res.status(httpStatusCodes.OK)
+                        .json({});
 
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -1284,7 +1364,7 @@ module.exports = {
             const cartInDb = await Cart.findById(cartId);
 
             if (cartInDb) {
-                if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
+                if (cartInDb.status > cartStatus.unplaced && cartInDb.status < cartStatus.completed) {
                     await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
                     await PlacedCart.findOneAndUpdate({ cartId }, {
                         status: cartStatus.cancelled,
@@ -1341,8 +1421,8 @@ module.exports = {
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
-        
-        if(readOwnCartPermission.granted) {
+
+        if (readOwnCartPermission.granted) {
             const cart = await Cart.findById(cartId);
             // const invoiceFile = './data/invoice_pdf/' + cart.orderId + '.pdf';
             // res.attachment(invoiceFile);          // sends 200 OK alongwith invoiceFile
@@ -1356,8 +1436,8 @@ module.exports = {
                     'x-sent': true,
                     'Content-type': 'application/pdf'
                 }
-              };
-            
+            };
+
             let fileName = cart.orderId + '.pdf';
             res.sendFile(fileName, options, function (err) {
                 if (err) {

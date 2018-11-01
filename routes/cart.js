@@ -55,11 +55,10 @@ router.route('/addPayment/EasyPay')
         cartController.addEasyPayPayment
     );
 
-// router.route('/acceptPayment/EasyPay')
-//     .patch(
-//         passport.authenticate('jwt', { session: false }),
-//         cartController.acceptEasyPayPayment
-//     );
+router.route('/acceptPayment/EasyPay')
+    .post(
+        cartController.acceptEasyPayPayment
+    );
 
 router.route('/acceptPayment/:paymentCode')
     .patch(
@@ -88,7 +87,7 @@ router.route('/invoice/:cartId')
         passport.authenticate('jwt', { session: false }),
         cartController.getInvoice
     );
-    
+
 router.route('/:cartId')
     .get(
         passport.authenticate('jwt', { session: false }),

@@ -20,8 +20,9 @@ const { generateOrderStatusChangeNotification, generateCartStatusChangeNotificat
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
-    const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes("*")||service.allowedBatches.includes(user.userInfo.user_batch)) &&
-        (!user.userInfo.user_programme || (service.allowedProgrammes.includes("*")||service.allowedProgrammes.includes(user.userInfo.user_programme))));
+    const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes('*') || service.allowedBatches.includes(user.userInfo.user_batch))) &&
+        (!user.userInfo.user_programme || (service.allowedProgrammes.includes('*') || service.allowedProgrammes.includes(user.userInfo.user_programme))) &&
+        (!user.userInfo.user_status || (service.allowedUserStatus.includes('*') || service.allowedUserStatus.includes(user.userInfo.user_status)));
 
     if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
@@ -246,7 +247,7 @@ module.exports = {
 
             const service = await Service.findById(newOrder.service);
 
-            if (!service){
+            if (!service) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
             newOrder.serviceName = service.name;
@@ -311,7 +312,8 @@ module.exports = {
                         'orders': order._id
                     }
                 });
-                res.status(httpStatusCodes.OK).json({});
+                res.status(httpStatusCodes.OK)
+                    .json({});
             } else {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
@@ -441,7 +443,7 @@ module.exports = {
 
             const orderInDb = await Order.findById(orderId);
 
-            if (!orderInDb){
+            if (!orderInDb) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
@@ -628,7 +630,8 @@ module.exports = {
                     }
                     await cart.save();
 
-                    res.status(httpStatusCodes.OK).json({});
+                    res.status(httpStatusCodes.OK)
+                        .json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }

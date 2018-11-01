@@ -10,23 +10,23 @@ const { parseFilterQuery } = require('../helpers/controllerHelpers');
 
 module.exports = {
     getDetails: async (req, res, next) => {
-        const {user} = req;
+        const { user } = req;
 
-        if (user.userType === adminTypes.superAdmin){
+        if (user.userType === adminTypes.superAdmin) {
             let { startDate, endDate } = req.query;
 
             if (!startDate) {
                 startDate = new Date(0);
             } else {
                 let startDateArray = startDate.split('-');
-                startDate = new Date(Number(startDateArray[0]), Number(startDateArray[1]) - 1, Number(startDateArray[2]),0,0,0);
+                startDate = new Date(Number(startDateArray[0]), Number(startDateArray[1]) - 1, Number(startDateArray[2]), 0, 0, 0);
             }
 
             if (!endDate) {
                 endDate = new Date();
             } else {
                 let endDateArray = endDate.split('-');
-                endDate = new Date(Number(endDateArray[0]), Number(endDateArray[1]) - 1, Number(endDateArray[2]),23,59,59);
+                endDate = new Date(Number(endDateArray[0]), Number(endDateArray[1]) - 1, Number(endDateArray[2]), 23, 59, 59);
             }
 
             const totalStats = await Cart.aggregate([
@@ -81,10 +81,10 @@ module.exports = {
                 },
                 {
                     $project: {
-                        _id:0,
-                        collectionType:'$_id',
-                        count:1,
-                        revenue:1
+                        _id: 0,
+                        collectionType: '$_id',
+                        count: 1,
+                        revenue: 1
                     }
                 }
             ]);
@@ -120,10 +120,10 @@ module.exports = {
                 },
                 {
                     $project: {
-                        _id:0,
-                        paymentType:'$_id',
-                        count:1,
-                        revenue:1
+                        _id: 0,
+                        paymentType: '$_id',
+                        count: 1,
+                        revenue: 1
                     }
                 }
             ]);
@@ -143,7 +143,7 @@ module.exports = {
                 },
                 {
                     $group: {
-                        _id: "$service",
+                        _id: '$service',
                         count: {
                             $sum: 1
                         },
@@ -154,10 +154,10 @@ module.exports = {
                 },
                 {
                     $project: {
-                        _id:0,
-                        service:'$_id',
-                        count:1,
-                        revenue:1
+                        _id: 0,
+                        service: '$_id',
+                        count: 1,
+                        revenue: 1
                     }
                 }
             ]);

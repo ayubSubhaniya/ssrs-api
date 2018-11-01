@@ -47,7 +47,8 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             await CollectionType.findByIdAndRemove(requestedCollectionTypeId);
-            res.status(HttpStatus.OK).json({});
+            res.status(HttpStatus.OK)
+                .json({});
         } else if (deleteOwnPermission.granted) {
 
             const deletedCollectionType = await CollectionType.findOneAndRemove({
@@ -56,7 +57,8 @@ module.exports = {
             });
 
             if (deletedCollectionType) {
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -155,10 +157,10 @@ module.exports = {
         if (changeStatusPermission.granted) {
             const collectionTypeUpdateAtt = req.value.body;
             const updatedCollectionType = await CollectionType.findByIdAndUpdate(collectionTypeId, collectionTypeUpdateAtt, { new: true });
-            
+
             if (updatedCollectionType) {
                 const message = 'Collection type ' + updatedCollectionType.name + ' is now '
-                                + (updatedCollectionType.isActive ? 'activated' : 'deactivated');
+                    + (updatedCollectionType.isActive ? 'activated' : 'deactivated');
                 const news = new News({
                     message,
                     createdOn: new Date(),

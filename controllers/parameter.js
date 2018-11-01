@@ -46,7 +46,8 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             await Parameter.findByIdAndRemove(requestedParameterId);
-            res.status(HttpStatus.OK).json({});
+            res.status(HttpStatus.OK)
+                .json({});
         } else if (deleteOwnPermission.granted) {
 
             const deletedParameter = await Parameter.findOneAndRemove({
@@ -55,7 +56,8 @@ module.exports = {
             });
 
             if (deletedParameter) {
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
