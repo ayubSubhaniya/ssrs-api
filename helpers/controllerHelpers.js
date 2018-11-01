@@ -1,4 +1,5 @@
-const { defaultPermissionObject, adminTypes, userTypes } = require('../configuration');
+
+const { defaultPermissionObject } = require('../configuration');
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
@@ -27,6 +28,9 @@ const constructPermissionObject = (permissions, role) => {
 
 
 const filterResourceData = (resourcesData, attributes) => {
+    if (!attributes){
+        return resourcesData;
+    }
 
     if (resourcesData instanceof Array) {
         let filteredResourcesData = [];
@@ -48,7 +52,7 @@ const filterResourceData = (resourcesData, attributes) => {
         let filteredResourceData = {};
 
         attributes.forEach(attribute => {
-            if (resourcesData[attribute] != undefined) {
+            if (resourcesData[attribute] !== undefined) {
                 filteredResourceData[attribute] = resourcesData[attribute];
             }
         });
@@ -66,12 +70,12 @@ const filterActiveData = (resourcesData) => {
 
         for (let i = 0; i < resourcesData.length; i++) {
             const resourceData = resourcesData[i];
-            
+
             if(resourceData.isActive === true)
                 filteredResourcesData.push(resourceData);
         }
         return filteredResourcesData;
-        
+
     } else if (resourcesData) {
         let filteredResourceData = {};
 
@@ -112,6 +116,7 @@ const parseFilterQuery = (query, allowedAttributes) => {
     }
     return filterQuery;
 };
+
 const parseSortQuery = (query, allowedAttributes) => {
     const sortQuery = {};
     if (query) {

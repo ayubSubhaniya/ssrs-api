@@ -45,6 +45,7 @@ const collectorSchema = new Schema({
 });
 
 collectorSchema.pre('validate', function (next) {
+    collectorIdGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#!');
     this.collectionCode = collectorIdGenerator.generate();
     next();
 });

@@ -4,19 +4,26 @@ const Service = require('../models/service');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const Cart = require('../models/cart');
+const PlacedCart = require('../models/placedCart');
+const Delivery = require('../models/delivery');
+const Collector = require('../models/collector');
 const Parameter = require('../models/parameter');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes } = require('../configuration');
+const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 
 
 /*return -1 when invalid*/
-const calculateServiceCost = async (service, requiredUnits) => {
+const calculateServiceCost = async (service, requiredUnits, user) => {
 
-    if (!service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
+    const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
+    const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes("*")||service.allowedBatches.includes(user.userInfo.user_batch)) &&
+        (!user.userInfo.user_programme || (service.allowedProgrammes.includes("*")||service.allowedProgrammes.includes(user.userInfo.user_programme))));
+
+    if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
         return -1;
     }
 
@@ -39,7 +46,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
             }
 
             const parameter = await Parameter.findById(parameterId);
-            if (!parameter.isActive || !availableParameters.includes(parameterId.toString())) {
+            if (!parameter || !parameter.isActive || !availableParameters.includes(parameterId.toString())) {
                 return -1;
             }
 
@@ -54,7 +61,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
                 parameterId = parameters[i];
             }
             const parameter = await Parameter.findById(parameterId);
-            if (!parameter.isActive) {
+            if (!parameter || !parameter.isActive) {
                 return -1;
             }
 
@@ -65,11 +72,11 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
     return totalCost * requiredUnits;
 };
 
-const recalculateOrderCost = async (order) => {
+const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
 
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
-    order.serviceCost = await calculateServiceCost(service, order.unitsRequested);
+    order.serviceCost = await calculateServiceCost(service, order.unitsRequested, user);
     order.totalCost = 0;
 
     if (order.parameterCost === -1) {
@@ -88,7 +95,7 @@ const recalculateOrderCost = async (order) => {
     return order;
 };
 
-const validateOrder = async (orders) => {
+const validateOrder = async (orders, user) => {
 
     if (orders instanceof Array) {
         let newOrders = [];
@@ -96,7 +103,7 @@ const validateOrder = async (orders) => {
         for (let i = 0; i < orders.length; i++) {
 
             if (orders[i].status === orderStatus.unplaced || orders[i].status === orderStatus.invalidOrder) {
-                newOrders.push(await recalculateOrderCost(orders[i]));
+                newOrders.push(await recalculateOrderCost(orders[i], user));
             } else {
                 newOrders.push(orders[i]);
             }
@@ -107,7 +114,7 @@ const validateOrder = async (orders) => {
         let newOrder = {};
 
         if (orders.status === orderStatus.unplaced || orders.status === orderStatus.invalidOrder) {
-            newOrder = await recalculateOrderCost(orders);
+            newOrder = await recalculateOrderCost(orders, user);
         } else {
             newOrder = orders;
         }
@@ -120,7 +127,7 @@ const validateOrder = async (orders) => {
 
 const validateAddedOrder = async (cartId, service, unitsRequested) => {
     const cart = await Cart.findById(cartId)
-        .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup']);
+        .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup']);
     const { orders } = cart;
     let count = unitsRequested;
     for (let i = 0; i < orders.length; i++) {
@@ -131,15 +138,14 @@ const validateAddedOrder = async (cartId, service, unitsRequested) => {
     return count <= service.maxUnits;
 };
 
-const getOrders = async (query, readableAttributes, parameterReadableAtt, sortQuery) => {
+const getOrders = async (user, query, readableAttributes, parameterReadableAtt, sortQuery) => {
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({
             path: 'parameters',
             select: parameterReadableAtt
         });
-
-    const validatedOrder = await validateOrder(orders);
+    const validatedOrder = await validateOrder(orders, user);
     return filterResourceData(validatedOrder, readableAttributes);
 };
 
@@ -184,7 +190,7 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const filteredOrders = await getOrders(query, orderAttributes, readAnyParameterPermission.attributes, sortQuery);
+        const filteredOrders = await getOrders(user, query, orderAttributes, readAnyParameterPermission.attributes, sortQuery);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -215,8 +221,7 @@ module.exports = {
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
-
-        const filteredOrders = await getOrders(query, orderAttributes, readAnyParameterPermission.attributes);
+        const filteredOrders = await getOrders(user, query, orderAttributes, readAnyParameterPermission.attributes);
         res.status(httpStatusCodes.OK)
             .json({ order: filteredOrders });
     },
@@ -240,9 +245,13 @@ module.exports = {
             newOrder.status = orderStatus.unplaced;
 
             const service = await Service.findById(newOrder.service);
+
+            if (!service){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
             newOrder.serviceName = service.name;
 
-            const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested);
+            const serviceCost = await calculateServiceCost(service, newOrder.unitsRequested, user);
 
             if (serviceCost === -1) {
                 res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -302,7 +311,7 @@ module.exports = {
                         'orders': order._id
                     }
                 });
-                res.sendStatus(httpStatusCodes.OK);
+                res.status(httpStatusCodes.OK).json({});
             } else {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
@@ -330,6 +339,7 @@ module.exports = {
                 _id: orderId,
                 requestedBy: daiictId
             });
+
             if (orderInDB) {
                 if (orderInDB.status === orderStatus.onHold) {
 
@@ -340,7 +350,13 @@ module.exports = {
                         status: orderStatus.processing,
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
-                        lastModified: new Date()
+                        lastModified: new Date(),
+                        // '$set': {
+                        //     'statusChangeTime.processing': {
+                        //         time: new Date(),
+                        //         by: systemAdmin
+                        //     }
+                        // }
                     }, { new: true })
                         .populate({
                             path: 'parameters',
@@ -359,7 +375,7 @@ module.exports = {
 
                     if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.service);
-                        const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested);
+                        const serviceCost = await calculateServiceCost(service, updatedOrder.unitsRequested, user);
 
                         if (serviceCost === -1) {
                             res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -425,12 +441,16 @@ module.exports = {
 
             const orderInDb = await Order.findById(orderId);
 
+            if (!orderInDb){
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
             let updateAtt = {
                 lastModifiedBy: daiictId,
                 lastModified: new Date()
             };
 
-            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.completed;
+            const holdOrder = orderUpdateAtt.status === orderStatus.onHold && orderInDb.status > orderStatus.placed && orderInDb.status < orderStatus.ready;
 
             if (!holdOrder && orderInDb.status !== orderStatus.processing) {
                 return res.status(httpStatusCodes.BAD_REQUEST)
@@ -441,11 +461,22 @@ module.exports = {
             switch (orderUpdateAtt.status) {
                 case orderStatus.ready:
                     updateAtt.status = orderStatus.ready;
+                    updateAtt['$set'] = {
+                        'statusChangeTime.ready': {
+                            time: new Date(),
+                            by: daiictId
+                        }
+                    };
                     break;
                 case orderStatus.onHold:
                     updateAtt.status = orderStatus.onHold;
                     updateAtt.holdReason = orderUpdateAtt.reason;
-                    /*generate notification for hold order*/
+                    updateAtt['$set'] = {
+                        'statusChangeTime.onHold': {
+                            time: new Date(),
+                            by: daiictId
+                        }
+                    };
                     break;
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -467,11 +498,22 @@ module.exports = {
             }
 
             if (allReady) {
-                if (cart.collectionType === collectionTypes.courier) {
+                if (cart.collectionTypeCategory === collectionTypes.delivery) {
                     cart.status = cartStatus.readyToDeliver;
+                    cart.statusChangeTime.readyToDeliver = {
+                        time: new Date(),
+                        by: systemAdmin
+                    };
                 } else {
                     cart.status = cartStatus.readyToPickup;
+                    cart.statusChangeTime.readyToPickup = {
+                        time: new Date(),
+                        by: systemAdmin
+                    };
                 }
+
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                await notification.save();
             }
             await cart.save();
 
@@ -505,6 +547,12 @@ module.exports = {
             updatedOrder.lastModified = new Date();
             updatedOrder.lastModifiedBy = daiictId;
             updatedOrder.status = orderStatus.cancelled;
+            updatedOrder['$set'] = {
+                'statusChangeTime.cancelled': {
+                    time: new Date(),
+                    by: daiictId
+                }
+            };
 
             const orderInDB = await Order.findById(orderId);
             if (orderInDB) {
@@ -513,9 +561,12 @@ module.exports = {
 
                     const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
                     const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
-                        status: orderStatus.failed,
+                        status: orderStatus.cancelled,
                         cancelReason: updatedOrder.cancelReason
                     });
+
+                    const notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    await notification.save();
 
                     const cart = await Cart.findById(orderInDB.cartId)
                         .populate({
@@ -524,22 +575,60 @@ module.exports = {
                         });
 
                     let allReady = true;
+                    let allCancel = true;
                     for (let i = 0; i < cart.orders.length; i++) {
                         if (cart.orders[i].status !== orderStatus.ready && cart.orders[i].status !== orderStatus.cancelled) {
                             allReady = false;
                         }
+                        if (cart.orders[i].status !== orderStatus.cancelled) {
+                            allCancel = false;
+                        }
                     }
 
                     if (allReady) {
-                        if (cart.collectionType = collectionTypes.courier) {
+                        if (cart.collectionTypeCategory === collectionTypes.delivery) {
                             cart.status = cartStatus.readyToDeliver;
+                            cart.statusChangeTime.readyToDeliver = {
+                                time: new Date(),
+                                by: systemAdmin
+                            };
                         } else {
                             cart.status = cartStatus.readyToPickup;
+                            cart.statusChangeTime.readyToPickup = {
+                                time: new Date(),
+                                by: systemAdmin
+                            };
                         }
+
+                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
+                    }
+
+                    if (allCancel) {
+                        cart.status = cartStatus.cancelled;
+                        cart.cancelReason = 'All orders cancelled';
+                        cart.statusChangeTime.cancelled = {
+                            time: new Date(),
+                            by: systemAdmin
+                        };
+
+                        await PlacedCart.findOneAndUpdate({ cartId: cart._id }, {
+                            status: cartStatus.cancelled,
+                            cancelReason: 'All orders cancelled'
+                        });
+
+                        if (cart.collectionTypeCategory === collectionTypes.delivery) {
+                            await Delivery.findByIdAndUpdate(cart.delivery, { status: collectionStatus.cancel });
+                        } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
+                            await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
+                        }
+
+                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
                     }
                     await cart.save();
 
-                    res.sendStatus(httpStatusCodes.OK);
+                    res.status(httpStatusCodes.OK).json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }

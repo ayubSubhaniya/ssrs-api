@@ -5,12 +5,15 @@ const randomstring = require('randomstring');
 const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
+const UserInfo = require('../models/userInfo');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
-const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, userTypes, resources, cookiesName, homePage } = require('../configuration');
+const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, 
+    userTypes, adminTypes, resources, cookiesName, homePage } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
+const mailTemplates = require('../configuration/mailTemplates.json');
 
 const mailAccountUserName = process.env.MAIL_USER;
 const mailAccountPassword = process.env.MAIL_PASS;
@@ -56,16 +59,22 @@ module.exports = {
     signUp: async (req, res, next) => {
 
         const { daiictId, password } = req.value.body;
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
 
         const createdOn = new Date();
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
+        const userInDB = await UserInfo.findOne({ user_inst_id: daiictId });
 
         //user already exist
         if (foundUser) {
-            return res.sendStatus(HttpStatus.FORBIDDEN);
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userAlreadyExist);
         }
+
+        if (!userInDB){
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.invalidDaiictUser);
+        }
+
+        const primaryEmail = userInDB.user_email_id + '@' + daiictMailDomainName;
 
         const randomHash = randomstring.generate();
         const host = req.get('host');
@@ -73,13 +82,11 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Verify your Email account',
-            html: 'Welcome to Student Service Request System - DAIICT!' +
-                '<br><br> Please click on the below mentioned link to verify your email.' +
+            subject: mailTemplates.signUp.subject,
+            html: mailTemplates.signUp.html +
                 '<br><a href=' + link + '>Click here to verify</a>',
 
         };
-
 
         //create new temp user
         const newUser = {
@@ -101,15 +108,14 @@ module.exports = {
     resendVerificationLink: async (req, res, next) => {
         const { daiictId } = req.params;
         const user = await tempUser.findOne({ daiictId });
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
+        const primaryEmail = user.primaryEmail;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Please confirm your Email account',
-            html: 'Welcome to Student Service Request System - DAIICT!' +
-                '<br><br> Please click on the below mentioned link to verify your email.' +
+            subject: mailTemplates.resendVerificationLink.subject,
+            html: mailTemplates.resendVerificationLink.html +
                 '<br><a href=' + link + '>Click here to verify</a>'
 
         };
@@ -120,16 +126,57 @@ module.exports = {
             .end('<h1>Verification link sent to email ' + primaryEmail + ' please verify your account</h1><br><a href=' + resendVerificationLink + '>Click here to resend verification link</a>');
     },
 
+    verifyAccount: async (req, res, next) => {
+        const { daiictId } = req.params;
+        const user = await tempUser.findOne({ daiictId });
+
+        // if user has been verified already
+        if(!user) {
+            res.end('<h2>This link has been used already and is now invalid.</h2>');
+        }
+
+        else if (req.query.id === user.randomHash) {
+            //crete new Cart
+            const cart = new Cart({
+                requestedBy: daiictId,
+                createdOn: user.createdOn,
+            });
+            await cart.save();
+
+            const userInfo = await UserInfo.findOne({user_inst_id:daiictId});
+
+            //create new user
+            const newUser = new User({
+                daiictId: user.daiictId,
+                primaryEmail: user.primaryEmail,
+                password: user.password,
+                createdOn: user.createdOn,
+                cartId: cart._id,
+                userInfo:userInfo._id
+            });
+
+            const savedUser = await newUser.save();
+            await tempUser.findByIdAndRemove(user._id);
+
+            req.flash('User sucessfully verified');
+            res.redirect(homePage);
+        }
+        else {
+            res.end('<h2>Bad Request</h2>');
+        }
+    },
+
     forgetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
-
+        
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
-        if (!foundUser){
+        if (!foundUser) {
             return res.sendStatus(HttpStatus.FORBIDDEN);
         }
+
+        const primaryEmail = foundUser.primaryEmail;
 
         const randomHash = randomstring.generate();
         const linkExpiryTime = new Date();
@@ -140,8 +187,9 @@ module.exports = {
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Password Reset Link',
-            html: 'Hello,<br> Please click on the link below to reset your password.<br><a href=' + link + '>Click here to reset password</a>',
+            subject: mailTemplates.forgetPassword.subject,
+            html:  mailTemplates.forgetPassword.html
+                    + '<br><a href=' + link + '>Click here to reset password</a>',
 
         };
         foundUser.resetPasswordToken = randomHash;
@@ -155,9 +203,10 @@ module.exports = {
 
     verifyResetPasswordLink: async (req, res, next) => {
         const { daiictId } = req.params;
-        const user = await User.findOne({daiictId});
+        const user = await User.findOne({ daiictId });
+
         //user already exist
-        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+        if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect(homePage);
         }
@@ -169,10 +218,9 @@ module.exports = {
 
     resetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
-        const primaryEmail = daiictId + '@' + daiictMailDomainName;
-        const user = await User.findOne({daiictId});
+        const user = await User.findOne({ daiictId });
 
-        if (!user || user.resetPasswordToken!==req.query.id || user.resetPasswordExpires<new Date()) {
+        if (!user || user.resetPasswordToken !== req.query.id || user.resetPasswordExpires < new Date()) {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect('/');
         }
@@ -181,52 +229,23 @@ module.exports = {
             req.flash('error', 'Password reset token is invalid or has expired.');
             return res.redirect('back');
         }
+
         user.password = await hashPassword(req.body.password);
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 
         await user.save();
+        const primaryEmail = user.primaryEmail;
 
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: 'Password successfully changed',
-            text: 'Hello,\n' +
-                '\tThis is a confirmation mail for successful change in password for your account ' + user.daiictId + '.\n',
+            subject: mailTemplates.passwordChanged.subject,
+            text: mailTemplates.passwordChanged + user.daiictId + '.\n',
 
         };
         const info = await smtpTransport.sendMail(mailOptions);
-        res.redirect(homePage)
-    },
-
-
-    verifyAccount: async (req, res, next) => {
-        const { daiictId } = req.params;
-        const user = await tempUser.findOne({ daiictId });
-
-        if (req.query.id === user.randomHash) {
-            //crete new Cart
-            const cart = new Cart({
-                requestedBy: daiictId,
-                createdOn: user.createdOn,
-            });
-            await cart.save();
-            //create new user
-            const newUser = new User({
-                daiictId: user.daiictId,
-                primaryEmail: user.primaryEmail,
-                password: user.password,
-                createdOn: user.createdOn,
-                cartId: cart._id
-            });
-            const savedUser = await newUser.save();
-            await tempUser.findByIdAndRemove(user._id);
-            req.flash('user sucessfully verified');
-            res.redirect(homePage);
-        }
-        else {
-            res.end('<h2>Bad Request</h2>');
-        }
+        res.redirect(homePage);
     },
 
     changePassword: async (req, res, next) => {
@@ -237,9 +256,8 @@ module.exports = {
 
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
-        res.sendStatus(HttpStatus.OK);
-    }
-    ,
+        res.status(HttpStatus.OK).json({});
+    },
 
     signIn: async (req, res, next) => {
 
@@ -249,6 +267,16 @@ module.exports = {
 
         //get User Id
         const { user } = req;
+
+        if (user.userType!=="superAdmin"){
+            if ((user.userInfo.user_type === 'EMPLOYEE' || user.userInfo.user_type === 'FACULTY') 
+                    && user.userInfo.user_status && user.userInfo.user_status === 'R') {
+                user.userType = adminTypes.admin;
+            } else {
+                user.userType = userTypes.student;
+            }
+        }
+
         if (user.resetPasswordToken !== undefined) {
             user.resetPasswordRandomHash = undefined;
             await user.save();
@@ -258,6 +286,9 @@ module.exports = {
 
         const filteredUser = filterResourceData(user, permission.attributes);
 
+        if (!user.isActive){
+            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userDeactivated);
+        }
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,
             expires: new Date(Date.now() + JWT_EXPIRY_TIME * 24 * 60 * 60 * 1000),
@@ -269,6 +300,6 @@ module.exports = {
     signOut: async (req, res, next) => {
         res.clearCookie('jwt');
         res.status(HttpStatus.OK)
-            .end();
+            .json({});
     },
 };

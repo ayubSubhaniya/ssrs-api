@@ -120,7 +120,7 @@ module.exports = {
                 city: Joi.string(),
                 state: Joi.string(),
                 country: Joi.string(),
-                pinCode: Joi.number(),
+                pinCode: Joi.string(),
             }),
         updateUserSchema: Joi.object()
             .keys({
@@ -151,11 +151,8 @@ module.exports = {
                 name: Joi.string()
                     .required(),
                 description: Joi.string(),
-                department: Joi.string(),
-                isApplicationSpecific: Joi.boolean(),
                 isSpecialService: Joi.boolean(),
-                isAvailableForAlumni: Joi.boolean(),
-                isCourierAvailable: Joi.boolean(),
+                isApplicationSpecific: Joi.boolean(),
                 isActive: Joi.boolean(),
                 maxUnits: Joi.number(),
                 baseCharge: Joi.number(),
@@ -165,24 +162,24 @@ module.exports = {
                 collectionTypes: Joi.array()
                     .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
-                paymentModes: {
-                    debitCard: Joi.boolean(),
-                    netBanking: Joi.boolean(),
-                    paytm: Joi.boolean(),
-                    cashOnDelivery: Joi.boolean(),
-                },
+                availablePaymentModes: Joi.array()
+                    .items(Joi.string()),
                 specialServiceUsers: Joi.array()
-                    .items(Joi.number()),
+                    .items(Joi.string()),
+                allowedUserTypes: Joi.array()
+                    .items(Joi.string()),
+                allowedProgrammes: Joi.array()
+                    .items(Joi.string()),
+                allowedBatches: Joi.array()
+                    .items(Joi.string()),
             }),
         serviceUpdateSchema: Joi.object()
             .keys({
                 name: Joi.string(),
                 description: Joi.string(),
-                department: Joi.string(),
-                isApplicationSpecific: Joi.boolean(),
                 isSpecialService: Joi.boolean(),
-                isAvailableForAlumni: Joi.boolean(),
-                isCourierAvailable: Joi.boolean(),
+                isApplicationSpecific: Joi.boolean(),
+                isActive: Joi.boolean(),
                 maxUnits: Joi.number(),
                 baseCharge: Joi.number(),
                 availableParameters: Joi.array()
@@ -191,14 +188,16 @@ module.exports = {
                 collectionTypes: Joi.array()
                     .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
-                paymentModes: {
-                    debitCard: Joi.boolean(),
-                    netBanking: Joi.boolean(),
-                    paytm: Joi.boolean(),
-                    cashOnDelivery: Joi.boolean(),
-                },
+                availablePaymentModes: Joi.array()
+                    .items(Joi.string()),
                 specialServiceUsers: Joi.array()
-                    .items(Joi.number()),
+                    .items(Joi.string()),
+                allowedUserTypes: Joi.array()
+                    .items(Joi.string()),
+                allowedProgrammes: Joi.array()
+                    .items(Joi.string()),
+                allowedBatches: Joi.array()
+                    .items(Joi.string()),
             }),
         parameterSchema: Joi.object()
             .keys({
@@ -221,12 +220,14 @@ module.exports = {
                 description: Joi.string(),
                 baseCharge: Joi.number(),
                 isActive: Joi.boolean(),
+                category: Joi.string(),
             }),
         collectionTypeUpdateSchema: Joi.object()
             .keys({
                 name: Joi.string(),
                 description: Joi.string(),
                 baseCharge: Joi.number(),
+                category: Joi.string(),
             }),
         notificationSchema: Joi.object()
             .keys({
@@ -246,15 +247,19 @@ module.exports = {
             }),
         changeOrderStatusSchema: Joi.object()
             .keys({
-                status: Joi.number().required()
+                status: Joi.number()
+                    .required(),
+                reason: Joi.string()
             }),
         cancelSchema: Joi.object()
             .keys({
-                cancelReason: Joi.string().required()
+                cancelReason: Joi.string()
+                    .required()
             }),
         changeCartStatusSchema: Joi.object()
             .keys({
-                status: Joi.number().required(),
+                status: Joi.number()
+                    .required(),
                 courierServiceName: Joi.string(),
                 trackingId: Joi.string(),
             }),
@@ -265,8 +270,9 @@ module.exports = {
                         .regex(/^[0-9a-fA-F]{24}$/)
                         .required(),
                     unitsRequested: Joi.number(),
-                    parameters: Joi.array().items(Joi.string()
-                        .regex(/^[0-9a-fA-F]{24}$/)),
+                    parameters: Joi.array()
+                        .items(Joi.string()
+                            .regex(/^[0-9a-fA-F]{24}$/)),
                     comment: Joi.string(),
                 },
             }),
@@ -274,12 +280,14 @@ module.exports = {
             .keys({
                 unitsRequested: Joi.number(),
                 comment: Joi.string(),
-                parameters: Joi.array().items(Joi.string()
-                    .regex(/^[0-9a-fA-F]{24}$/)),
+                parameters: Joi.array()
+                    .items(Joi.string()
+                        .regex(/^[0-9a-fA-F]{24}$/)),
             }),
         addPaymentSchema: Joi.object()
             .keys({
-                paymentType: Joi.number().required(),
+                paymentType: Joi.string()
+                    .required(),
                 paymentId: Joi.string(),
             }),
         addPickupSchema: Joi.object()
@@ -345,6 +353,41 @@ module.exports = {
                     .required(),
                 speedPostName: Joi.string()
                     .required(),
+            }),
+        addUserInfoSchema: Joi.object()
+            .keys({
+                userInfo: Joi.array()
+                    .items(Joi.object({
+                        user_inst_id: Joi.string()
+                            .required(),
+                        user_id: Joi.string()
+                            .required(),
+                        user_type: Joi.string()
+                            .required(),
+                        user_first_name: Joi.string()
+                            .required(),
+                        user_middle_name: Joi.string(),
+                        user_last_name: Joi.string(),
+                        user_sex: Joi.string()
+                            .required(),
+                        user_email_id: Joi.string()
+                            .required(),
+                        user_status: Joi.string(),
+                        user_adr_contact_name: Joi.string(),
+                        user_adr_line1: Joi.string(),
+                        user_adr_line2: Joi.string(),
+                        user_adr_line3: Joi.string(),
+                        user_adr_city: Joi.string(),
+                        user_adr_district: Joi.string(),
+                        user_adr_state: Joi.string(),
+                        user_adr_country: Joi.string(),
+                        user_adr_pincode: Joi.string(),
+                        user_adr_telno: Joi.string(),
+                        user_adr_mobileno: Joi.string(),
+                        user_adr_emailid: Joi.string(),
+                        user_batch: Joi.string(),
+                        user_programme: Joi.string()
+                    }))
             }),
     },
 };

@@ -25,6 +25,10 @@ const collectionTypeSchema = new Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    category: {
+        type: String,
+        required: true
     }
 });
 

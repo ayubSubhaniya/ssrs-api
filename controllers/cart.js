@@ -1,32 +1,89 @@
 const httpStatusCodes = require('http-status-codes');
 
 const Service = require('../models/service');
-const Courier = require('../models/courier');
+const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
-const Notification = require('../models/notification');
+const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
 
 const paymentCodeGenerator = require('shortid');
+paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#!');
 
 const { generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
+const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
+const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes } = require('../configuration');
+const { systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 
+const getMandatoryEasyPayFields = (cart) => {
+    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
+};
 
-const calculateCollectionTypeCost = async (collectionType, orders) => {
-    if (collectionType === undefined) {
-        return 0;
+const dayToMilliSec = 86400000;
+const checkForOfflinePayment = async () => {
+    const failedOrderTime = new Date();
+    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT);
+
+    const carts = await Cart.find({
+        status: cartStatus.placed,
+    });
+
+    for (let i = 0; i < carts.length; i++) {
+        if (carts[i].statusChangeTime.placed<=failedOrderTime){
+            await Cart.findByIdAndUpdate(carts[i]._id, {
+                status: cartStatus.cancelled,
+                cancelReason: 'Payment delay',
+                "$set":{
+                    'statusChangeTime.cancelled': {
+                        time: new Date(),
+                        by: systemAdmin
+                    }
+                }
+            });
+            /*Generate notification for cancel*/
+        } else {
+            /*Generate notification for payment*/
+        }
     }
-    const collectionTypeDoc = await CollectionType.findOne({ name: collectionType });
+};
 
+setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT*dayToMilliSec);
+
+const getEasyPayUrl = (cart) => {
+    let url = process.env.url + '?';
+    url += 'merchantid=' + process.env.merchantid;
+    url += '&mandatory fields=' + getMandatoryEasyPayFields(cart);
+    url += '&optional fields=';
+    url += '&returnurl=' + process.env.returnurl;
+    url += '&Reference No=' + cart.paymentCode;
+    url += '&submerchantid=' + process.env.submerchantid;
+    url += '&transaction amount=' + cart.totalCost;
+    url += '&paymode=' + process.env.paymode;
+    return encryptUrl(url);
+};
+
+
+const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory) => {
+    if (collectionType === undefined) {
+        return -1;
+    }
+    const collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
+
+    if (!collectionTypeDoc) {
+        return -1;
+    }
     if (!collectionTypeDoc.isActive) {
+        return -1;
+    }
+
+    if (collectionTypeCategory !== undefined && collectionTypeDoc.category !== collectionTypeCategory) {
         return -1;
     }
 
@@ -55,6 +112,18 @@ const calculateOrdersCost = async (cart) => {
     return cost;
 };
 
+const checkPaymentMode = async (cart, paymentMode) => {
+    //paymentMode = paymentMode.toLowerCase();
+    const { orders } = cart;
+    for (let i = 0; i < orders.length; i++) {
+        const service = await Service.findById(orders[i].service);
+        if (!service.availablePaymentModes.includes(paymentMode)) {
+            return false;
+        }
+    }
+    return true;
+};
+
 module.exports = {
     getMyCart: async (req, res, next) => {
 
@@ -70,19 +139,19 @@ module.exports = {
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
 
         if (readOwnCartPermission.granted) {
 
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
                         },
-                        'courier': {
+                        'delivery': {
                             select: readOwnCourierPermission.attributes
                         },
                         'pickup': {
@@ -97,7 +166,7 @@ module.exports = {
                     }
                 });
 
-            cart.orders = await validateOrder(cart.orders);
+            cart.orders = await validateOrder(cart.orders, user);
 
             const ordersCost = await calculateOrdersCost(cart);
             if (ordersCost === -1) {
@@ -144,22 +213,22 @@ module.exports = {
         const readAnyParameterPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
         const readAnyCourierPermission = accessControl.can(user.userType)
-            .readAny(resources.courier);
+            .readAny(resources.delivery);
         const readAnyPickupPermission = accessControl.can(user.userType)
             .readAny(resources.collector);
 
         if (readAnyCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readAnyOrderPermission.attributes
                         },
-                        'courier': {
+                        'delivery': {
                             select: readAnyCourierPermission.attributes
                         },
                         'pickup': {
@@ -173,6 +242,11 @@ module.exports = {
                         }
                     }
                 });
+
+            if (!cart) {
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
             if (cart.status >= cartStatus.placed) {
                 const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
@@ -182,12 +256,12 @@ module.exports = {
             }
         } else if (readOwnCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
                         },
-                        'courier': {
+                        'delivery': {
                             select: readOwnCourierPermission.attributes
                         },
                         'pickup': {
@@ -201,6 +275,11 @@ module.exports = {
                         }
                     }
                 });
+
+            if (!cart) {
+                return res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+
             if (cart.status >= cartStatus.placed) {
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
@@ -236,9 +315,9 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
-            if (query.status!==undefined){
-                if (query.status<cartStatus.placed){
-                    query.status=-1;
+            if (query.status !== undefined) {
+                if (query.status < cartStatus.placed) {
+                    query.status = -1;
                 }
             } else {
                 query.status = {
@@ -252,12 +331,21 @@ module.exports = {
             orderAttributesPermission = accessControl.can(user.userType)
                 .readAny(resources.order).attributes;
             courierAttributesPermission = accessControl.can(user.userType)
-                .readAny(resources.courier).attributes;
+                .readAny(resources.delivery).attributes;
             pickupAttributesPermission = accessControl.can(user.userType)
                 .readAny(resources.collector).attributes;
 
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
+            if (query.status !== undefined) {
+                if (query.status < cartStatus.placed) {
+                    query.status = -1;
+                }
+            } else {
+                query.status = {
+                    $gte: cartStatus.placed
+                };
+            }
             sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
             query.requestedBy = daiictId;
 
@@ -265,7 +353,7 @@ module.exports = {
             orderAttributesPermission = accessControl.can(user.userType)
                 .readOwn(resources.order).attributes;
             courierAttributesPermission = accessControl.can(user.userType)
-                .readOwn(resources.courier).attributes;
+                .readOwn(resources.delivery).attributes;
             pickupAttributesPermission = accessControl.can(user.userType)
                 .readOwn(resources.collector).attributes;
 
@@ -275,12 +363,12 @@ module.exports = {
 
         const cart = await Cart.find(query)
             .sort(sortQuery)
-            .deepPopulate(['orders.service', 'orders.parameters', 'courier', 'pickup'], {
+            .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                 populate: {
                     'orders': {
                         select: orderAttributesPermission
                     },
-                    'courier': {
+                    'delivery': {
                         select: courierAttributesPermission
                     },
                     'pickup': {
@@ -295,9 +383,9 @@ module.exports = {
                 }
             });
 
-        for (let i = 0; i < cart.length; i++) {
+        /*for (let i = 0; i < cart.length; i++) {
             if (cart[i].status < cartStatus.placed) {
-                cart[i].orders = await validateOrder(cart[i].orders);
+                cart[i].orders = await validateOrder(cart[i].orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart[i]);
                 if (ordersCost === -1) {
@@ -318,31 +406,32 @@ module.exports = {
 
                 cart[i].totalCost = cart[i].collectionTypeCost + cart[i].ordersCost;
             }
-        }
+        }*/
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
             .json({ cart: filteredCart });
     },
 
-    addCourier: async (req, res, next) => {
+    addDelivery: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
         const timeStamp = new Date();
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
-            const courier = new Courier(req.value.body);
-            courier.createdOn = timeStamp;
-            courier.createdBy = daiictId;
+            const delivery = new Delivery(req.value.body);
+            delivery.createdOn = timeStamp;
+            delivery.createdBy = daiictId;
 
             const cart = await Cart.findById(cartId)
                 .populate({
@@ -354,7 +443,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -364,7 +453,7 @@ module.exports = {
                     cart.ordersCost = ordersCost;
                 }
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.courier, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.delivery);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
@@ -377,19 +466,20 @@ module.exports = {
 
                 cart.pickup = undefined;
 
-                cart.collectionType = collectionTypes.courier;
-                cart.courier = courier._id;
-                courier.cartId = cart._id;
+                cart.collectionType = collectionType;
+                cart.collectionTypeCategory = collectionTypes.delivery;
+                cart.delivery = delivery._id;
+                delivery.cartId = cart._id;
 
-                const newCourier = await courier.save();
+                const newDelivery = await delivery.save();
                 const newCart = await cart.save();
 
-                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
+                const filteredDelivery = filterResourceData(newDelivery, readOwnCourierPermission.attributes);
                 const filteredCart = filterResourceData(newCart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.CREATED)
                     .json({
                         cart: filteredCart,
-                        courier: filteredCourier
+                        delivery: filteredDelivery
                     });
 
             } else {
@@ -404,18 +494,19 @@ module.exports = {
     updateCourier: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
         const readOwnCourierPermission = accessControl.can(user.userType)
-            .readOwn(resources.courier);
+            .readOwn(resources.delivery);
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted) {
-            const courier = req.value.body;
+            const delivery = req.value.body;
 
             const cart = await Cart.findById(cartId)
                 .populate({
@@ -423,11 +514,11 @@ module.exports = {
                     select: readOwnOrderPermission.attributes
                 });
 
-            if (!cart || !cart.courier) {
+            if (!cart || !cart.delivery) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -438,26 +529,27 @@ module.exports = {
                 }
 
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.courier, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.delivery);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
 
+                cart.collectionType = collectionType;
                 cart.collectionTypeCost = cost;
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
-                const newCourier = await Courier.findByIdAndUpdate(cart.courier, courier, { new: true });
-                /* check if courier is present*/
+                const newDelivery = await Delivery.findByIdAndUpdate(cart.delivery, delivery, { new: true });
+                /* check if delivery is present*/
                 const newCart = await cart.save();
 
-                const filteredCourier = filterResourceData(newCourier, readOwnCourierPermission.attributes);
+                const filteredDelivery = filterResourceData(newDelivery, readOwnCourierPermission.attributes);
                 const filteredCart = filterResourceData(newCart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
                     .json({
                         cart: filteredCart,
-                        courier: filteredCourier
+                        delivery: filteredDelivery
                     });
 
             } else {
@@ -473,6 +565,7 @@ module.exports = {
     addPickup: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
 
         const timeStamp = new Date();
 
@@ -500,7 +593,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -510,18 +603,20 @@ module.exports = {
                     cart.ordersCost = ordersCost;
                 }
 
-
-                const cost = await calculateCollectionTypeCost(collectionTypes.pickup, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.pickup);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
+
                 cart.collectionTypeCost = cost;
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
-                cart.courier = undefined;
 
-                cart.collectionType = collectionTypes.pickup;
+                cart.delivery = undefined;
+
+                cart.collectionType = collectionType;
+                cart.collectionTypeCategory = collectionTypes.pickup;
                 cart.pickup = pickup._id;
                 pickup.cartId = cart._id;
 
@@ -548,6 +643,7 @@ module.exports = {
     updatePickup: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
+        const { collectionType } = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
@@ -572,7 +668,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
 
-                cart.orders = await validateOrder(cart.orders);
+                cart.orders = await validateOrder(cart.orders, user);
 
                 const ordersCost = await calculateOrdersCost(cart);
                 if (ordersCost === -1) {
@@ -583,13 +679,14 @@ module.exports = {
                 }
 
 
-                const cost = await calculateCollectionTypeCost(collectionTypes.pickup, cart.orders);
+                const cost = await calculateCollectionTypeCost(collectionType, cart.orders, collectionTypes.pickup);
                 if (cost === -1) {
                     res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                     return;
                 }
 
+                cart.collectionType = collectionType;
                 cart.collectionTypeCost = cost;
                 cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
 
@@ -637,14 +734,20 @@ module.exports = {
                     if (cartUpdateAtt.paymentType === paymentTypes.offline) {
                         cartUpdateAtt.status = cartStatus.placed;
                         cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                        cartUpdateAtt['$set'] = {
+                            'statusChangeTime.placed': {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        };
                     } else {
-                        cartUpdateAtt.status = cartStatus.paymentComplete;
+                        res.sendStatus(httpStatusCodes.BAD_REQUEST);
                     }
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
 
-                    cartInDb.orders = await validateOrder(cartInDb.orders);
+                    cartInDb.orders = await validateOrder(cartInDb.orders, user);
 
                     const ordersCost = await calculateOrdersCost(cartInDb);
                     if (ordersCost === -1) {
@@ -673,9 +776,14 @@ module.exports = {
                             .send(errorMessages.invalid);
                     }
 
-                    if (cartInDb.courier === undefined && cartInDb.pickup === undefined) {
+                    if (cartInDb.delivery === undefined && cartInDb.pickup === undefined) {
                         return res.status(httpStatusCodes.PRECONDITION_FAILED)
                             .send(errorMessages.noCollectionType);
+                    }
+
+                    if (!(await checkPaymentMode(cartInDb, cartUpdateAtt.paymentType))) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidPaymentType);
                     }
 
                     /* save final cart and orders*/
@@ -690,14 +798,26 @@ module.exports = {
 
                     if (cartUpdateAtt.status === cartStatus.paymentComplete) {
 
-                        if (cartInDb.collectionType === collectionTypes.pickup) {
+                        if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
                             await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                        } else if (cartInDb.collectionType === collectionTypes.courier) {
-                            await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
+                        } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
                         }
 
                         for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing }, { new: true })
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                status: orderStatus.processing,
+                                '$set': {
+                                    'statusChangeTime.placed': {
+                                        time: new Date(),
+                                        by: systemAdmin
+                                    },
+                                    'statusChangeTime.processing': {
+                                        time: new Date(),
+                                        by: systemAdmin
+                                    },
+                                }
+                            }, { new: true })
                                 .populate('service');
 
                             const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
@@ -711,7 +831,15 @@ module.exports = {
                         cartUpdateAtt.status = cartStatus.processing;
                     } else {
                         for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.placed }, { new: true })
+                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                status: orderStatus.placed,
+                                '$set': {
+                                    'statusChangeTime.placed': {
+                                        time: new Date(),
+                                        by: systemAdmin
+                                    },
+                                }
+                            }, { new: true })
                                 .populate('service');
                             const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                             placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
@@ -727,7 +855,7 @@ module.exports = {
                     const placedCart = new PlacedCart(placedCartDoc);
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, 'System', cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -744,6 +872,9 @@ module.exports = {
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
+                } else if (cartInDb.status === cartStatus.processingPayment) {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.paymentInProcessing);
                 }
                 else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -753,6 +884,196 @@ module.exports = {
             }
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    addEasyPayPayment: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId, cartId } = user;
+
+        const updateOwnCartPermission = accessControl.can(user.userType)
+            .updateOwn(resources.cart);
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
+
+        if (updateOwnCartPermission.granted) {
+
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
+
+            if (cartInDb) {
+                if (cartInDb.status === cartStatus.unplaced) {
+                    const cartUpdateAtt = req.value.body;
+                    if (cartUpdateAtt.paymentType === paymentTypes.online) {
+                        cartUpdateAtt.status = cartStatus.processingPayment;
+                        cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                        cartUpdateAtt['$set'] = {
+                            'statusChangeTime.processingPayment': {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        };
+                    }
+
+                    cartUpdateAtt.lastModifiedBy = daiictId;
+                    cartUpdateAtt.lastModified = new Date();
+
+                    cartInDb.orders = await validateOrder(cartInDb.orders, user);
+
+                    const ordersCost = await calculateOrdersCost(cartInDb);
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        cartInDb.validityErrors.push(errorMessages.invalid);
+                    } else {
+                        cartInDb.ordersCost = ordersCost;
+                    }
+
+                    const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
+                    if (collectionTypeCost === -1) {
+                        res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidCollectionType);
+                        return;
+                    }
+                    cartInDb.collectionTypeCost = collectionTypeCost;
+                    cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
+
+                    if (cartInDb.orders.length === 0) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.noOrdersInCart);
+                    }
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalid);
+                    }
+
+                    if (cartInDb.delivery === undefined && cartInDb.pickup === undefined) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.noCollectionType);
+                    }
+
+                    if (!(await checkPaymentMode(cartInDb, cartUpdateAtt.paymentType))) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidPaymentType);
+                    }
+
+                    /* save final cart and orders*/
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].save();
+                    }
+
+                    await cartInDb.save();
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
+
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
+
+                    res.status(httpStatusCodes.OK)
+                        .json({
+                            cart: filteredCart,
+                            url: getEasyPayUrl(updatedCart)
+                        });
+                }
+                else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    acceptEasyPayPayment: async (req, res, next) => {
+        const responseCode = req.query['Response Code'];
+        const uniqueRefNo = req.query['Unique Ref Number'];
+        const serviceTaxAmount = req.query['Service Tax Amount'];
+        const processingFeeAmount = req.query['Processing Fee Amount'];
+        const totalAmount = req.query['Total Amount'];
+        const transactionAmount = req.query['Transaction Amount'];
+        const transactionDate = req.query['Transaction Date'];
+        const interchangeValue = req.query['Interchange Value'];
+        const tdr = req.query['TDR'];
+        const paymentMode = req.query['Payment Mode'];
+        const subMerchantId = req.query['SubmerchantId'];
+        const referenceNo = req.query['ReferenceNo'];
+        const tps = req.query['TPS'];
+        const id = req.query['ID'];
+        const rs = req.query['RS'];
+
+        const signatureStr = `${responseCode}|${uniqueRefNo}|${serviceTaxAmount}|${processingFeeAmount}|${totalAmount}|${transactionAmount}|${transactionDate}|${interchangeValue}|${tdr}|${paymentMode}|${subMerchantId}|${referenceNo}|${tps}|${id}|${process.env.aeskey}`;
+        const SHA512Sig = createSHASig(signatureStr);
+
+        if (SHA512Sig === rs) {
+            const cartInDb = await Cart.findOne({ paymentCode: referenceNo });
+
+            if (cartInDb) {
+                if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && transactionAmount === cartInDb.totalCost) {
+
+                    const cartUpdateAtt = {
+                        paymentId: uniqueRefNo
+                    };
+
+                    cartUpdateAtt.status = cartStatus.paymentComplete;
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.placed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        },
+                        'statusChangeTime.paymentComplete': {
+                            time: new Date(),
+                            by: systemAdmin
+                        },
+                        'statusChangeTime.processing': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
+
+                    if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
+                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
+                    }
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.processing,
+                            '$set': {
+                                'statusChangeTime.processing': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        });
+                    }
+
+                    cartUpdateAtt.status = cartStatus.processing;
+
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
+
+                    res.status(httpStatusCodes.OK);
+
+                } else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.BAD_REQUEST);
         }
     },
 
@@ -774,20 +1095,38 @@ module.exports = {
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.status = cartStatus.paymentComplete;
+            cartUpdateAtt['$set'] = {
+                'statusChangeTime.paymentComplete': {
+                    time: new Date(),
+                    by: daiictId
+                },
+                'statusChangeTime.processing': {
+                    time: new Date(),
+                    by: daiictId
+                }
+            };
 
             const cartInDb = await Cart.findOne({ paymentCode });
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
 
-                    if (cartInDb.collectionType === collectionTypes.pickup) {
+                    if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
                         await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                    } else if (cartInDb.collectionType === collectionTypes.courier) {
-                        await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.processing });
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.processing });
+                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.processing,
+                            '$set': {
+                                'statusChangeTime.processing': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        });
                     }
 
                     cartUpdateAtt.status = cartStatus.processing;
@@ -844,23 +1183,30 @@ module.exports = {
                     lastModifiedBy: daiictId,
                     lastModified: new Date()
                 };
+
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
-                        if (cartInDb.collectionType === collectionTypes.courier) {
+                        updateAtt['$set'] = {
+                            'statusChangeTime.completed': {
+                                time: new Date(),
+                                by: daiictId
+                            }
+                        };
+                        if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
                             if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
                                 return res.status(httpStatusCodes.PRECONDITION_FAILED)
                                     .send(errorMessages.courierInformationRequired);
                             }
 
-                            await Courier.findByIdAndUpdate(cartInDb.courier, { status: collectionStatus.completed });
+                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.completed });
 
-                            const updatedCourier = await Courier.findByIdAndUpdate(cartInDb.courier, {
+                            const updatedDelivery = await Delivery.findByIdAndUpdate(cartInDb.delivery, {
                                 courierServiceName: cartUpdateAtt.courierServiceName,
                                 trackingId: cartUpdateAtt.trackingId
                             });
 
-                            if (!updatedCourier) {
+                            if (!updatedDelivery) {
                                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
                             }
 
@@ -870,7 +1216,15 @@ module.exports = {
                         }
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             if (cartInDb.orders[i].status !== orderStatus.cancelled) {
-                                await Order.findByIdAndUpdate(cartInDb.orders[i], { status: orderStatus.completed });
+                                await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                    status: orderStatus.completed,
+                                    '$set': {
+                                        'statusChangeTime.completed': {
+                                            time: new Date(),
+                                            by: systemAdmin
+                                        },
+                                    }
+                                });
                                 await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, { status: orderStatus.completed });
                             }
 
@@ -882,7 +1236,16 @@ module.exports = {
 
                 await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
+
                 if (updatedCart) {
+
+                    // Generating notification
+                    const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, daiictId, updatedCart.orders.length, updatedCart.status);
+                    await notification.save();
+
+                    // Generating invoice
+                    generateInvoice(cartId);
+
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
@@ -911,23 +1274,41 @@ module.exports = {
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.status = cartStatus.cancelled;
+            cartUpdateAtt['$set'] = {
+                'statusChangeTime.cancelled': {
+                    time: new Date(),
+                    by: daiictId
+                }
+            };
 
             const cartInDb = await Cart.findById(cartId);
 
             if (cartInDb) {
-                if (cartInDb.status >= cartStatus.placed && cartInDb.status<cartStatus.completed) {
+                if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
                     await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
                     await PlacedCart.findOneAndUpdate({ cartId }, {
                         status: cartStatus.cancelled,
                         cancelReason: cartUpdateAtt.cancelReason
                     });
 
+                    if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.cancel });
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
+                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.cancel });
+                    }
+
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.cancelled,
                             lastModified: cartUpdateAtt.lastModified,
                             lastModifiedBy: daiictId,
-                            cancelReason: cartUpdateAtt.cancelReason
+                            cancelReason: cartUpdateAtt.cancelReason,
+                            '$set': {
+                                'statusChangeTime.cancelled': {
+                                    time: new Date(),
+                                    by: daiictId
+                                }
+                            }
                         });
 
                         await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, {
@@ -935,7 +1316,12 @@ module.exports = {
                             cancelReason: cartUpdateAtt.cancelReason
                         });
                     }
-                    res.sendStatus(httpStatusCodes.OK);
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled);
+                    await notification.save();
+
+                    res.status(httpStatusCodes.OK)
+                        .json({});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
@@ -947,4 +1333,43 @@ module.exports = {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
     },
+
+    getInvoice: async (req, res, next) => {
+
+        const { user } = req;
+        const { cartId } = req.params;
+
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        
+        if(readOwnCartPermission.granted) {
+            const cart = await Cart.findById(cartId);
+            // const invoiceFile = './data/invoice_pdf/' + cart.orderId + '.pdf';
+            // res.attachment(invoiceFile);          // sends 200 OK alongwith invoiceFile
+            // res.sendStatus(httpStatusCodes.OK);
+
+            let options = {
+                root: './data/invoice_pdf/',
+                dotfiles: 'deny',
+                headers: {
+                    'x-timestamp': Date.now(),
+                    'x-sent': true,
+                    'Content-type': 'application/pdf'
+                }
+              };
+            
+            let fileName = cart.orderId + '.pdf';
+            res.sendFile(fileName, options, function (err) {
+                if (err) {
+                    console.log(err);
+                    res.sendStatus(httpStatusCodes.NOT_FOUND);
+                } else {
+                    console.log('Sent: ', fileName);
+                }
+            });
+
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    }
 };

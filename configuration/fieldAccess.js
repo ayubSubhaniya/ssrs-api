@@ -24,6 +24,45 @@ module.exports = {
                 'primaryEmail',
                 'createdOn',
                 'addresses',
+                'userInfo',
+            ],
+            canCreate: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'requestedServices',
+                'daiictId',
+                'primaryEmail',
+                'password',
+            ],
+        },
+        admin: {
+            canUpdate: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'requestedServices',
+                'password',
+            ],
+            canRead: [
+                'name',
+                'secondaryEmail',
+                'contactNo',
+                'gender',
+                'programme',
+                'userType',
+                'isActive',
+                'requestedServices',
+                'notifications',
+                'daiictId',
+                'primaryEmail',
+                'createdOn',
+                'addresses',
+                'userInfo',
             ],
             canCreate: [
                 'name',
@@ -61,6 +100,7 @@ module.exports = {
                 'primaryEmail',
                 'createdOn',
                 'addresses',
+                'userInfo',
             ],
             canCreate: [
                 'name',
@@ -90,6 +130,19 @@ module.exports = {
                 'message',
             ],
         },
+        admin: {
+            canRead: [
+                '_id',
+                'message',
+                'createdOn',
+            ],
+            canCreate: [
+                'message',
+            ],
+            canUpdate: [
+                'message',
+            ],
+        },
         student: {
             canRead: [
                 'message',
@@ -101,6 +154,19 @@ module.exports = {
     },
     Notification: {
         superAdmin: {
+            canRead: [
+                '_id',
+                'message',
+                'createdOn',
+            ],
+            canCreate: [
+                'message',
+            ],
+            canUpdate: [
+                'message',
+            ],
+        },
+        admin: {
             canRead: [
                 '_id',
                 'message',
@@ -144,17 +210,56 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
                 'unitsRequested',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime',
+                'holdReason'
             ],
             canCreate: [],
             canUpdate: [
                 'status',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
+            ],
+        },
+        admin: {
+            canRead: [
+                '_id',
+                'requestedBy',
+                'cartId',
+                'service',
+                'serviceName',
+                'createdOn',
+                'lastModified',
+                'lastModifiedBy',
+                'serviceCost',
+                'parameterCost',
+                'comment',
+                'collectionTypeCost',
+                'totalCost',
+                'status',
+                'parameters',
+                'paymentType',
+                'isPaymentDone',
+                'paymentId',
+                'delivery',
+                'pickup',
+                'collectionType',
+                'validityErrors',
+                'unitsRequested',
+                'cancelReason',
+                'statusChangeTime',
+                'holdReason'
+            ],
+            canCreate: [],
+            canUpdate: [
+                'status',
+                'cancelReason',
+                'statusChangeTime'
             ],
         },
         student: {
@@ -176,12 +281,14 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
                 'unitsRequested',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime',
+                'holdReason'
             ],
             canCreate: [
                 'service',
@@ -192,7 +299,7 @@ module.exports = {
                 'comment',
                 'collectionType',
                 'unitsRequested',
-                'courier',
+                'delivery',
                 'pickup',
             ],
             canUpdate: [
@@ -200,7 +307,7 @@ module.exports = {
                 'isPaymentDone',
                 'paymentId',
                 'comment',
-                'courier',
+                'delivery',
                 'pickup',
                 'unitsRequested',
             ]
@@ -224,16 +331,49 @@ module.exports = {
                 'isPaymentDone',
                 'paymentId',
                 'paymentCode',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
             canCreate: [],
             canUpdate: [
                 'status',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
+            ],
+        },
+        admin: {
+            canRead: [
+                '_id',
+                'orderId',
+                'requestedBy',
+                'orders',
+                'createdOn',
+                'lastModified',
+                'lastModifiedBy',
+                'collectionTypeCost',
+                'ordersCost',
+                'totalCost',
+                'status',
+                'paymentType',
+                'isPaymentDone',
+                'paymentId',
+                'paymentCode',
+                'delivery',
+                'pickup',
+                'collectionType',
+                'validityErrors',
+                'cancelReason',
+                'statusChangeTime'
+            ],
+            canCreate: [],
+            canUpdate: [
+                'status',
+                'cancelReason',
+                'statusChangeTime'
             ],
         },
         student: {
@@ -253,18 +393,19 @@ module.exports = {
                 'isPaymentDone',
                 'paymentId',
                 'paymentCode',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
                 'validityErrors',
-                'cancelReason'
+                'cancelReason',
+                'statusChangeTime'
             ],
             canCreate: [
                 'orders',
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
                 'collectionType',
             ],
@@ -272,8 +413,9 @@ module.exports = {
                 'paymentType',
                 'isPaymentDone',
                 'paymentId',
-                'courier',
+                'delivery',
                 'pickup',
+                'statusChangeTime'
             ]
         },
     },
@@ -286,16 +428,17 @@ module.exports = {
                 'createdOn',
                 'createdBy',
                 'isApplicationSpecific',
-                'isAvailableForAlumni',
-                'isCourierAvailable',
                 'isSpecialService',
                 'isActive',
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
                 'specialServiceUsers',
-                'paymentModes',
+                'availablePaymentModes',
                 'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
             ],
             canCreate: [
                 'name',
@@ -309,8 +452,11 @@ module.exports = {
                 'baseCharge',
                 'availableParameters',
                 'specialServiceUsers',
-                'paymentModes',
+                'availablePaymentModes',
                 'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
             ],
             canUpdate: [
                 'name',
@@ -324,8 +470,68 @@ module.exports = {
                 'baseCharge',
                 'availableParameters',
                 'specialServiceUsers',
-                'paymentModes',
+                'availablePaymentModes',
                 'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
+            ],
+        },
+        admin: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'createdOn',
+                'createdBy',
+                'isApplicationSpecific',
+                'isSpecialService',
+                'isActive',
+                'maxUnits',
+                'baseCharge',
+                'availableParameters',
+                'specialServiceUsers',
+                'availablePaymentModes',
+                'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
+            ],
+            canCreate: [
+                'name',
+                'description',
+                'isApplicationSpecific',
+                'isAvailableForAlumni',
+                'isCourierAvailable',
+                'isSpecialService',
+                'isActive',
+                'maxUnits',
+                'baseCharge',
+                'availableParameters',
+                'specialServiceUsers',
+                'availablePaymentModes',
+                'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
+            ],
+            canUpdate: [
+                'name',
+                'description',
+                'isApplicationSpecific',
+                'isAvailableForAlumni',
+                'isCourierAvailable',
+                'isSpecialService',
+                'isActive',
+                'maxUnits',
+                'baseCharge',
+                'availableParameters',
+                'specialServiceUsers',
+                'availablePaymentModes',
+                'collectionTypes',
+                'allowedUserTypes',
+                'allowedProgrammes',
+                'allowedBatches'
             ],
         },
         student: {
@@ -336,7 +542,7 @@ module.exports = {
                 'maxUnits',
                 'baseCharge',
                 'availableParameters',
-                'paymentModes',
+                'availablePaymentModes',
                 'collectionTypes',
             ],
             canCreate: [],
@@ -345,6 +551,13 @@ module.exports = {
     },
     SpecialService: {
         superAdmin: {
+            canRead: [
+                '*'
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
+        admin: {
             canRead: [
                 '*'
             ],
@@ -365,6 +578,13 @@ module.exports = {
             canCreate: [],
             canUpdate: [],
         },
+        admin: {
+            canRead: [
+                '*'
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
         student: {
             canRead: [],
             canCreate: [],
@@ -379,6 +599,13 @@ module.exports = {
                 '*'
             ],
         },
+        admin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [
+                '*'
+            ],
+        },
         student: {
             canRead: [],
             canCreate: [],
@@ -387,6 +614,22 @@ module.exports = {
     },
     Collector: {
         superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'daiictId',
+                'contactNo',
+                'email',
+                'collectionCode',
+                'createdOn',
+                'createdBy',
+                'orderId',
+                'status',
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
+        admin: {
             canRead: [
                 '_id',
                 'name',
@@ -429,6 +672,27 @@ module.exports = {
     },
     Courier: {
         superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'contactNo',
+                'email',
+                'address',
+                'city',
+                'state',
+                'country',
+                'createdOn',
+                'createdBy',
+                'pinCode',
+                'trackingId',
+                'courierServiceName',
+                'orderId',
+                'status',
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
+        admin: {
             canRead: [
                 '_id',
                 'name',
@@ -493,6 +757,11 @@ module.exports = {
             canCreate: [],
             canUpdate: [],
         },
+        admin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [],
+        },
         student: {
             canRead: [
                 '_id',
@@ -551,20 +820,7 @@ module.exports = {
                 'isActive'
             ],
         },
-        student: {
-            canRead: [
-                '_id',
-                'name',
-                'description',
-                'baseCharge',
-                'isActive'
-            ],
-            canCreate: [],
-            canUpdate: []
-        },
-    },
-    CollectionType: {
-        superAdmin: {
+        admin: {
             canRead: [
                 '_id',
                 'name',
@@ -593,6 +849,72 @@ module.exports = {
                 'name',
                 'description',
                 'baseCharge',
+                'isActive'
+            ],
+            canCreate: [],
+            canUpdate: []
+        },
+    },
+    CollectionType: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'createdOn',
+                'createdBy',
+                'isActive',
+                'category'
+            ],
+            canCreate: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'category'
+            ],
+            canUpdate: [
+                'name',
+                'description',
+                'baseCharge',
+                'isActive',
+                'category'
+            ],
+        },
+        admin: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'createdOn',
+                'createdBy',
+                'isActive',
+                'category'
+            ],
+            canCreate: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'category'
+            ],
+            canUpdate: [
+                'name',
+                'description',
+                'baseCharge',
+                'isActive',
+                'category'
+            ],
+        },
+        student: {
+            canRead: [
+                '_id',
+                'name',
+                'description',
+                'baseCharge',
+                'category'
             ],
             canCreate: [],
             canUpdate: []
@@ -600,6 +922,11 @@ module.exports = {
     },
     AccessLevel: {
         superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [],
+        },
+        admin: {
             canRead: [],
             canCreate: [],
             canUpdate: [],
@@ -616,10 +943,149 @@ module.exports = {
             canCreate: [],
             canUpdate: [],
         },
+        admin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [],
+        },
         student: {
             canRead: [],
             canCreate: [],
             canUpdate: []
         },
     },
+    UserInfo: {
+        superAdmin: {
+            canRead: [
+                '_id',
+                'user_inst_id',
+                'user_type',
+                'user_first_name',
+                'user_middle_name',
+                'user_last_name',
+                'user_sex',
+                'user_email_id',
+                'user_status',
+                'user_adr_contact_name',
+                'user_adr_line1',
+                'user_adr_line2',
+                'user_adr_line3',
+                'user_adr_city',
+                'user_adr_district',
+                'user_adr_state',
+                'user_adr_country',
+                'user_adr_pincode',
+                'user_adr_telno',
+                'user_adr_mobileno',
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
+            ],
+            canCreate: [
+                'user_inst_id',
+                'user_type',
+                'user_first_name',
+                'user_middle_name',
+                'user_last_name',
+                'user_sex',
+                'user_email_id',
+                'user_status',
+                'user_adr_contact_name',
+                'user_adr_line1',
+                'user_adr_line2',
+                'user_adr_line3',
+                'user_adr_city',
+                'user_adr_district',
+                'user_adr_state',
+                'user_adr_country',
+                'user_adr_pincode',
+                'user_adr_telno',
+                'user_adr_mobileno',
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
+            ],
+            canUpdate: [
+                'user_inst_id',
+                'user_type',
+                'user_first_name',
+                'user_middle_name',
+                'user_last_name',
+                'user_sex',
+                'user_email_id',
+                'user_status',
+                'user_adr_contact_name',
+                'user_adr_line1',
+                'user_adr_line2',
+                'user_adr_line3',
+                'user_adr_city',
+                'user_adr_district',
+                'user_adr_state',
+                'user_adr_country',
+                'user_adr_pincode',
+                'user_adr_telno',
+                'user_adr_mobileno',
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
+            ],
+        },
+        admin: {
+            canRead: [
+                '_id',
+                'user_inst_id',
+                'user_type',
+                'user_first_name',
+                'user_middle_name',
+                'user_last_name',
+                'user_sex',
+                'user_email_id',
+                'user_status',
+                'user_adr_contact_name',
+                'user_adr_line1',
+                'user_adr_line2',
+                'user_adr_line3',
+                'user_adr_city',
+                'user_adr_district',
+                'user_adr_state',
+                'user_adr_country',
+                'user_adr_pincode',
+                'user_adr_telno',
+                'user_adr_mobileno',
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
+            ],
+            canCreate: [],
+            canUpdate: [],
+        },
+        student: {
+            canRead: [
+                'user_inst_id',
+                'user_type',
+                'user_first_name',
+                'user_middle_name',
+                'user_last_name',
+                'user_sex',
+                'user_email_id',
+                'user_status',
+                'user_adr_contact_name',
+                'user_adr_line1',
+                'user_adr_line2',
+                'user_adr_line3',
+                'user_adr_city',
+                'user_adr_district',
+                'user_adr_state',
+                'user_adr_country',
+                'user_adr_pincode',
+                'user_adr_telno',
+                'user_adr_mobileno',
+                'user_adr_emailid',
+                'user_batch',
+                'user_programme',
+            ],
+            canCreate: [],
+            canUpdate: [],
+        }
+    }
 };

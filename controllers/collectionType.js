@@ -47,7 +47,7 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             await CollectionType.findByIdAndRemove(requestedCollectionTypeId);
-            res.sendStatus(HttpStatus.OK);
+            res.status(HttpStatus.OK).json({});
         } else if (deleteOwnPermission.granted) {
 
             const deletedCollectionType = await CollectionType.findOneAndRemove({
@@ -56,7 +56,7 @@ module.exports = {
             });
 
             if (deletedCollectionType) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }

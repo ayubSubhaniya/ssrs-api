@@ -3,7 +3,7 @@ const Schema = moongose.Schema;
 
 const {collectionStatus} = require('../configuration');
 
-const courierSchema = new Schema({
+const deliverySchema = new Schema({
     name: {
         type: String,
         required: true,
@@ -69,5 +69,5 @@ const courierSchema = new Schema({
     }
 });
 
-const Courier = moongose.model('courier', courierSchema);
-module.exports = Courier;
+const Delivery = moongose.model('delivery', deliverySchema);
+module.exports = Delivery;

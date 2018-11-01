@@ -149,7 +149,7 @@ module.exports = {
             const news = await News.findByIdAndRemove(newsId);
 
             if (news) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -159,7 +159,7 @@ module.exports = {
                 createdBy: daiictId
             });
             if (news) {
-                res.sendStatus(HttpStatus.OK);
+                res.status(HttpStatus.OK).json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -175,7 +175,7 @@ module.exports = {
             .deleteAny(resources.news);
         if (deletePermission.granted) {
             await News.deleteMany({});
-            res.sendStatus(HttpStatus.OK);
+            res.status(HttpStatus.OK).json({});
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -190,7 +190,7 @@ module.exports = {
 
         if (deletePermission.granted) {
             await News.deleteMany({ createdBy: daiictId });
-            res.sendStatus(HttpStatus.OK);
+            res.status(HttpStatus.OK).json({});
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }

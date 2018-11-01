@@ -21,14 +21,6 @@ const serviceSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    isAvailableForAlumni: {
-        type: Boolean,
-        default: false,
-    },
-    isCourierAvailable: {
-        type: Boolean,
-        default: false,
-    },
     isSpecialService: {
         type: Boolean,
         default: false,
@@ -45,24 +37,9 @@ const serviceSchema = new Schema({
         type: Number,
         default: 0,
     },
-    paymentModes: {
-        debitCard: {
-            type: Boolean,
-            default: false,
-        },
-        netBanking: {
-            type: Boolean,
-            default: false,
-        },
-        paytm: {
-            type: Boolean,
-            default: false,
-        },
-        cashOnDelivery: {
-            type: Boolean,
-            default: false,
-        },
-    },
+    availablePaymentModes: [{
+        type: String
+    }],
     collectionTypes: [{
         type: Schema.Types.ObjectId,
         ref: 'collectionType'
@@ -74,7 +51,23 @@ const serviceSchema = new Schema({
     specialServiceUsers: [{
         type: String,
     }],
+    allowedUserTypes: [{
+        type: String,
+    }],
+    allowedProgrammes: [{
+        type: String,
+    }],
+    allowedBatches: [{
+        type: String,
+    }]
 });
+
+// serviceSchema.pre('save', function (next) {
+//     this.availableParameters.map(function (x) {
+//        return x.toLowerCase();
+//     });
+//     next();
+// });
 
 const Service = moongose.model('service', serviceSchema);
 module.exports = Service;

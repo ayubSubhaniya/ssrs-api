@@ -1,5 +1,6 @@
 module.exports = {
     userNotExist: "User doesn't exist",
+    userAlreadyExist: "User already exist",
     invalidService: "Invalid service request. Please check validity",
     invalid: "Invalid orders request. Please check validity",
     invalidCart: "Invalid cart. Please check validity",
@@ -13,9 +14,15 @@ module.exports = {
     noCollectionType: "No Collection type",
     allOrdersNotReady: "All orders not ready",
     noOrdersInCart: "No orders in cart",
-    userAlreadyExist: "User Already Exist",
     permissionDenied: 'Permission Denied',
     accountAlreadyExists: 'Account Already Exists',
     invalidToken: 'Invalid Token',
     sessionExpired: 'Session Expired',
+    invalidDaiictUser: 'Invalid DA-IICT user',
+    userDeactivated: 'User is deactivated',
+    inactiveCollectionType: 'Requested collection type is currently inactive',
+    notFoundCollectionType: 'Requested collection type doesn\'t exist',
+    notBelongToCollectionTypeCategory: 'Requested category and collection type doesn\'t match',
+    collectionTypeNotInUnion: 'Requested collection type is not allowed for all service',
+    paymentInProcessing: 'Payment already in process'
 };

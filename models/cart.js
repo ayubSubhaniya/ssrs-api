@@ -16,7 +16,7 @@ const cartSchema = new Schema({
         ref: 'order'
     }],
     paymentType: {
-        type: Number,
+        type: String,
     },
     paymentId: {
         type: String,
@@ -25,6 +25,10 @@ const cartSchema = new Schema({
         type: String,
     },
     collectionType: {
+        type: Schema.Types.ObjectId,
+        ref: 'collectionType'
+    },
+    collectionTypeCategory: {
         type: String,
     },
     collectionTypeCost: {
@@ -39,9 +43,9 @@ const cartSchema = new Schema({
         type: Number,
         default: 0,
     },
-    courier: {
+    delivery: {
         type: Schema.Types.ObjectId,
-        ref: 'courier'
+        ref: 'delivery'
     },
     pickup: {
         type: Schema.Types.ObjectId,
@@ -71,10 +75,64 @@ const cartSchema = new Schema({
     cancelReason: {
         type: String
     },
+    statusChangeTime:{
+        failed:{
+            time:Date,
+            by:String,
+        },
+        invalid:{
+            time:Date,
+            by:String,
+        },
+        unplaced:{
+            time:Date,
+            by:String,
+        },
+        processingPayment:{
+            time:Date,
+            by:String,
+        },
+        placed:{
+            time:Date,
+            by:String,
+        },
+        paymentComplete:{
+            time:Date,
+            by:String,
+        },
+        processing:{
+            time:Date,
+            by:String,
+        },
+        readyToDeliver:{
+            time:Date,
+            by:String,
+        },
+        readyToPickup:{
+            time:Date,
+            by:String,
+        },
+        completed:{
+            time:Date,
+            by:String,
+        },
+        onHold:{
+            time:Date,
+            by:String,
+        },
+        cancelled:{
+            time:Date,
+            by:String,
+        },
+        refunded:{
+            time:Date,
+            by:String,
+        }
+    }
 });
 
 cartSchema.pre('validate', function (next) {
-    this.orderId = orderid.generate();
+    this.orderId = (new Date().getFullYear()).toString() + orderid.generate().substring(4);
     next();
 });
 

@@ -14,6 +14,7 @@ const session = require('express-session');
 const Sentry = require('@sentry/node');
 const winston = require('winston');
 const internetAvailable = require('internet-available');
+//const https = require("https");
 
 let isInternetAvaliable = false;
 internetAvailable()
@@ -26,9 +27,9 @@ internetAvailable()
         console.log('No internet');
     });
 
-//if (isInternetAvaliable){
+if (isInternetAvaliable) {
     Sentry.init({ dsn: 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
-//}
+}
 
 const app = express();
 
@@ -73,13 +74,14 @@ const accessLogStream = rfs('access.log', {
 
 /* Local Database */
 /*const DB_HOST = process.env.DB_HOST;
+const DB_PORT = process.env.DB_PORT;
 const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
+const dbURI = 'mongodb://ssrsDaiict:ssrsDaiict123@localhost:27017/ssrs-daiict';*/
 
-const dbURI = `mongodb://${DB_HOST}/${DB_COLLECTION_NAME}`;
-*/
+
 /* Online Database */
 const dbURI = process.env.DB_URI;
 
@@ -106,15 +108,17 @@ const notification = require('./routes/notification');
 const collectionType = require('./routes/collectionType');
 const courier = require('./routes/courier');
 const collector = require('./routes/collector');
+const userInfo = require('./routes/userInfo');
+const dashBoard = require('./routes/dashboard');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 
 //Middlewares
-//if (isInternetAvaliable){
+if (isInternetAvaliable) {
     app.use(Sentry.Handlers.requestHandler());
-//}
+}
 
 if (app.get('env') === 'development') {
     app.use(morgan('dev'));
@@ -124,7 +128,7 @@ app.use(flash());
 app.use(favicon());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: "10mb"}));
 app.use(cookieParser());
 app.use(session({ secret: 'Shh, its a secret!' }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -135,24 +139,31 @@ app.use(cors({
     credentials: true,
 }));
 
+app.get('/SSRS/user/accept_payment',function(req,res,next){
+    const cartController = require('./controllers/cart');
+    cartController.acceptEasyPayPayment(req,res,next);
+});
+
 // Routes
 app.use('/account', account);
-app.use('/news/', news);
-app.use('/user/', user);
-app.use('/access/', access);
-app.use('/service/', service);
-app.use('/parameter/', parameter);
-app.use('/notification/', notification);
-app.use('/collectionType/', collectionType);
-app.use('/order/', order);
-app.use('/courier', courier);
+app.use('/news', news);
+app.use('/user', user);
+app.use('/access', access);
+app.use('/service', service);
+app.use('/parameter', parameter);
+app.use('/notification', notification);
+app.use('/collectionType', collectionType);
+app.use('/order', order);
+app.use('/delivery', courier);
 app.use('/collector', collector);
-app.use('/cart/', cart);
+app.use('/cart', cart);
+app.use('/userInfo', userInfo);
+app.use('/dashboard', dashBoard);
 
 
-//if (isInternetAvaliable){
+if (isInternetAvaliable) {
     app.use(Sentry.Handlers.errorHandler());
-//}
+}
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
@@ -176,3 +187,9 @@ app.use((err, req, res, next) => {
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => console.log(`Server is listnening on port ${port}`));
+// https.createServer({
+//     key: fs.readFileSync('../SSL/commercial.key'),
+//     cert: fs.readFileSync('../SSL/f2e066dddbc1a42e.crt'),
+//     ca: [fs.readFileSync('../SSL/gd1.crt'), fs.readFileSync('../SSL/gd2.crt'), fs.readFileSync('../SSL/gd3.crt')]
+// }, app).listen(port, () => console.log(`Server is listnening on port ${port}`));
+

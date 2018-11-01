@@ -62,8 +62,11 @@ module.exports = {
 
         const readPermission = accessControl.can(user.userType)
             .readOwn(resources.user);
+        const readUserInfoPermission = accessControl.can(user.userType)
+            .readOwn(resources.userInfo);
 
         if (readPermission.granted) {
+            user.userInfo = filterResourceData(user.userInfo, readUserInfoPermission.attributes);
             const filteredUser = filterResourceData(user, readPermission.attributes);
             res.status(HttpStatus.OK)
                 .json({ user: filteredUser });
@@ -80,7 +83,8 @@ module.exports = {
             .readAny(resources.user);
 
         if (readPermission.granted) {
-            const requestedUser = await User.findOne({ daiictId: requestedUserId });
+            const requestedUser = await User.findOne({ daiictId: requestedUserId })
+                .populate('userInfo');
 
             if (requestedUser) {
                 const filteredUser = filterResourceData(requestedUser, readPermission.attributes);
@@ -108,7 +112,8 @@ module.exports = {
                 daiictId: {
                     $nin: [daiictId]
                 }
-            });
+            })
+                .populate('userInfo');
             const filteredUsers = filterResourceData(requestedUsers, readPermission.attributes);
             res.status(HttpStatus.OK)
                 .json({ user: filteredUsers });
@@ -182,7 +187,7 @@ module.exports = {
 
         if (deletePermission.granted) {
             const deletedUser = await User.findOneAndRemove({ daiictId: requestedUserId });
-            res.sendStatus(HttpStatus.OK);
+            res.status(HttpStatus.OK).json({});
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -325,13 +330,13 @@ module.exports = {
 
             // Removing requestedCourierInfoId from user.addresses array
             var idx = user.addresses.indexOf(requestedCourierInfoId);
-            if(idx >= 0){
+            if (idx >= 0) {
                 user.addresses.splice(idx, 1);
                 await user.save();
             }
             await CourierInfo.findByIdAndRemove(requestedCourierInfoId);
-            res.sendStatus(HttpStatus.OK);
-            
+            res.status(HttpStatus.OK).json({});
+
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }

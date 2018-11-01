@@ -67,6 +67,48 @@ const orderSchema = new Schema({
     holdReason:{
         type:String
     },
+    statusChangeTime:{
+        failed:{
+            time:Date,
+            by:String,
+        },
+        invalidOrder:{
+            time:Date,
+            by:String,
+        },
+        unplaced:{
+            time:Date,
+            by:String,
+        },
+        placed:{
+            time:Date,
+            by:String,
+        },
+        processing:{
+            time:Date,
+            by:String,
+        },
+        ready:{
+            time:Date,
+            by:String,
+        },
+        completed:{
+            time:Date,
+            by:String,
+        },
+        onHold:{
+            time:Date,
+            by:String,
+        },
+        cancelled:{
+            time:Date,
+            by:String,
+        },
+        refunded:{
+            time:Date,
+            by:String,
+        }
+    }
 });
 
 

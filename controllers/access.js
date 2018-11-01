@@ -58,6 +58,13 @@ const grantDefaultAccess = () => {
                 .readAny(resourceType, fieldAccess[resourceType][userType]['canRead']);
         });
 
+    resourceType = resources.userInfo;
+    Object.keys(userTypes)
+        .forEach(userType => {
+            accessControl.grant(userType)
+                .readOwn(resourceType, fieldAccess[resourceType][userType]['canRead']);
+        });
+
     resourceType = resources.parameter;
     Object.keys(userTypes)
         .forEach(userType => {
@@ -106,7 +113,7 @@ const grantDefaultAccess = () => {
                 .createOwn(resourceType, fieldAccess[resourceType][userType]['canCreate']);
         });
 
-    resourceType = resources.courier;
+    resourceType = resources.delivery;
     Object.keys(userTypes)
         .forEach(userType => {
             accessControl.grant(userType)
@@ -197,9 +204,9 @@ const loadAdminTypes = () => {
     }
 };
 
-loadAccessControl();
 loadUserTypes();
 loadAdminTypes();
+loadAccessControl();
 
 module.exports = {
     accessControl,

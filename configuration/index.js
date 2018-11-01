@@ -1,5 +1,6 @@
 module.exports = {
-    homePage:'http://student-service-request-system.herokuapp.com/',
+    systemAdmin:"system",
+    homePage:'https://ssrs.daiict.ac.in:8080/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
@@ -9,15 +10,15 @@ module.exports = {
     RESET_PASSWORD_EXPIRY_TIME: 1,
     NEWS_EXPIRY_TIME: 8,
     NOTIFICATION_EXPIRY_TIME: 8,
+    ORDER_FAIL_TIME_IN_OFFLINE_PAYMENT: 8,
+    CHECK_FOR_OFFLINE_PAYMENT:1,
     collectionTypes: {
-        courier: 'Courier',
+        delivery: 'Delivery',
         pickup: 'Pickup',
     },
     paymentTypes: {
-        offline: 0,
-        payTm: 1,
-        creditCard: 2,
-        debitCard: 3
+        offline: "offline",
+        online: "online"
     },
     permissions: {
         readAny: 'readAny',
@@ -33,7 +34,8 @@ module.exports = {
         student: 'student'
     },
     adminTypes: {
-        superAdmin: 'superAdmin'
+        superAdmin: 'superAdmin',
+        admin: 'admin'
     },
     resources: {
         user: 'User',
@@ -44,14 +46,15 @@ module.exports = {
         changeResourceStatus: 'changeResourceStatus',
         news: 'News',
         notification: 'Notification',
-        courier: 'Courier',
+        delivery: 'Courier',
         collector: 'Collector',
         accessLevel: 'AccessLevel',
         role: 'Role',
         parameter: 'Parameter',
         collectionType: 'CollectionType',
         cart: 'Cart',
-        courierInfo: 'CourierInfo'
+        courierInfo: 'CourierInfo',
+        userInfo: 'UserInfo'
     },
     validityErrors: {
         permissionDenied: 'Permission Denied',
@@ -66,6 +69,7 @@ module.exports = {
         failed: 0,
         invalid: 10,
         unplaced: 20,
+        processingPayment:25,
         placed: 30,
         paymentComplete: 40,
         processing: 50,
@@ -93,7 +97,8 @@ module.exports = {
         pendingPayment: 10,
         processing: 20,
         ready: 30,
-        completed: 40
+        completed: 40,
+        cancel:50
     },
 
     placedOrderServiceAttributes: [
@@ -131,7 +136,7 @@ module.exports = {
         'paymentType',
         'paymentId',
         'paymentCode',
-        'courier',
+        'delivery',
         'pickup',
         'collectionType',
         'cancelReason'
@@ -243,6 +248,12 @@ module.exports = {
             delete:'none',
         },
         CourierInfo:{
+            read:'none',
+            update:'none',
+            create:'none',
+            delete:'none',
+        },
+        UserInfo:{
             read:'none',
             update:'none',
             create:'none',
