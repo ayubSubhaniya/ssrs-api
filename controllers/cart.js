@@ -28,6 +28,7 @@ const { validateOrder } = require('./order');
 
 //const dayToMilliSec = 86400000;
 const checkForOfflinePayment = async () => {
+    console.log("check for offline payment");
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
@@ -55,6 +56,7 @@ const checkForOfflinePayment = async () => {
 };
 
 const checkForFailedOnlinePayment = async () => {
+    console.log("check for online payment");
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
@@ -81,7 +83,10 @@ const checkForFailedOnlinePayment = async () => {
     }
 };
 
-nodeSchedule.schedule('0 0 * * *', checkForFailedOnlinePayment);
+nodeSchedule.schedule('0 3 * * *', async ()=>{
+    await checkForFailedOnlinePayment();
+    await checkForOfflinePayment()
+});
 
 // setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
 // setInterval(checkForFailedOnlinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);

@@ -265,8 +265,8 @@ module.exports = {
             from: mailAccountUserName,
             to: primaryEmail,
             subject: mailTemplates.forgetPassword.subject,
-            html:  mailTemplates.forgetPassword.html
-                    + '<br><a href=' + link + '>Click here to reset password</a>',
+            html: mailTemplates.forgetPassword.html
+                + '<br><a href=' + link + '>Click here to reset password</a>',
 
         };
         foundUser.resetPasswordToken = randomHash;
@@ -349,8 +349,8 @@ module.exports = {
         const { user } = req;
 
         if (user.userType !== 'superAdmin') {
-            if ((user.userInfo.user_type === 'EMPLOYEE' || user.userInfo.user_type === 'FACULTY')
-                && user.userInfo.user_status && user.userInfo.user_status === 'R') {
+            if ((user.userInfo.user_type !== 'STUDENT')
+                && user.userInfo.user_status && user.userInfo.user_status === 'U') {
                 user.userType = adminTypes.admin;
             } else {
                 user.userType = userTypes.student;
