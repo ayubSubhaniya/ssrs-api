@@ -389,5 +389,18 @@ module.exports = {
                         user_programme: Joi.string()
                     }))
             }),
+        editEmailTemplate: Joi.object()
+            .keys({
+                templateId: Joi.string().required(),
+                templateName: Joi.string(),
+                subject: Joi.string(),
+                cc: Joi.array().items(
+                    Joi.string()
+                ),
+                bcc: Joi.array().items(
+                    Joi.string()
+                ),
+                body: Joi.string()
+            }),
     },
 };

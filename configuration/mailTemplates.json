@@ -1,21 +1,28 @@
 {
     "signUp": {
+        "templateId": "5bhfnj67kcndhrknz25gdhctn",
+        "templateName": "Sign up",
         "subject": "Verify your Email account",
-        "html": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email."
+        "cc": [],
+        "bcc": [],
+        "body": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email."
     },
-    
-    "resendVerificationLink": {
-        "subject": "Please confirm your Email account",
-        "html": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email."
-    },
-
     "forgetPassword": {
+        "templateId": "6bhjnkolcdswxlz85co4h7c2b0p",
+        "templateName": "Forget Password",
         "subject": "Password Reset Link",
-        "html": "Hello, <br>Please click on the link below to reset your password."
+        "cc": [
+            "abc@gmail.com"
+        ],
+        "bcc": [],
+        "body": "Hello, <br>Please click on the link below to reset your password."
     },
-
     "passwordChanged": {
+        "templateId": "c8ks30lck7cjkrknz25c4l0dh",
+        "templateName": "Password successfully changed",
         "subject": "Password successfully changed",
+        "cc": [],
+        "bcc": [],
         "body": "Hello,\n \tThis is a confirmation mail for successful change in password for your account - "
     }
 }

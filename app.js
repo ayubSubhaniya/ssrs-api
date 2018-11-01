@@ -110,6 +110,7 @@ const courier = require('./routes/courier');
 const collector = require('./routes/collector');
 const userInfo = require('./routes/userInfo');
 const dashBoard = require('./routes/dashboard');
+const template = require('./routes/template');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -159,6 +160,7 @@ app.use('/collector', collector);
 app.use('/cart', cart);
 app.use('/userInfo', userInfo);
 app.use('/dashboard', dashBoard);
+app.use('/template', template);
 
 
 if (isInternetAvaliable) {
