@@ -168,6 +168,8 @@ module.exports = {
                     .items(Joi.string()),
                 allowedUserTypes: Joi.array()
                     .items(Joi.string()),
+                allowedUserStatus: Joi.array()
+                    .items(Joi.string()),
                 allowedProgrammes: Joi.array()
                     .items(Joi.string()),
                 allowedBatches: Joi.array()
@@ -193,6 +195,8 @@ module.exports = {
                 specialServiceUsers: Joi.array()
                     .items(Joi.string()),
                 allowedUserTypes: Joi.array()
+                    .items(Joi.string()),
+                allowedUserStatus: Joi.array()
                     .items(Joi.string()),
                 allowedProgrammes: Joi.array()
                     .items(Joi.string()),

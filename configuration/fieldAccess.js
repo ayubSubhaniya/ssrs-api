@@ -438,7 +438,8 @@ module.exports = {
                 'collectionTypes',
                 'allowedUserTypes',
                 'allowedProgrammes',
-                'allowedBatches'
+                'allowedBatches',
+                'allowedUserStatus'
             ],
             canCreate: [
                 'name',
@@ -456,7 +457,8 @@ module.exports = {
                 'collectionTypes',
                 'allowedUserTypes',
                 'allowedProgrammes',
-                'allowedBatches'
+                'allowedBatches',
+                'allowedUserStatus'
             ],
             canUpdate: [
                 'name',
@@ -474,7 +476,8 @@ module.exports = {
                 'collectionTypes',
                 'allowedUserTypes',
                 'allowedProgrammes',
-                'allowedBatches'
+                'allowedBatches',
+                'allowedUserStatus'
             ],
         },
         admin: {
@@ -495,7 +498,8 @@ module.exports = {
                 'collectionTypes',
                 'allowedUserTypes',
                 'allowedProgrammes',
-                'allowedBatches'
+                'allowedBatches',
+                'allowedUserStatus'
             ],
             canCreate: [
                 'name',
@@ -513,7 +517,8 @@ module.exports = {
                 'collectionTypes',
                 'allowedUserTypes',
                 'allowedProgrammes',
-                'allowedBatches'
+                'allowedBatches',
+                'allowedUserStatus'
             ],
             canUpdate: [
                 'name',
@@ -531,7 +536,8 @@ module.exports = {
                 'collectionTypes',
                 'allowedUserTypes',
                 'allowedProgrammes',
-                'allowedBatches'
+                'allowedBatches',
+                'allowedUserStatus'
             ],
         },
         student: {

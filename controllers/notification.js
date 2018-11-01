@@ -115,7 +115,8 @@ module.exports = {
             const notification = await Notification.findByIdAndRemove(notificationId);
 
             if (notification) {
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -125,7 +126,8 @@ module.exports = {
                 userId: daiictId
             });
             if (notification) {
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -141,7 +143,8 @@ module.exports = {
             .deleteAny(resources.notification);
         if (deletePermission.granted) {
             await Notification.deleteMany({});
-            res.status(HttpStatus.OK).json({});
+            res.status(HttpStatus.OK)
+                .json({});
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }

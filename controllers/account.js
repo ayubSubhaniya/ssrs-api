@@ -9,8 +9,23 @@ const User = require('../models/user');
 const UserInfo = require('../models/userInfo');
 const tempUser = require('../models/tempUser');
 const Cart = require('../models/cart');
-const { httpProtocol, JWT_SECRET, JWT_EXPIRY_TIME, JWT_ISSUER, RESET_PASSWORD_EXPIRY_TIME, daiictMailDomainName, 
-    userTypes, adminTypes, resources, cookiesName, homePage } = require('../configuration');
+
+const {
+    maximumSignUpRequestBeforeBlocking,
+    userBlockageTimeForTooManySignUpRequests,
+    httpProtocol,
+    JWT_SECRET,
+    JWT_EXPIRY_TIME,
+    JWT_ISSUER,
+    RESET_PASSWORD_EXPIRY_TIME,
+    daiictMailDomainName,
+    userTypes,
+    adminTypes,
+    resources,
+    cookiesName,
+    homePage
+} = require('../configuration');
+
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
@@ -68,11 +83,13 @@ module.exports = {
 
         //user already exist
         if (foundUser) {
-            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userAlreadyExist);
+            return res.status(HttpStatus.FORBIDDEN)
+                .send(errorMessages.userAlreadyExist);
         }
 
-        if (!userInDB){
-            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.invalidDaiictUser);
+        if (!userInDB) {
+            return res.status(HttpStatus.FORBIDDEN)
+                .send(errorMessages.invalidDaiictUser);
         }
 
         const primaryEmail = userInDB.user_email_id + '@' + daiictMailDomainName;
@@ -94,15 +111,41 @@ module.exports = {
             html: mailBody
         };
 
-        //create new temp user
-        const newUser = {
-            daiictId,
-            primaryEmail,
-            password: await hashPassword(password),
-            createdOn,
-            randomHash
-        };
-        const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
+        const tempUserInDB = await tempUser.findOne({ daiictId });
+
+        if (!tempUserInDB) {
+            //create new temp user
+            const newUser = {
+                daiictId,
+                primaryEmail,
+                password: await hashPassword(password),
+                createdOn,
+                randomHash
+            };
+            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
+        } else {
+
+            const newUser = {
+                daiictId,
+                primaryEmail,
+                password: await hashPassword(password),
+                randomHash
+            };
+
+            const timeNotAllowed = new Date();
+            timeNotAllowed.setHours(timeNotAllowed.getHours() - userBlockageTimeForTooManySignUpRequests);
+
+            if (tempUserInDB.createdOn <= timeNotAllowed) {
+                newUser.createdOn = createdOn;
+                newUser.totalRequestSent = 1;
+            } else if (tempUserInDB.totalRequestSent >= maximumSignUpRequestBeforeBlocking) {
+                return res.status(HttpStatus.FORBIDDEN)
+                    .send(errorMessages.blockUser);
+            } else {
+                newUser.totalRequestSent = tempUserInDB.totalRequestSent + 1;
+            }
+        }
+
         const info = await smtpTransport.sendMail(mailOptions);
 
         res.status(HttpStatus.CREATED)
@@ -114,6 +157,19 @@ module.exports = {
     resendVerificationLink: async (req, res, next) => {
         const { daiictId } = req.params;
         const user = await tempUser.findOne({ daiictId });
+
+        const timeNotAllowed = new Date();
+        timeNotAllowed.setHours(timeNotAllowed.getHours() - userBlockageTimeForTooManySignUpRequests);
+        if (user.createdOn <= timeNotAllowed) {
+            return res.sendStatus(HttpStatus.FORBIDDEN)
+                .send(errorMessages.signUpRequestExpired);
+        } else if (user.totalRequestSent >= maximumSignUpRequestBeforeBlocking) {
+            return res.status(HttpStatus.FORBIDDEN)
+                .send(errorMessages.blockUser);
+        } else {
+            user.totalRequestSent = user.totalRequestSent + 1;
+            await user.save();
+        }
         const primaryEmail = user.primaryEmail;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
@@ -143,7 +199,7 @@ module.exports = {
         const user = await tempUser.findOne({ daiictId });
 
         // if user has been verified already
-        if(!user) {
+        if (!user) {
             res.end('<h2>This link has been used already and is now invalid.</h2>');
         }
 
@@ -155,7 +211,7 @@ module.exports = {
             });
             await cart.save();
 
-            const userInfo = await UserInfo.findOne({user_inst_id:daiictId});
+            const userInfo = await UserInfo.findOne({ user_inst_id: daiictId });
 
             //create new user
             const newUser = new User({
@@ -164,7 +220,7 @@ module.exports = {
                 password: user.password,
                 createdOn: user.createdOn,
                 cartId: cart._id,
-                userInfo:userInfo._id
+                userInfo: userInfo._id
             });
 
             const savedUser = await newUser.save();
@@ -180,7 +236,7 @@ module.exports = {
 
     forgetPassword: async (req, res, next) => {
         const { daiictId } = req.params;
-        
+
         //check if user exist
         const foundUser = await User.findOne({ daiictId });
 
@@ -188,11 +244,32 @@ module.exports = {
             return res.sendStatus(HttpStatus.FORBIDDEN);
         }
 
-        const primaryEmail = foundUser.primaryEmail;
-
-        const randomHash = randomstring.generate();
+        let randomHash;
         const linkExpiryTime = new Date();
         linkExpiryTime.setHours(linkExpiryTime.getHours() + RESET_PASSWORD_EXPIRY_TIME);
+
+        if (foundUser.resetPasswordRequestTime) {
+            const timeNotAllowed = new Date();
+            timeNotAllowed.setHours(timeNotAllowed.getHours() - userBlockageTimeForTooManySignUpRequests);
+
+            if (foundUser.resetPasswordRequestTime <= timeNotAllowed) {
+                foundUser.resetPasswordRequestTime = new Date();
+                randomHash = randomstring.generate();
+                foundUser.resetPasswordRequest = 1;
+            } else if (foundUser.resetPasswordRequest >= maximumSignUpRequestBeforeBlocking) {
+                return res.status(HttpStatus.FORBIDDEN)
+                    .send(errorMessages.blockUser);
+            } else {
+                randomHash = foundUser.resetPasswordToken;
+                foundUser.resetPasswordRequest++;
+                await foundUser.save();
+            }
+        } else {
+            foundUser.resetPasswordRequestTime = new Date();
+            foundUser.resetPasswordRequest = 1;
+        }
+
+        const primaryEmail = foundUser.primaryEmail;
 
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/resetPassword/' + daiictId + '?id=' + randomHash;
@@ -253,6 +330,8 @@ module.exports = {
         user.password = await hashPassword(req.body.password);
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
+        user.resetPasswordRequest = undefined;
+        user.resetPasswordRequestTime = undefined;
 
         await user.save();
         const primaryEmail = user.primaryEmail;
@@ -281,7 +360,8 @@ module.exports = {
 
         const newUser = await User.findOneAndUpdate({ daiictId }, { password: await hashPassword(newPassword) }, { new: true });
 
-        res.status(HttpStatus.OK).json({});
+        res.status(HttpStatus.OK)
+            .json({});
     },
 
     signIn: async (req, res, next) => {
@@ -293,9 +373,9 @@ module.exports = {
         //get User Id
         const { user } = req;
 
-        if (user.userType!=="superAdmin"){
-            if ((user.userInfo.user_type === 'EMPLOYEE' || user.userInfo.user_type === 'FACULTY') 
-                    && user.userInfo.user_status && user.userInfo.user_status === 'R') {
+        if (user.userType !== 'superAdmin') {
+            if ((user.userInfo.user_type !== 'STUDENT')
+                && user.userInfo.user_status && user.userInfo.user_status === 'U') {
                 user.userType = adminTypes.admin;
             } else {
                 user.userType = userTypes.student;
@@ -303,7 +383,10 @@ module.exports = {
         }
 
         if (user.resetPasswordToken !== undefined) {
-            user.resetPasswordRandomHash = undefined;
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpires = undefined;
+            user.resetPasswordRequest = undefined;
+            user.resetPasswordRequestTime = undefined;
             await user.save();
         }
         const permission = accessControl.can(user.userType)
@@ -311,8 +394,9 @@ module.exports = {
 
         const filteredUser = filterResourceData(user, permission.attributes);
 
-        if (!user.isActive){
-            return res.status(HttpStatus.FORBIDDEN).send(errorMessages.userDeactivated);
+        if (!user.isActive) {
+            return res.status(HttpStatus.FORBIDDEN)
+                .send(errorMessages.userDeactivated);
         }
         res.cookie(cookiesName.jwt, token, {
             httpOnly: false,

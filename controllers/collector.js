@@ -7,17 +7,17 @@ const { filterResourceData, parseFilterQuery } = require('../helpers/controllerH
 
 module.exports = {
 
-    getCollectorByCollectionCode: async(req, res, next) => {
+    getCollectorByCollectionCode: async (req, res, next) => {
         const { user } = req;
 
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collector);
 
-        if(readPermission.granted) {
+        if (readPermission.granted) {
             const query = parseFilterQuery(req.query, readPermission.attributes);
             const requestedCollectors = await collectorModel.find(query);
 
-            if(requestedCollectors) {
+            if (requestedCollectors) {
                 const filteredCollectors = filterResourceData(requestedCollectors, readPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ collector: filteredCollectors });
@@ -29,9 +29,9 @@ module.exports = {
         }
     },
 
-    getCollector: async(req, res, next) => {
+    getCollector: async (req, res, next) => {
         const { user } = req;
-        const {daiictId} = user;
+        const { daiictId } = user;
         const { requestedCollectorId } = req.params;
 
         const readAnyPermission = accessControl.can(user.userType)
@@ -39,23 +39,23 @@ module.exports = {
         const readOwnPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
 
-        if(readAnyPermission.granted) {
+        if (readAnyPermission.granted) {
             const requestedCollector = await collectorModel.findById(requestedCollectorId);
 
-            if(requestedCollector) {
+            if (requestedCollector) {
                 const filteredCollector = filterResourceData(requestedCollector, readAnyPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ collector: filteredCollector });
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
-        } else if(readOwnPermission.granted) {
+        } else if (readOwnPermission.granted) {
             const requestedCollector = await collectorModel.findOne({
-                _id:requestedCollectorId,
-                createdBy:daiictId
+                _id: requestedCollectorId,
+                createdBy: daiictId
             });
 
-            if(requestedCollector) {
+            if (requestedCollector) {
                 const filteredCollector = filterResourceData(requestedCollector, readOwnPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ collector: filteredCollector });

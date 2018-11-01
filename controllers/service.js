@@ -112,7 +112,8 @@ module.exports = {
                         isSpecialService: false,
                         allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
                         allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
-                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] },
+                        allowedUserStatus: { $in: [user.userInfo.user_status, '*'] }
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -336,7 +337,8 @@ module.exports = {
                         isSpecialService: false,
                         allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
                         allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
-                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] },
+                        allowedUserStatus: { $in: [user.userInfo.user_status, '*'] }
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -659,7 +661,8 @@ module.exports = {
             const service = await Service.findByIdAndRemove(serviceId);
 
             if (service) {
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
@@ -673,7 +676,8 @@ module.exports = {
             });
 
             if (service) {
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }

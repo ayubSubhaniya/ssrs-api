@@ -23,7 +23,7 @@ router.route('/resendVerificationLink/:daiictId')
 router.route('/signin')
     .post(
         validateBody(schemas.authSchema),
-        passport.authenticate("local", { session: false }),
+        passport.authenticate('local', { session: false }),
         AccountController.signIn
     );
 

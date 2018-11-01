@@ -187,7 +187,8 @@ module.exports = {
 
         if (deletePermission.granted) {
             const deletedUser = await User.findOneAndRemove({ daiictId: requestedUserId });
-            res.status(HttpStatus.OK).json({});
+            res.status(HttpStatus.OK)
+                .json({});
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
@@ -335,7 +336,8 @@ module.exports = {
                 await user.save();
             }
             await CourierInfo.findByIdAndRemove(requestedCourierInfoId);
-            res.status(HttpStatus.OK).json({});
+            res.status(HttpStatus.OK)
+                .json({});
 
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
