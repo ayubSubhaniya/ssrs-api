@@ -19,10 +19,8 @@ passport.use(new JwtStrategy({
         if (user.userType!=="superAdmin"){
             if (user.userInfo.user_type === "STUDENT"){
                 user.userType = userTypes.student;
-            } else if (user.userInfo.user_type === "EMPLOYEE"){
+            } else{
                 user.userType = adminTypes.admin;
-            } else if (user.userInfo.user_type === "FACULTY"){
-                user.userType = userTypes.student;
             }
         }
 
