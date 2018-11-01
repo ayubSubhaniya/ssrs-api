@@ -3,6 +3,7 @@ const HttpStatus = require('http-status-codes');
 const nodemailer = require('nodemailer');
 const randomstring = require('randomstring');
 const bcrypt = require('bcryptjs');
+const mustache = require('mustache');
 
 const User = require('../models/user');
 const UserInfo = require('../models/userInfo');
@@ -79,13 +80,18 @@ module.exports = {
         const randomHash = randomstring.generate();
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + randomHash;
+
+        const options = {
+            link: link
+        }
+        let mailBody = mustache.render(mailTemplates.signUp.body, options);
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
+            cc: mailTemplates.signUp.cc,
+            bcc: mailTemplates.signUp.bcc,
             subject: mailTemplates.signUp.subject,
-            html: mailTemplates.signUp.html +
-                '<br><a href=' + link + '>Click here to verify</a>',
-
+            html: mailBody
         };
 
         //create new temp user
@@ -111,14 +117,20 @@ module.exports = {
         const primaryEmail = user.primaryEmail;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
+        
+        const options = {
+            link: link
+        }
+        let mailBody = mustache.render(mailTemplates.signUp.body, options);
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
-            subject: mailTemplates.resendVerificationLink.subject,
-            html: mailTemplates.resendVerificationLink.html +
-                '<br><a href=' + link + '>Click here to verify</a>'
-
+            cc: mailTemplates.signUp.cc,
+            bcc: mailTemplates.signUp.bcc,
+            subject: mailTemplates.signUp.subject,
+            html: mailBody
         };
+
         const resendVerificationLink = httpProtocol + '://' + host + '/account/resendVerificationLink/' + daiictId;
         const info = await smtpTransport.sendMail(mailOptions);
 
@@ -184,14 +196,22 @@ module.exports = {
 
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/resetPassword/' + daiictId + '?id=' + randomHash;
+
+        const tags = {
+            daiictId: daiictId,
+            link: link
+        };
+        let mailBody = mustache.render(mailTemplates.forgetPassword.body, tags);
+
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
+            cc: mailTemplates.forgetPassword.cc,
+            bcc: mailTemplates.forgetPassword.bcc,
             subject: mailTemplates.forgetPassword.subject,
-            html:  mailTemplates.forgetPassword.html
-                    + '<br><a href=' + link + '>Click here to reset password</a>',
-
+            html: mailBody
         };
+
         foundUser.resetPasswordToken = randomHash;
         foundUser.resetPasswordExpires = linkExpiryTime;
         await foundUser.save();
@@ -237,12 +257,17 @@ module.exports = {
         await user.save();
         const primaryEmail = user.primaryEmail;
 
+        const options = {
+            daiictId: daiictId
+        }
+        let mailBody = mustache.render(mailTemplates.passwordChanged.body, options);
         const mailOptions = {
             from: mailAccountUserName,
             to: primaryEmail,
+            cc: mailTemplates.passwordChanged.cc,
+            bcc: mailTemplates.passwordChanged.bcc,
             subject: mailTemplates.passwordChanged.subject,
-            text: mailTemplates.passwordChanged + user.daiictId + '.\n',
-
+            html: mailBody
         };
         const info = await smtpTransport.sendMail(mailOptions);
         res.redirect(homePage);
