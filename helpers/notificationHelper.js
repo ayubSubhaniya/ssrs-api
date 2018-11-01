@@ -26,8 +26,8 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
         case orderStatus.cancelled:
             orderStatusMsg += 'was cancelled';
             break;
-        case orderStatus.failed:
-            orderStatusMsg += 'has failed';
+        case orderStatus.paymentFailed:
+            orderStatusMsg += 'has paymentFailed';
             break;
         case orderStatus.onHold:
             orderStatusMsg += 'is on hold';
@@ -78,8 +78,8 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
         case cartStatus.cancelled:
             cartStatusMsg += 'was cancelled';
             break;
-        case cartStatus.failed:
-            cartStatusMsg += 'has failed';
+        case cartStatus.paymentFailed:
+            cartStatusMsg += 'has paymentFailed';
             break;
         case cartStatus.onHold:
             cartStatusMsg += 'is on hold';

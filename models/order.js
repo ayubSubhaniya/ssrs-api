@@ -68,7 +68,7 @@ const orderSchema = new Schema({
         type: String
     },
     statusChangeTime: {
-        failed: {
+        paymentFailed: {
             time: Date,
             by: String,
         },

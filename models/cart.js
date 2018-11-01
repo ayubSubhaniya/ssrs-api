@@ -1,4 +1,5 @@
-const orderid = require('order-id')('ssrs-daiict');
+const { orderNoGeneratorSecret } = require('../configuration');
+const orderid = require('order-id')(orderNoGeneratorSecret);
 const db = require('mongoose');
 const deepPopulate = require('mongoose-deep-populate')(db);
 
@@ -76,7 +77,7 @@ const cartSchema = new Schema({
         type: String
     },
     statusChangeTime: {
-        failed: {
+        paymentFailed: {
             time: Date,
             by: String,
         },

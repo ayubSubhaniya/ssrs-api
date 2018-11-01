@@ -7,6 +7,7 @@ module.exports = {
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',
+    orderNoGeneratorSecret: 'ssrs-orders',
     JWT_SECRET: 'ssrs-daiict-authentication',
     JWT_ISSUER: 'ssrs-daiict',
     JWT_EXPIRY_TIME: 1, //unit day
@@ -69,9 +70,9 @@ module.exports = {
         jwt: 'jwt',
     },
     cartStatus: {
-        failed: 0,
         invalid: 10,
         unplaced: 20,
+        paymentFailed: 23,
         processingPayment: 25,
         placed: 30,
         paymentComplete: 40,
@@ -84,7 +85,7 @@ module.exports = {
         refunded: 110,
     },
     orderStatus: {
-        failed: 0,
+        paymentFailed: 0,
         invalidOrder: 10,
         unplaced: 20,
         placed: 30,
@@ -96,7 +97,7 @@ module.exports = {
         refunded: 90,
     },
     collectionStatus: {
-        failed: 0,
+        paymentFailed: 0,
         pendingPayment: 10,
         processing: 20,
         ready: 30,
@@ -146,7 +147,7 @@ module.exports = {
     ],
 
     allowedCartStatusChanges: {
-        'placed': ['paymentComplete', 'processing', 'failed', 'cancelled'],
+        'placed': ['paymentComplete', 'processing', 'paymentFailed', 'cancelled'],
         'paymentComplete': ['processing', 'cancelled'],
         'processing': ['readyToDeliver', 'readyToPickup', 'cancelled'],
         'readyToDeliver': ['completed', 'cancelled'],
@@ -154,7 +155,7 @@ module.exports = {
     },
 
     allowedOrderStatusChanges: {
-        'placed': ['processing', 'failed', 'cancelled'],
+        'placed': ['processing', 'paymentFailed', 'cancelled'],
         'processing': ['ready', 'cancelled'],
         'ready': ['completed', 'cancelled'],
     },

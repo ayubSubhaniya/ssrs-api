@@ -17,10 +17,9 @@ function decrypt(text) {
 }
 
 const createSHASig = (text) => {
-    const hash = crypto.createHmac('sha512', process.env.aeskey);
+    const hash = crypto.createHash('sha512', password);
     hash.update(text);
-    const value = hash.digest('hex');
-    return value;
+    return hash.digest('hex');
 };
 
 const encryptUrl = (url) => {

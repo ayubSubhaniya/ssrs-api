@@ -1,6 +1,9 @@
 const httpStatusCodes = require('http-status-codes');
 const nodeSchedule = require('node-cron');
 
+const { orderNoGeneratorSecret } = require('../configuration');
+const orderid = require('order-id')(orderNoGeneratorSecret);
+
 const Service = require('../models/service');
 const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
@@ -78,7 +81,7 @@ const checkForFailedOnlinePayment = async () => {
     }
 };
 
-nodeSchedule.schedule("0 0 * * *", checkForFailedOnlinePayment);
+nodeSchedule.schedule('0 0 * * *', checkForFailedOnlinePayment);
 
 // setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
 // setInterval(checkForFailedOnlinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
@@ -229,6 +232,7 @@ module.exports = {
     getCart: async (req, res, next) => {
 
         const { user } = req;
+        const { daiictId } = user;
         const { cartId } = req.params;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
@@ -286,7 +290,10 @@ module.exports = {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
         } else if (readOwnCartPermission.granted) {
-            const cart = await Cart.findById(cartId)
+            const cart = await Cart.findOne({
+                _id: cartId,
+                requestedBy: daiictId
+            })
                 .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
@@ -311,7 +318,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
 
-            if (cart.status >= cartStatus.placed) {
+            if (cart.status > cartStatus.unplaced) {
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
                     .json({ cart: filteredCart });
@@ -760,7 +767,7 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.unplaced) {
+                if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
                     if (cartUpdateAtt.paymentType === paymentTypes.offline) {
                         cartUpdateAtt.status = cartStatus.placed;
@@ -938,11 +945,11 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.unplaced) {
+                if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
                     if (cartUpdateAtt.paymentType === paymentTypes.online) {
                         cartUpdateAtt.status = cartStatus.processingPayment;
-                        cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                        cartUpdateAtt.paymentCode = orderid.generate();
                         cartUpdateAtt['$set'] = {
                             'statusChangeTime.processingPayment': {
                                 time: new Date(),
@@ -1073,15 +1080,25 @@ module.exports = {
         const SHA512Sig = createSHASig(signatureStr);
 
         if (SHA512Sig === rs) {
+
             const cartInDb = await Cart.findOne({ paymentCode: referenceNo });
 
             if (responseCode !== easyPaySuccessResponse) {
+                const cartUpdateAtt = {
+                    status: cartStatus.paymentFailed,
+                    '$set': {
+                        'statusChangeTime.paymentFailed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    }
+                };
+                await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
                 return res.status(httpStatusCodes.BAD_REQUEST)
                     .json({ error: errorMessages.paymentFailed });
             }
 
             if (cartInDb) {
-
                 const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
                 if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
 
@@ -1123,6 +1140,7 @@ module.exports = {
                         });
                     }
 
+
                     const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
                     placedCartDoc.cartId = cartInDb._id;
 
@@ -1156,7 +1174,8 @@ module.exports = {
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
-                    res.status(httpStatusCodes.OK);
+                    res.status(httpStatusCodes.OK)
+                        .json({});
 
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -1376,7 +1395,7 @@ module.exports = {
             const cartInDb = await Cart.findById(cartId);
 
             if (cartInDb) {
-                if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
+                if (cartInDb.status > cartStatus.unplaced && cartInDb.status < cartStatus.completed) {
                     await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
                     await PlacedCart.findOneAndUpdate({ cartId }, {
                         status: cartStatus.cancelled,

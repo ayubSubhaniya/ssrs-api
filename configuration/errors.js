@@ -26,7 +26,7 @@ module.exports = {
     notBelongToCollectionTypeCategory: 'Requested category and collection type doesn\'t match',
     collectionTypeNotInUnion: 'Requested collection type is not allowed for all service',
     paymentInProcessing: 'Payment already in process',
-    paymentFailed: 'Payment failed',
+    paymentFailed: 'Payment Failed',
     blockUser: `Too many request you are blocked for ${userBlockageTimeForTooManySignUpRequests} hours`,
     signUpRequestExpired: 'Your verification link has expired. Sign up again',
 };
