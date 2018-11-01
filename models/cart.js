@@ -133,8 +133,7 @@ const cartSchema = new Schema({
 });
 
 cartSchema.pre('validate', function (next) {
-    this.orderId = (new Date().getFullYear()).toString() + orderid.generate()
-        .substring(4);
+    this.orderId = (new Date().getFullYear()).toString() + "-" + orderid.generate();
     next();
 });
 
