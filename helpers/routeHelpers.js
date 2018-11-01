@@ -395,8 +395,6 @@ module.exports = {
             }),
         editEmailTemplate: Joi.object()
             .keys({
-                templateId: Joi.string().required(),
-                templateName: Joi.string(),
                 subject: Joi.string(),
                 cc: Joi.array().items(
                     Joi.string()
