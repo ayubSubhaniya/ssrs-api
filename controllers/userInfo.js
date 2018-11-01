@@ -64,11 +64,14 @@ module.exports = {
             .distinct('user_programme');
         const userTypes = await UserInfo.find()
             .distinct('user_type');
+        const userStatus = await UserInfo.find()
+            .distinct('user_status');
         res.status(HttpStatus.OK)
             .json({
                 batches,
                 programmes,
-                userTypes
+                userTypes,
+                userStatus
             });
     },
 };

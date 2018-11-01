@@ -376,12 +376,12 @@ module.exports = {
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
             if (query.status !== undefined) {
-                if (query.status < cartStatus.placed) {
+                if (query.status < cartStatus.unplaced) {
                     query.status = -1;
                 }
             } else {
                 query.status = {
-                    $gte: cartStatus.placed
+                    $gt: cartStatus.unplaced
                 };
             }
             sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
@@ -834,59 +834,24 @@ module.exports = {
                     const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
                     placedCartDoc.cartId = cartInDb._id;
 
-                    if (cartUpdateAtt.status === cartStatus.paymentComplete) {
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.placed,
+                            '$set': {
+                                'statusChangeTime.placed': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        }, { new: true })
+                            .populate('service');
+                        const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                        placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                        placedOrderDoc.orderId = order._id;
 
-                        if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
-                            await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
-                        } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
-                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
-                        }
-
-                        for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
-                                status: orderStatus.processing,
-                                '$set': {
-                                    'statusChangeTime.placed': {
-                                        time: new Date(),
-                                        by: systemAdmin
-                                    },
-                                    'statusChangeTime.processing': {
-                                        time: new Date(),
-                                        by: systemAdmin
-                                    },
-                                }
-                            }, { new: true })
-                                .populate('service');
-
-                            const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
-                            placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
-                            placedOrderDoc.orderId = order._id;
-
-                            const placedOrder = new PlacedOrder(placedOrderDoc);
-                            await placedOrder.save();
-                            placedCartDoc.orders[i] = placedOrder._id;
-                        }
-                        cartUpdateAtt.status = cartStatus.processing;
-                    } else {
-                        for (let i = 0; i < cartInDb.orders.length; i++) {
-                            const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
-                                status: orderStatus.placed,
-                                '$set': {
-                                    'statusChangeTime.placed': {
-                                        time: new Date(),
-                                        by: systemAdmin
-                                    },
-                                }
-                            }, { new: true })
-                                .populate('service');
-                            const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
-                            placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
-                            placedOrderDoc.orderId = order._id;
-
-                            const placedOrder = new PlacedOrder(placedOrderDoc);
-                            await placedOrder.save();
-                            placedCartDoc.orders[i] = placedOrder._id;
-                        }
+                        const placedOrder = new PlacedOrder(placedOrderDoc);
+                        await placedOrder.save();
+                        placedCartDoc.orders[i] = placedOrder._id;
                     }
 
                     placedCartDoc.status = cartUpdateAtt.status;
@@ -1027,6 +992,9 @@ module.exports = {
                             cart: filteredCart,
                             url: getEasyPayUrl(updatedCart)
                         });
+                } else if (cartInDb.status === cartStatus.processingPayment) {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.paymentInProcessing);
                 }
                 else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -1083,22 +1051,23 @@ module.exports = {
 
             const cartInDb = await Cart.findOne({ paymentCode: referenceNo });
 
-            if (responseCode !== easyPaySuccessResponse) {
-                const cartUpdateAtt = {
-                    status: cartStatus.paymentFailed,
-                    '$set': {
-                        'statusChangeTime.paymentFailed': {
-                            time: new Date(),
-                            by: systemAdmin
-                        }
-                    }
-                };
-                await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
-                return res.status(httpStatusCodes.BAD_REQUEST)
-                    .json({ error: errorMessages.paymentFailed });
-            }
-
             if (cartInDb) {
+
+                if (responseCode !== easyPaySuccessResponse) {
+                    const cartUpdateAtt = {
+                        status: cartStatus.paymentFailed,
+                        '$set': {
+                            'statusChangeTime.paymentFailed': {
+                                time: new Date(),
+                                by: systemAdmin
+                            }
+                        }
+                    };
+                    await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
+                    return res.status(httpStatusCodes.BAD_REQUEST)
+                        .json({ error: errorMessages.paymentFailed });
+                }
+
                 const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
                 if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
 

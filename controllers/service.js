@@ -112,7 +112,8 @@ module.exports = {
                         isSpecialService: false,
                         allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
                         allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
-                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] },
+                        allowedUserStatus: { $in: [user.userInfo.user_status, '*'] }
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId
@@ -336,7 +337,8 @@ module.exports = {
                         isSpecialService: false,
                         allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
                         allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
-                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] }
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] },
+                        allowedUserStatus: { $in: [user.userInfo.user_status, '*'] }
                     }, {
                         isSpecialService: true,
                         specialServiceUsers: daiictId

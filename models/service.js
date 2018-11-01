@@ -54,6 +54,9 @@ const serviceSchema = new Schema({
     allowedUserTypes: [{
         type: String,
     }],
+    allowedUserStatus: [{
+        type: String,
+    }],
     allowedProgrammes: [{
         type: String,
     }],
