@@ -336,13 +336,17 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
-            canCreate: [],
+            canCreate: [
+                'comment'
+            ],
             canUpdate: [
                 'status',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
         },
         admin: {
@@ -367,13 +371,17 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
-            canCreate: [],
+            canCreate: [
+                'comment'
+            ],
             canUpdate: [
                 'status',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
         },
         student: {
@@ -398,7 +406,8 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
             canCreate: [
                 'orders',

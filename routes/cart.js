@@ -82,9 +82,17 @@ router.route('/cancelCart/:cartId')
         cartController.cancelCart
     );
 
+router.route('/comment/:cartId')
+    .post(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'cartId'),
+        cartController.addComment
+    );
+
 router.route('/invoice/:cartId')
     .get(
         passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'cartId'),
         cartController.getInvoice
     );
 

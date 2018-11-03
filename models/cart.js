@@ -129,6 +129,16 @@ const cartSchema = new Schema({
             time: Date,
             by: String,
         }
+    },
+    comment: {
+        ready: {
+            type: String,
+            default: ""
+        },
+        completed: {
+            type: String,
+            default: ""
+        }
     }
 });
 

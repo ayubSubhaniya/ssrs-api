@@ -1289,6 +1289,13 @@ module.exports = {
                                 by: daiictId
                             }
                         };
+
+                        if(cartUpdateAtt.comment) {
+                            updateAtt['$set'] = {
+                                'comment.completed': cartUpdateAtt.comment
+                            }
+                        }
+
                         if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
                             if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
                                 return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -1425,6 +1432,45 @@ module.exports = {
             } else {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    addComment: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { cartId } = req.params;
+
+        const readAnyCartPermission = accessControl.can(user.userType)
+            .readAny(resources.cart);
+        const readAnyOrderPermission = accessControl.can(user.userType)
+            .readAny(resources.order);
+
+        if(readAnyCartPermission.granted && readAnyOrderPermission.granted) {
+            
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: 'status'
+                });
+            
+            let notReadyCnt = cartInDb.orders.length;
+            for(let i=0; i<cartInDb.orders.length; i++){
+                if (cartInDb.orders[i].status === orderStatus.ready)
+                    notReadyCnt--;
+            }
+
+            if(notReadyCnt === 1) {
+                const {comment} = req.body;
+                cartInDb.comment.ready = comment;
+                await cartInDb.save();
+
+                res.status(httpStatusCodes.OK).json({});
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
+            }
+
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
