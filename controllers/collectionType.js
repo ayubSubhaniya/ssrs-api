@@ -13,7 +13,7 @@ module.exports = {
         const { daiictId } = user;
 
         const createPermission = accessControl.can(user.userType)
-            .createAny(resources.collectionType);
+            .createOwn(resources.collectionType);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 
@@ -150,7 +150,7 @@ module.exports = {
         const { collectionTypeId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateOwn(resources.changeResourceStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 
@@ -160,7 +160,7 @@ module.exports = {
 
             if (updatedCollectionType) {
                 const message = 'Collection type ' + updatedCollectionType.name + ' is now '
-                    + (updatedCollectionType.isActive ? 'activated' : 'deactivated');
+                    + (updatedCollectionType.isActive ? 'active' : 'inactive');
                 const news = new News({
                     message,
                     createdOn: new Date(),
@@ -185,7 +185,7 @@ module.exports = {
         const { requestedCollectionTypeId } = req.params;
 
         const updatePermission = accessControl.can(user.userType)
-            .updateAny(resources.collectionType);
+            .updateOwn(resources.collectionType);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 
