@@ -746,7 +746,7 @@
     },
     "admin": {
         "User": {
-            "read:own": [
+            "read:any": [
                 "name",
                 "secondaryEmail",
                 "contactNo",
@@ -787,7 +787,7 @@
             ]
         },
         "Order": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "requestedBy",
                 "cartId",
@@ -826,7 +826,7 @@
             ]
         },
         "Service": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "name",
                 "description",
@@ -889,7 +889,7 @@
             ]
         },
         "SpecialService": {
-            "read:own": [
+            "read:any": [
                 "*"
             ],
             "create:own": [],
@@ -899,7 +899,7 @@
             "update:own": []
         },
         "InActiveResource": {
-            "read:own": [
+            "read:any": [
                 "*"
             ],
             "create:own": [],
@@ -909,7 +909,7 @@
             "update:own": []
         },
         "changeResourceStatus": {
-            "read:own": [],
+            "read:any": [],
             "create:own": [],
             "delete:own": [
                 "*"
@@ -919,7 +919,7 @@
             ]
         },
         "News": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "message",
                 "createdOn"
@@ -935,7 +935,7 @@
             ]
         },
         "Notification": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "message",
                 "createdOn"
@@ -951,7 +951,7 @@
             ]
         },
         "Courier": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "name",
                 "contactNo",
@@ -975,7 +975,7 @@
             "update:own": []
         },
         "Collector": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "name",
                 "daiictId",
@@ -994,7 +994,7 @@
             "update:own": []
         },
         "AccessLevel": {
-            "read:own": [],
+            "read:any": [],
             "create:own": [],
             "delete:own": [
                 "*"
@@ -1002,7 +1002,7 @@
             "update:own": []
         },
         "Role": {
-            "read:own": [],
+            "read:any": [],
             "create:own": [],
             "delete:own": [
                 "*"
@@ -1010,7 +1010,7 @@
             "update:own": []
         },
         "Parameter": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "name",
                 "description",
@@ -1036,7 +1036,7 @@
             ]
         },
         "CollectionType": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "name",
                 "description",
@@ -1065,7 +1065,7 @@
             ]
         },
         "Cart": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "orderId",
                 "requestedBy",
@@ -1103,7 +1103,7 @@
             ]
         },
         "CourierInfo": {
-            "read:own": [],
+            "read:any": [],
             "create:own": [],
             "delete:own": [
                 "*"
@@ -1111,7 +1111,7 @@
             "update:own": []
         },
         "UserInfo": {
-            "read:own": [
+            "read:any": [
                 "_id",
                 "user_inst_id",
                 "user_type",
