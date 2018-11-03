@@ -27,7 +27,6 @@ const userInfoSchema = new Schema({
     },
     user_email_id: {
         type: String,
-        unique: true,
         required: true,
     },
     user_status: {
@@ -81,7 +80,7 @@ const UserInfo = moongose.model('userinfo', userInfoSchema);
 
 userInfoSchema.pre('save', function (next) {
     this.user_type = this.user_type.toUpperCase();
-    this.user_status = this.user_status.toUpperCase();
+    this.user_status = (this.user_status ? this.user_status.toUpperCase() : '');
     next();
 });
 module.exports = UserInfo;

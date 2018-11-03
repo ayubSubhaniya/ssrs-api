@@ -41,8 +41,8 @@ module.exports = {
             let bulk = UserInfo.collection.initializeUnorderedBulkOp();
 
             for (let i = 0; i < userInfo.length; i++) {
-                const { user_email_id } = userInfo[i];
-                bulk.find({ user_email_id: user_email_id })
+                const { user_inst_id } = userInfo[i];
+                bulk.find({ user_inst_id: user_inst_id })
                     .upsert()
                     .updateOne(userInfo[i]);
             }
