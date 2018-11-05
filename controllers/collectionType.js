@@ -13,7 +13,7 @@ module.exports = {
         const { daiictId } = user;
 
         const createPermission = accessControl.can(user.userType)
-            .createOwn(resources.collectionType);
+            .createAny(resources.collectionType);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 
@@ -150,7 +150,7 @@ module.exports = {
         const { collectionTypeId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateOwn(resources.changeResourceStatus);
+            .updateAny(resources.changeResourceStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 
@@ -185,7 +185,7 @@ module.exports = {
         const { requestedCollectionTypeId } = req.params;
 
         const updatePermission = accessControl.can(user.userType)
-            .updateOwn(resources.collectionType);
+            .updateAny(resources.collectionType);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.collectionType);
 

@@ -32,11 +32,24 @@ const grantDefaultAdminAccess = () => {
                     if (adminTypes[adminType] !== adminTypes.superAdmin) {
                         accessControl.grant(adminTypes[adminType])
                             .readAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead'])
-                            .createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
-                            .deleteOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
-                            .updateOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+                            //.createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
+                            //.deleteOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
+                            //.updateOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
                     }
                 });
+        });
+
+
+    let resource = resources.accessLevel;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.deny(adminTypes[adminType])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
+                    //.createAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
+                    //.deleteAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
+                    //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+            }
         });
 };
 

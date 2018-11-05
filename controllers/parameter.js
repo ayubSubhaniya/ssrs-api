@@ -12,9 +12,9 @@ module.exports = {
         const { daiictId } = user;
 
         const createPermission = accessControl.can(user.userType)
-            .createOwn(resources.parameter);
+            .createAny(resources.parameter);
         const readPermission = accessControl.can(user.userType)
-            .readOwn(resources.parameter);
+            .readAny(resources.parameter);
 
         if (createPermission.granted) {
             let parameterAtt = req.value.body;
@@ -148,7 +148,7 @@ module.exports = {
         const { parameterId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateOwn(resources.changeResourceStatus);
+            .updateAny(resources.changeResourceStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
 
@@ -174,7 +174,7 @@ module.exports = {
         const { requestedParameterId } = req.params;
 
         const updatePermission = accessControl.can(user.userType)
-            .updateOwn(resources.parameter);
+            .updateAny(resources.parameter);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
 
