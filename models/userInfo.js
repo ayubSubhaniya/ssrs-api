@@ -27,7 +27,6 @@ const userInfoSchema = new Schema({
     },
     user_email_id: {
         type: String,
-        unique: true,
         required: true,
     },
     user_status: {
