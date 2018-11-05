@@ -79,7 +79,7 @@ const DB_COLLECTION_NAME = process.env.DB_COLLECTION_NAME;
 const DB_USER = process.env.DB_USER;
 const DB_PASS = process.env.DB_PASS;
 
-const dbURI = 'mongodb://ssrsDaiict:ssrsDaiict123@localhost:27017/ssrs-daiict';
+const dbURI = `mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_COLLECTION_NAME}`;
 
 
 /* Online Database */
