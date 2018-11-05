@@ -1444,28 +1444,40 @@ module.exports = {
 
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
-        const readAnyOrderPermission = accessControl.can(user.userType)
-            .readAny(resources.order);
 
-        if(readAnyCartPermission.granted && readAnyOrderPermission.granted) {
+        if(readAnyCartPermission.granted) {
             
-            const cartInDb = await Cart.findById(cartId)
-                .populate({
-                    path: 'orders',
-                    select: 'status'
-                });
+            const cartInDb = await Cart.findById(cartId);
             
-            let notReadyCnt = cartInDb.orders.length;
-            for(let i=0; i<cartInDb.orders.length; i++){
-                if (cartInDb.orders[i].status === orderStatus.ready)
-                    notReadyCnt--;
-            }
-
-            if(notReadyCnt === 1) {
+            if(cartInDb.status >= cartStatus.processing) {
                 const {comment} = req.body;
-                cartInDb.comment.ready = comment;
-                await cartInDb.save();
+                switch(cartInDb.status) {
+                    case cartStatus.processing:
+                        cartInDb.comment.processing = comment;
+                        break;
+                    case cartStatus.readyToDeliver:
+                        cartInDb.comment.readyToDeliver = comment;
+                        break;
+                    case cartStatus.readyToPickup:
+                        cartInDb.comment.readyToPickup = comment;
+                        break;
+                    case cartStatus.completed:
+                        cartInDb.comment.completed = comment;
+                        break;
+                    case cartStatus.onHold:
+                        cartInDb.comment.onHold = comment;
+                        break;
+                    case cartStatus.cancelled:
+                        cartInDb.comment.cancelled = comment;
+                        break;
+                    case cartStatus.refunded:
+                        cartInDb.comment.refunded = comment;
+                        break;
+                    default:
+                        res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
 
+                await cartInDb.save();
                 res.status(httpStatusCodes.OK).json({});
             } else {
                 res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);

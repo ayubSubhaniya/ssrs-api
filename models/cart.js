@@ -131,11 +131,31 @@ const cartSchema = new Schema({
         }
     },
     comment: {
-        ready: {
+        processing: {
+            type: String,
+            default: ""
+        },
+        readyToDeliver: {
+            type: String,
+            default: ""
+        },
+        readyToPickup: {
             type: String,
             default: ""
         },
         completed: {
+            type: String,
+            default: ""
+        },
+        onHold: {
+            type: String,
+            default: ""
+        },
+        cancelled: {
+            type: String,
+            default: ""
+        },
+        refunded: {
             type: String,
             default: ""
         }
