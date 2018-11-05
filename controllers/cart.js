@@ -1469,6 +1469,7 @@ module.exports = {
                         break;
                     case cartStatus.cancelled:
                         cartInDb.comment.cancelled = comment;
+                        cartInDb.cancelReason = comment;
                         break;
                     case cartStatus.refunded:
                         cartInDb.comment.refunded = comment;
