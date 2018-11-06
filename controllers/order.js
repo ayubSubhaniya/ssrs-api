@@ -364,6 +364,7 @@ module.exports = {
                             path: 'parameters',
                             select: readAnyParameterPermission.attributes
                         });
+                    await Cart.findByIdAndUpdate(orderInDB.cartId,{status:cartStatus.processing});
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
@@ -507,6 +508,7 @@ module.exports = {
                     } else {
                         mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} has been put on hold due to ${updateAtt.holdReason}`;
                     }
+                    cart.status = cartStatus.onHold;
 
                     break;
                 default :
