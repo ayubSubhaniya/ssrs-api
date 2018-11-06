@@ -12,9 +12,22 @@ const favicon = require('static-favicon');
 const flash = require('express-flash');
 const session = require('express-session');
 const Sentry = require('@sentry/node');
-const winston = require('winston');
 const internetAvailable = require('internet-available');
-//const https = require("https");
+const debug = require('debug')('http');
+const http = require('http');
+const https = require('https');
+const helmet = require('helmet');
+const compression = require('compression');
+
+const { logger } = require('./configuration/logger');
+const {} = require('./configuration/dotenv');
+
+const name = 'SSRS-DAIICT';
+debug('booting %o', name);
+
+const { sessionSecret } = require('./configuration');
+const { sendMail } = require('./configuration/mail');
+const { developersMail } = require('./configuration/bug');
 
 let isInternetAvaliable = false;
 internetAvailable()
@@ -32,31 +45,6 @@ if (isInternetAvaliable) {
 }
 
 const app = express();
-
-if (app.get('env') === 'development') {
-    const dotenv = require('dotenv');
-
-    const { error } = dotenv.config();
-    if (error) {
-        throw error('Please add .env file');
-    }
-}
-
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.json(),
-    transports: [
-        //
-        // - Write to all logs with level `info` and below to `combined.log`
-        // - Write all logs error (and below) to `error.log`.
-        //
-        new winston.transports.File({
-            filename: 'logs/error.log',
-            level: 'error'
-        }),
-        new winston.transports.File({ filename: 'logs/combined.log' })
-    ]
-});
 
 const logDirectory = path.join(__dirname, 'logs');
 
@@ -85,7 +73,7 @@ const dbURI = 'mongodb://ssrsDaiict:ssrsDaiict123@localhost:27017/ssrs-daiict';
 /* Online Database */
 const dbURI = process.env.DB_URI;
 
-db.connect(dbURI)
+db.connect(dbURI, { useNewUrlParser: true })
     .then(
         () => {
             console.log('MongoDB connection established');
@@ -124,14 +112,21 @@ if (isInternetAvaliable) {
 if (app.get('env') === 'development') {
     app.use(morgan('dev'));
 }
-
+if (app.get('env') === 'production') {
+    app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }));
+}
+app.use(compression());
+app.use(helmet());
 app.use(flash());
 app.use(favicon());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms :res[content-length] ":referrer" ":user-agent"', { stream: accessLogStream }));
-app.use(bodyParser.json({limit: "10mb"}));
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(cookieParser());
-app.use(session({ secret: 'Shh, its a secret!' }));
+app.use(session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false
+}));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cors({
@@ -140,9 +135,9 @@ app.use(cors({
     credentials: true,
 }));
 
-app.get('/SSRS/user/payment_response',function(req,res,next){
+app.get('/SSRS/user/payment_response', function (req, res, next) {
     const cartController = require('./controllers/cart');
-    cartController.acceptEasyPayPayment(req,res,next);
+    cartController.acceptEasyPayPayment(req, res, next);
 });
 
 // Routes
@@ -174,7 +169,7 @@ app.use((req, res, next) => {
 
 // Error handler function
 app.use((err, req, res, next) => {
-    const error = err;
+    const error = app.get('env') === 'development' ? err : {};
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
     // response to client
@@ -183,6 +178,25 @@ app.use((err, req, res, next) => {
 
     // response to server
     console.error(err);
+    debug(req.method + ' ' + req.url + ' %O', error);
+    logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
+});
+
+
+process.on('uncaughtException', async (er) => {
+    if (app.get('env') === 'production') {
+        console.error(er.stack);
+        logger.error(er);
+        logger.error(er.stack);
+
+        await sendMail(developersMail, er.message, er.stack);
+    } else {
+        console.error(er.stack);
+        logger.error(er);
+        logger.error(er.stack);
+
+        await sendMail(developersMail, er.message, er.stack);
+    }
 });
 
 // start server

@@ -1,6 +1,5 @@
 const JWT = require(`jsonwebtoken`);
 const HttpStatus = require('http-status-codes');
-const nodemailer = require('nodemailer');
 const randomstring = require('randomstring');
 const bcrypt = require('bcryptjs');
 const mustache = require('mustache');
@@ -29,36 +28,17 @@ const {
 const errorMessages = require('../configuration/errors');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
-const mailTemplates = require('../configuration/mailTemplates.json');
 
-const mailAccountUserName = process.env.MAIL_USER;
-const mailAccountPassword = process.env.MAIL_PASS;
-
-/*
-    Here we are configuring our SMTP Server details.
-    STMP is mail server which is responsible for sending and recieving email.
-*/
-const smtpTransport = nodemailer.createTransport({
-    host: 'webmail.daiict.ac.in',
-    port: 465,
-    secureConnection: true,
-    auth: {
-        user: mailAccountUserName,
-        pass: mailAccountPassword
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-});
-/*------------------SMTP Over-----------------------------*/
+const { smtpTransport } = require('../configuration/mail'),
+    mailTemplates = require('../configuration/mailTemplates.json'),
+    mailAccountUserName = process.env.MAIL_USER,
+    mailAccountPassword = process.env.MAIL_PASS;
 
 const hashPassword = async (password) => {
     //generate a salt
     const salt = await bcrypt.genSalt();
     //generate password hash
-    const passwordHashed = await bcrypt.hash(password, salt);
-    //reassign hashed password
-    return passwordHashed;
+    return await bcrypt.hash(password, salt);
 };
 
 //sign a new token
@@ -72,8 +52,6 @@ const signToken = user => {
 };
 
 module.exports = {
-    smtpTransport,
-
     signUp: async (req, res, next) => {
 
         const { daiictId, password } = req.value.body;
@@ -102,7 +80,7 @@ module.exports = {
 
         const options = {
             link: link
-        }
+        };
         let mailBody = mustache.render(mailTemplates.signUp.body, options);
         const mailOptions = {
             from: mailAccountUserName,
@@ -175,10 +153,10 @@ module.exports = {
         const primaryEmail = user.primaryEmail;
         const host = req.get('host');
         const link = httpProtocol + '://' + host + '/account/verify/' + daiictId + '?id=' + user.randomHash;
-        
+
         const options = {
             link: link
-        }
+        };
         let mailBody = mustache.render(mailTemplates.signUp.body, options);
         const mailOptions = {
             from: mailAccountUserName,
@@ -340,7 +318,7 @@ module.exports = {
 
         const options = {
             daiictId: daiictId
-        }
+        };
         let mailBody = mustache.render(mailTemplates.passwordChanged.body, options);
         const mailOptions = {
             from: mailAccountUserName,

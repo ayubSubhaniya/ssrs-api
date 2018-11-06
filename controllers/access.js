@@ -51,6 +51,30 @@ const grantDefaultAdminAccess = () => {
                     //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
             }
         });
+
+    resource = resources.user;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.deny(adminTypes[adminType])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
+                //.createAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
+                //.deleteAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
+                //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+            }
+        });
+
+    resource = resources.userInfo;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.deny(adminTypes[adminType])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
+                //.createAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
+                //.deleteAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
+                //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+            }
+        });
 };
 
 const grantDefaultAccess = () => {

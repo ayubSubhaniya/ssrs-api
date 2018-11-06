@@ -18,7 +18,7 @@ const placedCartSchema = new Schema({
         ref: 'placedOrder'
     }],
     paymentType: {
-        type: Number,
+        type: String,
     },
     paymentId: {
         type: String,

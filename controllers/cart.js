@@ -11,11 +11,12 @@ const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
+const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
 const EasyPayPaymentInfo = require('../models/easyPayPaymentInfo');
 
 const paymentCodeGenerator = require('shortid');
-paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#!');
+paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$');
 
 const { generateCartStatusChangeNotification, generatePendingPaymentNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
@@ -25,10 +26,11 @@ const { accessControl } = require('./access');
 const { easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
+const { sendMail } = require('../configuration/mail');
 
 //const dayToMilliSec = 86400000;
 const checkForOfflinePayment = async () => {
-    
+
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
@@ -49,20 +51,33 @@ const checkForOfflinePayment = async () => {
                 }
             });
 
+            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
+            let mailSubject = carts[i].orderId;
+            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has been cancelled due to delay in payment.`;
+            await sendMail(mailTo, mailSubject, mailText);
+
             /*Generate notification for cancel*/
             const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
             await notification.save();
 
         } else {
+
+            const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+
+            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
+            let mailSubject = carts[i].orderId;
+            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has a pending payment. Please pay fast in ${cancelledInDays} days to avoid auto cancellation. Payment code is ${carts[i].paymentCode}`;
+            await sendMail(mailTo, mailSubject, mailText);
+
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, "offline")
+            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'offline');
             await notification.save();
         }
     }
 };
 
 const checkForFailedOnlinePayment = async () => {
-    
+
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
@@ -83,20 +98,32 @@ const checkForFailedOnlinePayment = async () => {
                 }
             });
 
+            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
+            let mailSubject = carts[i].orderId;
+            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has been cancelled due to delay in payment.`;
+            await sendMail(mailTo, mailSubject, mailText);
+
             /*Generate notification for cancel*/
             const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
             await notification.save();
         } else {
+            const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+
+            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
+            let mailSubject = carts[i].orderId;
+            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has a failed payment. Please pay fast in ${cancelledInDays} days to avoid auto cancellation.`;
+            await sendMail(mailTo, mailSubject, mailText);
+
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, "online")
+            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online');
             await notification.save();
         }
     }
 };
 
-nodeSchedule.schedule('0 3 * * *', async ()=>{
+nodeSchedule.schedule('0 3 * * *', async () => {
     await checkForFailedOnlinePayment();
-    await checkForOfflinePayment()
+    await checkForOfflinePayment();
 });
 
 // setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
@@ -879,6 +906,10 @@ module.exports = {
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
+                    let mailSubject = updatedCart.orderId;
+                    let mailText = `Your order ${updatedCart.orderId} with ${updatedCart.orders.length} order(s) has been placed. Please pay ${updatedCart.totalCost} rupees to process order. Payment code is ${updatedCart.paymentCode}`;
+
                     const cart = new Cart({
                         requestedBy: daiictId,
                         createdOn: user.createdOn,
@@ -886,6 +917,8 @@ module.exports = {
                     await cart.save();
                     user.cartId = cart._id;
                     await user.save();
+
+                    await sendMail(mailTo, mailSubject, mailText);
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
 
@@ -1080,6 +1113,12 @@ module.exports = {
                         }
                     };
                     await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
+
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let mailSubject = cartInDb.orderId;
+                    let mailText = `Your easy pay payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been failed. Please retry again.`;
+                    await sendMail(mailTo, mailSubject, mailText);
+
                     return res.status(httpStatusCodes.BAD_REQUEST)
                         .json({ error: errorMessages.paymentFailed });
                 }
@@ -1156,6 +1195,11 @@ module.exports = {
 
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
 
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let mailSubject = cartInDb.orderId;
+                    let mailText = `Your easy pay payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been successful. Your order is in process. Transaction Id for payment is ${updatedCart.paymentId}.`;
+                    await sendMail(mailTo, mailSubject, mailText);
+
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
@@ -1229,6 +1273,12 @@ module.exports = {
 
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
 
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let mailSubject = cartInDb.orderId;
+                    let mailText = `Your payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been successful. Your order is in process.`;
+
+                    await sendMail(mailTo, mailSubject, mailText);
+
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
@@ -1280,6 +1330,10 @@ module.exports = {
                     lastModified: new Date()
                 };
 
+                let mailTo = await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy }).user_email_id;
+                let mailSubject = cartInDb.orderId;
+                let mailText;
+
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
@@ -1290,10 +1344,10 @@ module.exports = {
                             }
                         };
 
-                        if(cartUpdateAtt.comment) {
+                        if (cartUpdateAtt.comment) {
                             updateAtt['$set'] = {
                                 'comment.completed': cartUpdateAtt.comment
-                            }
+                            };
                         }
 
                         if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
@@ -1309,12 +1363,15 @@ module.exports = {
                                 trackingId: cartUpdateAtt.trackingId
                             });
 
+                            mailText = `Your order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been sent for delivery through ${updatedDelivery.courierServiceName}. Tracking Id for delivery is ${updatedDelivery.trackingId}`;
+
                             if (!updatedDelivery) {
                                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
                             }
 
 
                         } else {
+                            mailText = `Your order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been sent for picked up successfully`;
                             await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.completed });
                         }
                         for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -1340,6 +1397,7 @@ module.exports = {
                 await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
 
+                await sendMail(mailTo, mailSubject, mailText);
                 if (updatedCart) {
 
                     // Generating notification
@@ -1387,12 +1445,11 @@ module.exports = {
             const cartInDb = await Cart.findById(cartId);
 
             if (cartInDb) {
-                if (cartInDb.status > cartStatus.unplaced && cartInDb.status < cartStatus.completed) {
-                    await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
-                    await PlacedCart.findOneAndUpdate({ cartId }, {
-                        status: cartStatus.cancelled,
-                        cancelReason: cartUpdateAtt.cancelReason
-                    });
+                if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
+
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let mailSubject = cartInDb.orderId;
+                    let mailText = `Your order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been cancelled due to ${cartUpdateAtt.cancelReason}`;
 
                     if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
                         await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.cancel });
@@ -1420,6 +1477,13 @@ module.exports = {
                         });
                     }
 
+                    await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
+                    await PlacedCart.findOneAndUpdate({ cartId }, {
+                        status: cartStatus.cancelled,
+                        cancelReason: cartUpdateAtt.cancelReason
+                    });
+
+                    await sendMail(mailTo, mailSubject, mailText);
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason);
                     await notification.save();
 
@@ -1447,26 +1511,28 @@ module.exports = {
         const readAnyOrderPermission = accessControl.can(user.userType)
             .readAny(resources.order);
 
-        if(readAnyCartPermission.granted && readAnyOrderPermission.granted) {
-            
+        if (readAnyCartPermission.granted && readAnyOrderPermission.granted) {
+
             const cartInDb = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
                     select: 'status'
                 });
-            
+
             let notReadyCnt = cartInDb.orders.length;
-            for(let i=0; i<cartInDb.orders.length; i++){
-                if (cartInDb.orders[i].status === orderStatus.ready)
+            for (let i = 0; i < cartInDb.orders.length; i++) {
+                if (cartInDb.orders[i].status === orderStatus.ready) {
                     notReadyCnt--;
+                }
             }
 
-            if(notReadyCnt === 1) {
-                const {comment} = req.body;
+            if (notReadyCnt === 1) {
+                const { comment } = req.body;
                 cartInDb.comment.ready = comment;
                 await cartInDb.save();
 
-                res.status(httpStatusCodes.OK).json({});
+                res.status(httpStatusCodes.OK)
+                    .json({});
             } else {
                 res.sendStatus(httpStatusCodes.NOT_ACCEPTABLE);
             }
