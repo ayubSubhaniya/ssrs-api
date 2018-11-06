@@ -42,5 +42,6 @@ const sendMail = async (toId, subject, text, html) => {
 };
 
 module.exports = {
-    sendMail
+    sendMail,
+    smtpTransport
 };
