@@ -551,8 +551,8 @@ module.exports = {
                 } else {
                     mailText = `Your order ${cart.orderId} with ${cart.orders.length} order(s) is ready. Please pickup.`;
                 }
+                await sendMail(mailTo, mailSubject, mailText);
             }
-            await sendMail(mailTo, mailSubject, mailText);
 
             if (updatedOrder) {
                 const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status);
