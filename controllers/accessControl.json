@@ -1,964 +1,936 @@
 {
-  "student": {
-    "User": {
-      "read:own": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "userType",
-        "isActive",
-        "requestedServices",
-        "notifications",
-        "daiictId",
-        "primaryEmail",
-        "createdOn",
-        "addresses",
-        "userInfo"
-      ],
-      "create:own": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "requestedServices",
-        "daiictId",
-        "primaryEmail",
-        "password",
-        "addresses"
-      ],
-      "update:own": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "requestedServices",
-        "addresses"
-      ]
+    "student": {
+        "User": {
+            "read:own": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "userType",
+                "isActive",
+                "requestedServices",
+                "notifications",
+                "daiictId",
+                "primaryEmail",
+                "createdOn",
+                "addresses",
+                "userInfo"
+            ],
+            "create:own": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "requestedServices",
+                "daiictId",
+                "primaryEmail",
+                "password",
+                "addresses"
+            ],
+            "update:own": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "requestedServices",
+                "addresses"
+            ]
+        },
+        "News": {
+            "read:any": [
+                "message",
+                "createdOn"
+            ]
+        },
+        "UserInfo": {
+            "read:own": [
+                "user_inst_id",
+                "user_type",
+                "user_first_name",
+                "user_middle_name",
+                "user_last_name",
+                "user_sex",
+                "user_email_id",
+                "user_status",
+                "user_adr_contact_name",
+                "user_adr_line1",
+                "user_adr_line2",
+                "user_adr_line3",
+                "user_adr_city",
+                "user_adr_district",
+                "user_adr_state",
+                "user_adr_country",
+                "user_adr_pincode",
+                "user_adr_telno",
+                "user_adr_mobileno",
+                "user_adr_emailid",
+                "user_batch",
+                "user_programme"
+            ]
+        },
+        "Parameter": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "isActive"
+            ]
+        },
+        "CollectionType": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "category"
+            ]
+        },
+        "Service": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "maxUnits",
+                "baseCharge",
+                "availableParameters",
+                "availablePaymentModes",
+                "collectionTypes"
+            ]
+        },
+        "Order": {
+            "read:own": [
+                "_id",
+                "requestedBy",
+                "cartId",
+                "service",
+                "serviceName",
+                "createdOn",
+                "lastModified",
+                "serviceCost",
+                "parameterCost",
+                "collectionTypeCost",
+                "totalCost",
+                "status",
+                "comment",
+                "parameters",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "delivery",
+                "pickup",
+                "collectionType",
+                "validityErrors",
+                "unitsRequested",
+                "cancelReason",
+                "statusChangeTime",
+                "holdReason"
+            ],
+            "create:own": [
+                "service",
+                "parameters",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "comment",
+                "collectionType",
+                "unitsRequested",
+                "delivery",
+                "pickup"
+            ],
+            "update:own": [
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "comment",
+                "delivery",
+                "pickup",
+                "unitsRequested"
+            ],
+            "delete:own": [
+                "*"
+            ]
+        },
+        "Cart": {
+            "read:own": [
+                "_id",
+                "orderId",
+                "requestedBy",
+                "orders",
+                "createdOn",
+                "lastModified",
+                "lastModifiedBy",
+                "collectionTypeCost",
+                "ordersCost",
+                "totalCost",
+                "status",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "paymentCode",
+                "delivery",
+                "pickup",
+                "collectionType",
+                "validityErrors",
+                "cancelReason",
+                "statusChangeTime",
+                "comment"
+            ],
+            "create:own": [
+                "orders",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "delivery",
+                "pickup",
+                "collectionType"
+            ],
+            "update:own": [
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "delivery",
+                "pickup",
+                "statusChangeTime"
+            ]
+        },
+        "Collector": {
+            "read:own": [
+                "_id",
+                "name",
+                "daiictId",
+                "contactNo",
+                "email",
+                "collectionCode",
+                "orderId",
+                "status"
+            ],
+            "create:own": [
+                "name",
+                "daiictId",
+                "contactNo",
+                "email"
+            ]
+        },
+        "Courier": {
+            "read:own": [
+                "_id",
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "pinCode",
+                "trackingId",
+                "courierServiceName",
+                "orderId",
+                "status"
+            ],
+            "create:own": [
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "pinCode"
+            ],
+            "update:own": [
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "pinCode"
+            ]
+        },
+        "CourierInfo": {
+            "read:own": [
+                "_id",
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "pinCode"
+            ],
+            "create:own": [
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "pinCode"
+            ],
+            "update:own": [
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "pinCode"
+            ],
+            "delete:own": [
+                "*"
+            ]
+        },
+        "Notification": {
+            "read:own": [
+                "_id",
+                "message",
+                "createdOn"
+            ],
+            "delete:own": [
+                "*"
+            ]
+        }
     },
-    "News": {
-      "read:any": [
-        "message",
-        "createdOn"
-      ]
+    "superAdmin": {
+        "User": {
+            "read:any": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "userType",
+                "isActive",
+                "requestedServices",
+                "notifications",
+                "daiictId",
+                "primaryEmail",
+                "createdOn",
+                "addresses",
+                "userInfo"
+            ],
+            "create:any": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "requestedServices",
+                "daiictId",
+                "primaryEmail",
+                "password"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "requestedServices",
+                "password"
+            ]
+        },
+        "Order": {
+            "read:any": [
+                "_id",
+                "requestedBy",
+                "cartId",
+                "service",
+                "serviceName",
+                "createdOn",
+                "lastModified",
+                "lastModifiedBy",
+                "serviceCost",
+                "parameterCost",
+                "comment",
+                "collectionTypeCost",
+                "totalCost",
+                "status",
+                "parameters",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "delivery",
+                "pickup",
+                "collectionType",
+                "validityErrors",
+                "unitsRequested",
+                "cancelReason",
+                "statusChangeTime",
+                "holdReason"
+            ],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "status",
+                "cancelReason",
+                "statusChangeTime"
+            ]
+        },
+        "Service": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "createdOn",
+                "createdBy",
+                "isApplicationSpecific",
+                "isSpecialService",
+                "isActive",
+                "maxUnits",
+                "baseCharge",
+                "availableParameters",
+                "specialServiceUsers",
+                "availablePaymentModes",
+                "collectionTypes",
+                "allowedUserTypes",
+                "allowedProgrammes",
+                "allowedBatches",
+                "allowedUserStatus"
+            ],
+            "create:any": [
+                "name",
+                "description",
+                "isApplicationSpecific",
+                "isAvailableForAlumni",
+                "isCourierAvailable",
+                "isSpecialService",
+                "isActive",
+                "maxUnits",
+                "baseCharge",
+                "availableParameters",
+                "specialServiceUsers",
+                "availablePaymentModes",
+                "collectionTypes",
+                "allowedUserTypes",
+                "allowedProgrammes",
+                "allowedBatches",
+                "allowedUserStatus"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "name",
+                "description",
+                "isApplicationSpecific",
+                "isAvailableForAlumni",
+                "isCourierAvailable",
+                "isSpecialService",
+                "isActive",
+                "maxUnits",
+                "baseCharge",
+                "availableParameters",
+                "specialServiceUsers",
+                "availablePaymentModes",
+                "collectionTypes",
+                "allowedUserTypes",
+                "allowedProgrammes",
+                "allowedBatches",
+                "allowedUserStatus"
+            ]
+        },
+        "SpecialService": {
+            "read:any": [
+                "*"
+            ],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "InActiveResource": {
+            "read:any": [
+                "*"
+            ],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "changeResourceStatus": {
+            "read:any": [],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "*"
+            ]
+        },
+        "News": {
+            "read:any": [
+                "_id",
+                "message",
+                "createdOn"
+            ],
+            "create:any": [
+                "message"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "message"
+            ]
+        },
+        "Notification": {
+            "read:any": [
+                "_id",
+                "message",
+                "createdOn"
+            ],
+            "create:any": [
+                "message"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "message"
+            ]
+        },
+        "Courier": {
+            "read:any": [
+                "_id",
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "createdOn",
+                "createdBy",
+                "pinCode",
+                "trackingId",
+                "courierServiceName",
+                "orderId",
+                "status"
+            ],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "Collector": {
+            "read:any": [
+                "_id",
+                "name",
+                "daiictId",
+                "contactNo",
+                "email",
+                "collectionCode",
+                "createdOn",
+                "createdBy",
+                "orderId",
+                "status"
+            ],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "AccessLevel": {
+            "read:any": [],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "Role": {
+            "read:any": [],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "Parameter": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "createdOn",
+                "createdBy",
+                "isActive"
+            ],
+            "create:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "name",
+                "description",
+                "baseCharge",
+                "isActive"
+            ]
+        },
+        "CollectionType": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "createdOn",
+                "createdBy",
+                "isActive",
+                "category"
+            ],
+            "create:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "category"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "name",
+                "description",
+                "baseCharge",
+                "isActive",
+                "category"
+            ]
+        },
+        "Cart": {
+            "read:any": [
+                "_id",
+                "orderId",
+                "requestedBy",
+                "orders",
+                "createdOn",
+                "lastModified",
+                "lastModifiedBy",
+                "collectionTypeCost",
+                "ordersCost",
+                "totalCost",
+                "status",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "paymentCode",
+                "delivery",
+                "pickup",
+                "collectionType",
+                "validityErrors",
+                "cancelReason",
+                "statusChangeTime",
+                "comment"
+            ],
+            "create:any": [
+                "comment"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "status",
+                "cancelReason",
+                "statusChangeTime",
+                "comment"
+            ]
+        },
+        "CourierInfo": {
+            "read:any": [],
+            "create:any": [],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": []
+        },
+        "UserInfo": {
+            "read:any": [
+                "_id",
+                "user_inst_id",
+                "user_type",
+                "user_first_name",
+                "user_middle_name",
+                "user_last_name",
+                "user_sex",
+                "user_email_id",
+                "user_status",
+                "user_adr_contact_name",
+                "user_adr_line1",
+                "user_adr_line2",
+                "user_adr_line3",
+                "user_adr_city",
+                "user_adr_district",
+                "user_adr_state",
+                "user_adr_country",
+                "user_adr_pincode",
+                "user_adr_telno",
+                "user_adr_mobileno",
+                "user_adr_emailid",
+                "user_batch",
+                "user_programme"
+            ],
+            "create:any": [
+                "user_inst_id",
+                "user_type",
+                "user_first_name",
+                "user_middle_name",
+                "user_last_name",
+                "user_sex",
+                "user_email_id",
+                "user_status",
+                "user_adr_contact_name",
+                "user_adr_line1",
+                "user_adr_line2",
+                "user_adr_line3",
+                "user_adr_city",
+                "user_adr_district",
+                "user_adr_state",
+                "user_adr_country",
+                "user_adr_pincode",
+                "user_adr_telno",
+                "user_adr_mobileno",
+                "user_adr_emailid",
+                "user_batch",
+                "user_programme"
+            ],
+            "delete:any": [
+                "*"
+            ],
+            "update:any": [
+                "user_inst_id",
+                "user_type",
+                "user_first_name",
+                "user_middle_name",
+                "user_last_name",
+                "user_sex",
+                "user_email_id",
+                "user_status",
+                "user_adr_contact_name",
+                "user_adr_line1",
+                "user_adr_line2",
+                "user_adr_line3",
+                "user_adr_city",
+                "user_adr_district",
+                "user_adr_state",
+                "user_adr_country",
+                "user_adr_pincode",
+                "user_adr_telno",
+                "user_adr_mobileno",
+                "user_adr_emailid",
+                "user_batch",
+                "user_programme"
+            ]
+        }
     },
-    "UserInfo": {
-      "read:own": [
-        "user_inst_id",
-        "user_type",
-        "user_first_name",
-        "user_middle_name",
-        "user_last_name",
-        "user_sex",
-        "user_email_id",
-        "user_status",
-        "user_adr_contact_name",
-        "user_adr_line1",
-        "user_adr_line2",
-        "user_adr_line3",
-        "user_adr_city",
-        "user_adr_district",
-        "user_adr_state",
-        "user_adr_country",
-        "user_adr_pincode",
-        "user_adr_telno",
-        "user_adr_mobileno",
-        "user_adr_emailid",
-        "user_batch",
-        "user_programme"
-      ]
-    },
-    "Parameter": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "isActive"
-      ]
-    },
-    "CollectionType": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "category"
-      ]
-    },
-    "Service": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "availablePaymentModes",
-        "collectionTypes"
-      ]
-    },
-    "Order": {
-      "read:own": [
-        "_id",
-        "requestedBy",
-        "cartId",
-        "service",
-        "serviceName",
-        "createdOn",
-        "lastModified",
-        "serviceCost",
-        "parameterCost",
-        "collectionTypeCost",
-        "totalCost",
-        "status",
-        "comment",
-        "parameters",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "delivery",
-        "pickup",
-        "collectionType",
-        "validityErrors",
-        "unitsRequested",
-        "cancelReason",
-        "statusChangeTime",
-        "holdReason"
-      ],
-      "create:own": [
-        "service",
-        "parameters",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "comment",
-        "collectionType",
-        "unitsRequested",
-        "delivery",
-        "pickup"
-      ],
-      "update:own": [
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "comment",
-        "delivery",
-        "pickup",
-        "unitsRequested"
-      ],
-      "delete:own": [
-        "*"
-      ]
-    },
-    "Cart": {
-      "read:own": [
-        "_id",
-        "orderId",
-        "requestedBy",
-        "orders",
-        "createdOn",
-        "lastModified",
-        "lastModifiedBy",
-        "collectionTypeCost",
-        "ordersCost",
-        "totalCost",
-        "status",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "paymentCode",
-        "delivery",
-        "pickup",
-        "collectionType",
-        "validityErrors",
-        "cancelReason",
-        "statusChangeTime",
-        "comment"
-      ],
-      "create:own": [
-        "orders",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "delivery",
-        "pickup",
-        "collectionType"
-      ],
-      "update:own": [
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "delivery",
-        "pickup",
-        "statusChangeTime"
-      ]
-    },
-    "Collector": {
-      "read:own": [
-        "_id",
-        "name",
-        "daiictId",
-        "contactNo",
-        "email",
-        "collectionCode",
-        "orderId",
-        "status"
-      ],
-      "create:own": [
-        "name",
-        "daiictId",
-        "contactNo",
-        "email"
-      ]
-    },
-    "Courier": {
-      "read:own": [
-        "_id",
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "pinCode",
-        "trackingId",
-        "courierServiceName",
-        "orderId",
-        "status"
-      ],
-      "create:own": [
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "pinCode"
-      ],
-      "update:own": [
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "pinCode"
-      ]
-    },
-    "CourierInfo": {
-      "read:own": [
-        "_id",
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "pinCode"
-      ],
-      "create:own": [
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "pinCode"
-      ],
-      "update:own": [
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "pinCode"
-      ],
-      "delete:own": [
-        "*"
-      ]
-    },
-    "Notification": {
-      "read:own": [
-        "_id",
-        "message",
-        "createdOn"
-      ],
-      "delete:own": [
-        "*"
-      ]
+    "admin": {
+        "User": {
+            "read:any": []
+        },
+        "Order": {
+            "read:any": [
+                "_id",
+                "requestedBy",
+                "cartId",
+                "service",
+                "serviceName",
+                "createdOn",
+                "lastModified",
+                "lastModifiedBy",
+                "serviceCost",
+                "parameterCost",
+                "comment",
+                "collectionTypeCost",
+                "totalCost",
+                "status",
+                "parameters",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "delivery",
+                "pickup",
+                "collectionType",
+                "validityErrors",
+                "unitsRequested",
+                "cancelReason",
+                "statusChangeTime",
+                "holdReason"
+            ],
+            "update:any": [
+                "status",
+                "cancelReason",
+                "statusChangeTime"
+            ]
+        },
+        "Service": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "createdOn",
+                "createdBy",
+                "isApplicationSpecific",
+                "isSpecialService",
+                "isActive",
+                "maxUnits",
+                "baseCharge",
+                "availableParameters",
+                "specialServiceUsers",
+                "availablePaymentModes",
+                "collectionTypes",
+                "allowedUserTypes",
+                "allowedProgrammes",
+                "allowedBatches",
+                "allowedUserStatus"
+            ]
+        },
+        "SpecialService": {
+            "read:any": [
+                "*"
+            ]
+        },
+        "InActiveResource": {
+            "read:any": [
+                "*"
+            ]
+        },
+        "changeResourceStatus": {
+            "read:any": []
+        },
+        "News": {
+            "read:any": [
+                "_id",
+                "message",
+                "createdOn"
+            ]
+        },
+        "Notification": {
+            "read:any": [
+                "_id",
+                "message",
+                "createdOn"
+            ]
+        },
+        "Courier": {
+            "read:any": [
+                "_id",
+                "name",
+                "contactNo",
+                "email",
+                "address",
+                "city",
+                "state",
+                "country",
+                "createdOn",
+                "createdBy",
+                "pinCode",
+                "trackingId",
+                "courierServiceName",
+                "orderId",
+                "status"
+            ]
+        },
+        "Collector": {
+            "read:any": [
+                "_id",
+                "name",
+                "daiictId",
+                "contactNo",
+                "email",
+                "collectionCode",
+                "createdOn",
+                "createdBy",
+                "orderId",
+                "status"
+            ]
+        },
+        "AccessLevel": {
+            "read:any": []
+        },
+        "Role": {
+            "read:any": []
+        },
+        "Parameter": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "createdOn",
+                "createdBy",
+                "isActive"
+            ]
+        },
+        "CollectionType": {
+            "read:any": [
+                "_id",
+                "name",
+                "description",
+                "baseCharge",
+                "createdOn",
+                "createdBy",
+                "isActive",
+                "category"
+            ]
+        },
+        "Cart": {
+            "read:any": [
+                "_id",
+                "orderId",
+                "requestedBy",
+                "orders",
+                "createdOn",
+                "lastModified",
+                "lastModifiedBy",
+                "collectionTypeCost",
+                "ordersCost",
+                "totalCost",
+                "status",
+                "paymentType",
+                "isPaymentDone",
+                "paymentId",
+                "paymentCode",
+                "delivery",
+                "pickup",
+                "collectionType",
+                "validityErrors",
+                "cancelReason",
+                "statusChangeTime",
+                "comment"
+            ],
+            "update:any": [
+                "status",
+                "cancelReason",
+                "statusChangeTime",
+                "comment"
+            ]
+        },
+        "CourierInfo": {
+            "read:any": []
+        },
+        "UserInfo": {
+            "read:any": []
+        }
     }
-  },
-  "superAdmin": {
-    "User": {
-      "read:any": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "userType",
-        "isActive",
-        "requestedServices",
-        "notifications",
-        "daiictId",
-        "primaryEmail",
-        "createdOn",
-        "addresses",
-        "userInfo"
-      ],
-      "create:any": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "requestedServices",
-        "daiictId",
-        "primaryEmail",
-        "password"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "requestedServices",
-        "password"
-      ]
-    },
-    "Order": {
-      "read:any": [
-        "_id",
-        "requestedBy",
-        "cartId",
-        "service",
-        "serviceName",
-        "createdOn",
-        "lastModified",
-        "lastModifiedBy",
-        "serviceCost",
-        "parameterCost",
-        "comment",
-        "collectionTypeCost",
-        "totalCost",
-        "status",
-        "parameters",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "delivery",
-        "pickup",
-        "collectionType",
-        "validityErrors",
-        "unitsRequested",
-        "cancelReason",
-        "statusChangeTime",
-        "holdReason"
-      ],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "status",
-        "cancelReason",
-        "statusChangeTime"
-      ]
-    },
-    "Service": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "createdOn",
-        "createdBy",
-        "isApplicationSpecific",
-        "isSpecialService",
-        "isActive",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "specialServiceUsers",
-        "availablePaymentModes",
-        "collectionTypes",
-        "allowedUserTypes",
-        "allowedProgrammes",
-        "allowedBatches",
-        "allowedUserStatus"
-      ],
-      "create:any": [
-        "name",
-        "description",
-        "isApplicationSpecific",
-        "isAvailableForAlumni",
-        "isCourierAvailable",
-        "isSpecialService",
-        "isActive",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "specialServiceUsers",
-        "availablePaymentModes",
-        "collectionTypes",
-        "allowedUserTypes",
-        "allowedProgrammes",
-        "allowedBatches",
-        "allowedUserStatus"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "name",
-        "description",
-        "isApplicationSpecific",
-        "isAvailableForAlumni",
-        "isCourierAvailable",
-        "isSpecialService",
-        "isActive",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "specialServiceUsers",
-        "availablePaymentModes",
-        "collectionTypes",
-        "allowedUserTypes",
-        "allowedProgrammes",
-        "allowedBatches",
-        "allowedUserStatus"
-      ]
-    },
-    "SpecialService": {
-      "read:any": [
-        "*"
-      ],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "InActiveResource": {
-      "read:any": [
-        "*"
-      ],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "changeResourceStatus": {
-      "read:any": [],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "*"
-      ]
-    },
-    "News": {
-      "read:any": [
-        "_id",
-        "message",
-        "createdOn"
-      ],
-      "create:any": [
-        "message"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "message"
-      ]
-    },
-    "Notification": {
-      "read:any": [
-        "_id",
-        "message",
-        "createdOn"
-      ],
-      "create:any": [
-        "message"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "message"
-      ]
-    },
-    "Courier": {
-      "read:any": [
-        "_id",
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "createdOn",
-        "createdBy",
-        "pinCode",
-        "trackingId",
-        "courierServiceName",
-        "orderId",
-        "status"
-      ],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "Collector": {
-      "read:any": [
-        "_id",
-        "name",
-        "daiictId",
-        "contactNo",
-        "email",
-        "collectionCode",
-        "createdOn",
-        "createdBy",
-        "orderId",
-        "status"
-      ],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "AccessLevel": {
-      "read:any": [],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "Role": {
-      "read:any": [],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "Parameter": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "createdOn",
-        "createdBy",
-        "isActive"
-      ],
-      "create:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "name",
-        "description",
-        "baseCharge",
-        "isActive"
-      ]
-    },
-    "CollectionType": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "createdOn",
-        "createdBy",
-        "isActive",
-        "category"
-      ],
-      "create:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "category"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "name",
-        "description",
-        "baseCharge",
-        "isActive",
-        "category"
-      ]
-    },
-    "Cart": {
-      "read:any": [
-        "_id",
-        "orderId",
-        "requestedBy",
-        "orders",
-        "createdOn",
-        "lastModified",
-        "lastModifiedBy",
-        "collectionTypeCost",
-        "ordersCost",
-        "totalCost",
-        "status",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "paymentCode",
-        "delivery",
-        "pickup",
-        "collectionType",
-        "validityErrors",
-        "cancelReason",
-        "statusChangeTime",
-        "comment"
-      ],
-      "create:any": [
-        "comment"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "status",
-        "cancelReason",
-        "statusChangeTime",
-        "comment"
-      ]
-    },
-    "CourierInfo": {
-      "read:any": [],
-      "create:any": [],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": []
-    },
-    "UserInfo": {
-      "read:any": [
-        "_id",
-        "user_inst_id",
-        "user_type",
-        "user_first_name",
-        "user_middle_name",
-        "user_last_name",
-        "user_sex",
-        "user_email_id",
-        "user_status",
-        "user_adr_contact_name",
-        "user_adr_line1",
-        "user_adr_line2",
-        "user_adr_line3",
-        "user_adr_city",
-        "user_adr_district",
-        "user_adr_state",
-        "user_adr_country",
-        "user_adr_pincode",
-        "user_adr_telno",
-        "user_adr_mobileno",
-        "user_adr_emailid",
-        "user_batch",
-        "user_programme"
-      ],
-      "create:any": [
-        "user_inst_id",
-        "user_type",
-        "user_first_name",
-        "user_middle_name",
-        "user_last_name",
-        "user_sex",
-        "user_email_id",
-        "user_status",
-        "user_adr_contact_name",
-        "user_adr_line1",
-        "user_adr_line2",
-        "user_adr_line3",
-        "user_adr_city",
-        "user_adr_district",
-        "user_adr_state",
-        "user_adr_country",
-        "user_adr_pincode",
-        "user_adr_telno",
-        "user_adr_mobileno",
-        "user_adr_emailid",
-        "user_batch",
-        "user_programme"
-      ],
-      "delete:any": [
-        "*"
-      ],
-      "update:any": [
-        "user_inst_id",
-        "user_type",
-        "user_first_name",
-        "user_middle_name",
-        "user_last_name",
-        "user_sex",
-        "user_email_id",
-        "user_status",
-        "user_adr_contact_name",
-        "user_adr_line1",
-        "user_adr_line2",
-        "user_adr_line3",
-        "user_adr_city",
-        "user_adr_district",
-        "user_adr_state",
-        "user_adr_country",
-        "user_adr_pincode",
-        "user_adr_telno",
-        "user_adr_mobileno",
-        "user_adr_emailid",
-        "user_batch",
-        "user_programme"
-      ]
-    }
-  },
-  "admin": {
-    "User": {
-      "read:any": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "userType",
-        "isActive",
-        "requestedServices",
-        "notifications",
-        "daiictId",
-        "primaryEmail",
-        "createdOn",
-        "addresses",
-        "userInfo"
-      ]
-    },
-    "Order": {
-      "read:any": [
-        "_id",
-        "requestedBy",
-        "cartId",
-        "service",
-        "serviceName",
-        "createdOn",
-        "lastModified",
-        "lastModifiedBy",
-        "serviceCost",
-        "parameterCost",
-        "comment",
-        "collectionTypeCost",
-        "totalCost",
-        "status",
-        "parameters",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "delivery",
-        "pickup",
-        "collectionType",
-        "validityErrors",
-        "unitsRequested",
-        "cancelReason",
-        "statusChangeTime",
-        "holdReason"
-      ]
-    },
-    "Service": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "createdOn",
-        "createdBy",
-        "isApplicationSpecific",
-        "isSpecialService",
-        "isActive",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "specialServiceUsers",
-        "availablePaymentModes",
-        "collectionTypes",
-        "allowedUserTypes",
-        "allowedProgrammes",
-        "allowedBatches",
-        "allowedUserStatus"
-      ]
-    },
-    "SpecialService": {
-      "read:any": [
-        "*"
-      ]
-    },
-    "InActiveResource": {
-      "read:any": [
-        "*"
-      ]
-    },
-    "changeResourceStatus": {
-      "read:any": []
-    },
-    "News": {
-      "read:any": [
-        "_id",
-        "message",
-        "createdOn"
-      ]
-    },
-    "Notification": {
-      "read:any": [
-        "_id",
-        "message",
-        "createdOn"
-      ]
-    },
-    "Courier": {
-      "read:any": [
-        "_id",
-        "name",
-        "contactNo",
-        "email",
-        "address",
-        "city",
-        "state",
-        "country",
-        "createdOn",
-        "createdBy",
-        "pinCode",
-        "trackingId",
-        "courierServiceName",
-        "orderId",
-        "status"
-      ]
-    },
-    "Collector": {
-      "read:any": [
-        "_id",
-        "name",
-        "daiictId",
-        "contactNo",
-        "email",
-        "collectionCode",
-        "createdOn",
-        "createdBy",
-        "orderId",
-        "status"
-      ]
-    },
-    "AccessLevel": {
-      "read:any": []
-    },
-    "Role": {
-      "read:any": []
-    },
-    "Parameter": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "createdOn",
-        "createdBy",
-        "isActive"
-      ]
-    },
-    "CollectionType": {
-      "read:any": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "createdOn",
-        "createdBy",
-        "isActive",
-        "category"
-      ]
-    },
-    "Cart": {
-      "read:any": [
-        "_id",
-        "orderId",
-        "requestedBy",
-        "orders",
-        "createdOn",
-        "lastModified",
-        "lastModifiedBy",
-        "collectionTypeCost",
-        "ordersCost",
-        "totalCost",
-        "status",
-        "paymentType",
-        "isPaymentDone",
-        "paymentId",
-        "paymentCode",
-        "delivery",
-        "pickup",
-        "collectionType",
-        "validityErrors",
-        "cancelReason",
-        "statusChangeTime",
-        "comment"
-      ]
-    },
-    "CourierInfo": {
-      "read:any": []
-    },
-    "UserInfo": {
-      "read:any": [
-        "_id",
-        "user_inst_id",
-        "user_type",
-        "user_first_name",
-        "user_middle_name",
-        "user_last_name",
-        "user_sex",
-        "user_email_id",
-        "user_status",
-        "user_adr_contact_name",
-        "user_adr_line1",
-        "user_adr_line2",
-        "user_adr_line3",
-        "user_adr_city",
-        "user_adr_district",
-        "user_adr_state",
-        "user_adr_country",
-        "user_adr_pincode",
-        "user_adr_telno",
-        "user_adr_mobileno",
-        "user_adr_emailid",
-        "user_batch",
-        "user_programme"
-      ]
-    }
-  }
 }

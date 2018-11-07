@@ -39,7 +39,7 @@ const grantDefaultAdminAccess = () => {
                 });
         });
 
-
+    /* Denying access, user and userinfo readAny permission to Admins */
     let resource = resources.accessLevel;
     Object.keys(adminTypes)
         .forEach(adminType => {
@@ -75,6 +75,27 @@ const grantDefaultAdminAccess = () => {
                 //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
             }
         });
+
+
+    /* Granting order and cart update permission to Admins */
+    resource = resources.order;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.grant(adminTypes[adminType])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+            }
+        });
+
+    resource = resources.cart;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.grant(adminTypes[adminType])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+            }
+        });
+
 };
 
 const grantDefaultAccess = () => {
