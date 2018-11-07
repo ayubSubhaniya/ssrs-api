@@ -746,7 +746,23 @@
     },
     "admin": {
         "User": {
-            "read:any": []
+            "read:any": [],
+            "read:own": [
+                "name",
+                "secondaryEmail",
+                "contactNo",
+                "gender",
+                "programme",
+                "userType",
+                "isActive",
+                "requestedServices",
+                "notifications",
+                "daiictId",
+                "primaryEmail",
+                "createdOn",
+                "addresses",
+                "userInfo"
+            ]
         },
         "Order": {
             "read:any": [
@@ -930,7 +946,32 @@
             "read:any": []
         },
         "UserInfo": {
-            "read:any": []
+            "read:any": [],
+            "read:own": [
+                "_id",
+                "user_inst_id",
+                "user_type",
+                "user_first_name",
+                "user_middle_name",
+                "user_last_name",
+                "user_sex",
+                "user_email_id",
+                "user_status",
+                "user_adr_contact_name",
+                "user_adr_line1",
+                "user_adr_line2",
+                "user_adr_line3",
+                "user_adr_city",
+                "user_adr_district",
+                "user_adr_state",
+                "user_adr_country",
+                "user_adr_pincode",
+                "user_adr_telno",
+                "user_adr_mobileno",
+                "user_adr_emailid",
+                "user_batch",
+                "user_programme"
+            ]
         }
     }
 }

@@ -39,16 +39,16 @@ const grantDefaultAdminAccess = () => {
                 });
         });
 
-    /* Denying access, user and userinfo readAny permission to Admins */
+    /* Denying access, user and userinfo readAny permission
+        and granting readOwn permission for user and userInfo
+        to Admins 
+    */
     let resource = resources.accessLevel;
     Object.keys(adminTypes)
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.deny(adminTypes[adminType])
                     .readAny(resource, fieldAccess[resource][adminType]['canRead'])
-                    //.createAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
-                    //.deleteAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
-                    //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
             }
         });
 
@@ -57,10 +57,10 @@ const grantDefaultAdminAccess = () => {
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.deny(adminTypes[adminType])
-                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
-                //.createAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
-                //.deleteAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
-                //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead']);
+
+                accessControl.grant(adminTypes[adminType])
+                    .readOwn(resource, fieldAccess[resource][adminType]['canRead']);
             }
         });
 
@@ -69,10 +69,10 @@ const grantDefaultAdminAccess = () => {
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.deny(adminTypes[adminType])
-                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
-                //.createAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
-                //.deleteAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
-                //.updateAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead']);
+                
+                accessControl.grant(adminTypes[adminType])
+                    .readOwn(resource, fieldAccess[resource][adminType]['canRead']);
             }
         });
 
