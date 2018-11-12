@@ -27,7 +27,8 @@ const { accessControl } = require('./access');
 const { easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
-const { sendMail } = require('../configuration/mail');
+const { sendMail } = require('../configuration/mail'),
+    mailTemplates = require('../configuration/mailTemplates.json');
 
 //const dayToMilliSec = 86400000;
 const checkForOfflinePayment = async () => {
@@ -53,9 +54,15 @@ const checkForOfflinePayment = async () => {
             });
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let mailSubject = carts[i].orderId;
-            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has been cancelled due to delay in payment.`;
-            await sendMail(mailTo, mailSubject, mailText);
+            let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
+            let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
+            let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
+            let options = {
+                orderId: carts[i].orderId,
+                cartLength: carts[i].orders.length
+            }
+            let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
+            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for cancel*/
             const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
@@ -66,9 +73,17 @@ const checkForOfflinePayment = async () => {
             const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let mailSubject = carts[i].orderId;
-            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has a pending payment. Please pay fast in ${cancelledInDays} days to avoid auto cancellation. Payment code is ${carts[i].paymentCode}`;
-            await sendMail(mailTo, mailSubject, mailText);
+            let cc = mailTemplates['paymentPendingOffline'].cc;
+            let bcc = mailTemplates['paymentPendingOffline'].bcc;
+            let mailSubject = mailTemplates['paymentPendingOffline'].subject;
+            let options = {
+                orderId: carts[i].orderId,
+                cartLength: carts[i].orders.length,
+                cancelledInDays,
+                paymentCode: carts[i].paymentCode
+            }
+            let mailBody = mustache.render(mailTemplates['paymentPendingOffline'].body, options);
+            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
             const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'offline');
@@ -100,9 +115,15 @@ const checkForFailedOnlinePayment = async () => {
             });
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let mailSubject = carts[i].orderId;
-            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has been cancelled due to delay in payment.`;
-            await sendMail(mailTo, mailSubject, mailText);
+            let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
+            let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
+            let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
+            let options = {
+                orderId: carts[i].orderId,
+                cartLength: carts[i].orders.length
+            }
+            let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
+            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for cancel*/
             const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
@@ -111,10 +132,18 @@ const checkForFailedOnlinePayment = async () => {
             const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let mailSubject = carts[i].orderId;
-            let mailText = `Your order ${carts[i].orderId} with ${carts[i].orders.length} order(s) has a failed payment. Please pay fast in ${cancelledInDays} days to avoid auto cancellation.`;
-            await sendMail(mailTo, mailSubject, mailText);
-
+            let cc = mailTemplates['paymentPendingOnline'].cc;
+            let bcc = mailTemplates['paymentPendingOnline'].bcc;
+            let mailSubject = mailTemplates['paymentPendingOnline'].subject;
+            let options = {
+                orderId: carts[i].orderId,
+                cartLength: carts[i].orders.length,
+                cancelledInDays,
+                paymentCode: carts[i].paymentCode
+            }
+            let mailBody = mustache.render(mailTemplates['paymentPendingOnline'].body, options);
+            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
+            
             /*Generate notification for payment*/
             const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online');
             await notification.save();
@@ -907,10 +936,6 @@ module.exports = {
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
-                    let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
-                    let mailSubject = updatedCart.orderId;
-                    let mailText = `Your order ${updatedCart.orderId} with ${updatedCart.orders.length} order(s) has been placed. Please pay ${updatedCart.totalCost} rupees to process order. Payment code is ${updatedCart.paymentCode}`;
-
                     const cart = new Cart({
                         requestedBy: daiictId,
                         createdOn: user.createdOn,
@@ -919,7 +944,18 @@ module.exports = {
                     user.cartId = cart._id;
                     await user.save();
 
-                    await sendMail(mailTo, mailSubject, mailText);
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
+                    let cc = mailTemplates['orderPlaced'].cc;
+                    let bcc = mailTemplates['orderPlaced'].bcc;
+                    let mailSubject = mailTemplates['orderPlaced'].subject;
+                    let options = {
+                        orderId: updatedCart.orderId,
+                        cartLength: updatedCart.orders.length,
+                        totalCost: updatedCart.totalCost,
+                        paymentCode: updatedCart.paymentCode
+                    }
+                    let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
 
@@ -1116,9 +1152,15 @@ module.exports = {
                     await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
-                    let mailSubject = cartInDb.orderId;
-                    let mailText = `Your easy pay payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been failed. Please retry again.`;
-                    await sendMail(mailTo, mailSubject, mailText);
+                    let cc = mailTemplates['failedEasyPayPayment'].cc;
+                    let bcc = mailTemplates['failedEasyPayPayment'].bcc;
+                    let mailSubject = mailTemplates['failedEasyPayPayment'].subject;
+                    let options = {
+                        orderId: cartInDb.orderId,
+                        cartLength: cartInDb.orders.length,
+                    }
+                    let mailBody = mustache.render(mailTemplates['failedEasyPayPayment'].body, options);
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     return res.status(httpStatusCodes.BAD_REQUEST)
                         .json({ error: errorMessages.paymentFailed });
@@ -1197,9 +1239,16 @@ module.exports = {
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
-                    let mailSubject = cartInDb.orderId;
-                    let mailText = `Your easy pay payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been successful. Your order is in process. Transaction Id for payment is ${updatedCart.paymentId}.`;
-                    await sendMail(mailTo, mailSubject, mailText);
+                    let cc = mailTemplates['successfulEasyPayPayment'].cc;
+                    let bcc = mailTemplates['successfulEasyPayPayment'].bcc;
+                    let mailSubject = mailTemplates['successfulEasyPayPayment'].subject;
+                    let options = {
+                        orderId: cartInDb.orderId,
+                        cartLength: cartInDb.orders.length,
+                        paymentId: cartInDb.paymentId
+                    }
+                    let mailBody = mustache.render(mailTemplates['successfulEasyPayPayment'].body, options);
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
@@ -1275,10 +1324,15 @@ module.exports = {
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
-                    let mailSubject = cartInDb.orderId;
-                    let mailText = `Your payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been successful. Your order is in process.`;
-
-                    await sendMail(mailTo, mailSubject, mailText);
+                    let cc = mailTemplates['offlinePaymentAccepted'].cc;
+                    let bcc = mailTemplates['offlinePaymentAccepted'].bcc;
+                    let mailSubject = mailTemplates['offlinePaymentAccepted'].subject;
+                    let options = {
+                        orderId: cartInDb.orderId,
+                        cartLength: cartInDb.orders.length,
+                    }
+                    let mailBody = mustache.render(mailTemplates['offlinePaymentAccepted'].body, options);
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
@@ -1332,8 +1386,10 @@ module.exports = {
                 };
 
                 let mailTo = await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy }).user_email_id;
-                let mailSubject = cartInDb.orderId;
-                let mailText;
+                let cc = mailTemplates['orderCompleted-Delivery'].cc;
+                let bcc = mailTemplates['orderCompleted-Delivery'].bcc;
+                let mailSubject = mailTemplates['orderCompleted-Delivery'].subject;
+                let mailBody;
 
                 switch (cartUpdateAtt.status) {
                     case cartStatus.completed:
@@ -1364,7 +1420,13 @@ module.exports = {
                                 trackingId: cartUpdateAtt.trackingId
                             });
 
-                            mailText = `Your order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been sent for delivery through ${updatedDelivery.courierServiceName}. Tracking Id for delivery is ${updatedDelivery.trackingId}`;
+                            const options = {
+                                orderId: cartInDb.orderId,
+                                cartLength: cartInDb.orders.length,
+                                courierServiceName: updatedDelivery.courierServiceName,
+                                trackingId: updatedDelivery.trackingId
+                            }
+                            mailBody = mustache.render(mailTemplates['orderCompleted-Delivery'].body, options);
 
                             if (!updatedDelivery) {
                                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -1372,7 +1434,12 @@ module.exports = {
 
 
                         } else {
-                            mailText = `Your order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been sent for picked up successfully`;
+                            const options = {
+                                orderId: cartInDb.orderId,
+                                cartLength: cartInDb.orders.length,
+                            }
+                            mailBody = mustache.render(mailTemplates['orderCompleted-Pickup'].body, options);
+
                             await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.completed });
                         }
                         for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -1398,7 +1465,8 @@ module.exports = {
                 await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
 
-                await sendMail(mailTo, mailSubject, mailText);
+                await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
+                
                 if (updatedCart) {
 
                     // Generating notification
@@ -1448,16 +1516,12 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
 
-                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
-                    let mailSubject = cartInDb.orderId;
-                    let mailText = `Your order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been cancelled due to ${cartUpdateAtt.cancelReason}`;
-
                     if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
                         await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.cancel });
                     } else if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
                         await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.cancel });
                     }
-
+                                        
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.cancelled,
@@ -1484,7 +1548,17 @@ module.exports = {
                         cancelReason: cartUpdateAtt.cancelReason
                     });
 
-                    await sendMail(mailTo, mailSubject, mailText);
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let cc = mailTemplates['cancelReason'].cc;
+                    let bcc = mailTemplates['cancelReason'].bcc;
+                    let mailSubject = mailTemplates['cancelReason'].subject;
+                    const options = {
+                        orderId: cartInDb.orderId,
+                        cancelReason: cartInDb.cancelReason
+                    }
+                    let mailBody = mustache.render(mailTemplates['cancelReason'].body, options);
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
+                    
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason);
                     await notification.save();
 
