@@ -83,7 +83,7 @@
     },
     "orderCompleted-Delivery": {
         "templateId": "cmd0codl984jd6crf7cnfhsjamcdd",
-        "templateName": "Order Completed",
+        "templateName": "Order Completed - Delivery",
         "subject": "Order Completed",
         "cc": [],
         "bcc": [],
@@ -91,7 +91,7 @@
     },
     "orderCompleted-Pickup": {
         "templateId": "cmd0codl984jd6crf7cnfhoc0ldmfj",
-        "templateName": "Order Completed",
+        "templateName": "Order Completed - Pickup",
         "subject": "Order Completed",
         "cc": [],
         "bcc": [],
