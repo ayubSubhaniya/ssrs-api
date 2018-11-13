@@ -266,6 +266,7 @@ module.exports = {
                     .required(),
                 courierServiceName: Joi.string(),
                 trackingId: Joi.string(),
+                comment: Joi.string(),
             }),
         addOrderSchema: Joi.object()
             .keys({

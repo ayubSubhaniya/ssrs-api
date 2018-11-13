@@ -163,7 +163,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({});
             } else {
-                res.sendStatus(HttpStatus.NOT_FOUND);
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
@@ -215,8 +215,7 @@ module.exports = {
             .readOwn(resources.news);
 
         const newNews = {
-            message: req.body.message,
-            serviceId: req.body.serviceId
+            message: req.body.message
         };
 
         if (updateAnyPermission.granted) {
@@ -230,7 +229,7 @@ module.exports = {
                 res.status(HttpStatus.NOT_ACCEPTABLE);
             }
         } else if (updateOwnPermission.granted) {
-            const news = await News.updateOne({
+            const news = await News.findOneAndUpdate({
                 _id: newsId,
                 createdBy: daiictId
             }, newNews, { new: true });
@@ -240,7 +239,7 @@ module.exports = {
                 res.status(HttpStatus.OK)
                     .json({ news: filteredNews });
             } else {
-                res.status(HttpStatus.NOT_ACCEPTABLE);
+                res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);

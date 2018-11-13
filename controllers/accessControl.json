@@ -176,7 +176,8 @@
         "collectionType",
         "validityErrors",
         "cancelReason",
-        "statusChangeTime"
+        "statusChangeTime",
+        "comment"
       ],
       "create:own": [
         "orders",
@@ -472,6 +473,16 @@
         "*"
       ]
     },
+    "changeOrderStatus": {
+      "read:any": [],
+      "create:any": [],
+      "delete:any": [
+        "*"
+      ],
+      "update:any": [
+        "*"
+      ]
+    },
     "News": {
       "read:any": [
         "_id",
@@ -640,16 +651,20 @@
         "collectionType",
         "validityErrors",
         "cancelReason",
-        "statusChangeTime"
+        "statusChangeTime",
+        "comment"
       ],
-      "create:any": [],
+      "create:any": [
+        "comment"
+      ],
       "delete:any": [
         "*"
       ],
       "update:any": [
         "status",
         "cancelReason",
-        "statusChangeTime"
+        "statusChangeTime",
+        "comment"
       ]
     },
     "CourierInfo": {
@@ -741,6 +756,7 @@
   },
   "admin": {
     "User": {
+      "read:any": [],
       "read:own": [
         "name",
         "secondaryEmail",
@@ -756,33 +772,10 @@
         "createdOn",
         "addresses",
         "userInfo"
-      ],
-      "create:own": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "requestedServices",
-        "daiictId",
-        "primaryEmail",
-        "password"
-      ],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
-        "name",
-        "secondaryEmail",
-        "contactNo",
-        "gender",
-        "programme",
-        "requestedServices",
-        "password"
       ]
     },
     "Order": {
-      "read:own": [
+      "read:any": [
         "_id",
         "requestedBy",
         "cartId",
@@ -810,65 +803,20 @@
         "statusChangeTime",
         "holdReason"
       ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
+      "update:any": [
         "status",
         "cancelReason",
         "statusChangeTime"
       ]
     },
     "Service": {
-      "read:own": [
+      "read:any": [
         "_id",
         "name",
         "description",
         "createdOn",
         "createdBy",
         "isApplicationSpecific",
-        "isSpecialService",
-        "isActive",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "specialServiceUsers",
-        "availablePaymentModes",
-        "collectionTypes",
-        "allowedUserTypes",
-        "allowedProgrammes",
-        "allowedBatches",
-        "allowedUserStatus"
-      ],
-      "create:own": [
-        "name",
-        "description",
-        "isApplicationSpecific",
-        "isAvailableForAlumni",
-        "isCourierAvailable",
-        "isSpecialService",
-        "isActive",
-        "maxUnits",
-        "baseCharge",
-        "availableParameters",
-        "specialServiceUsers",
-        "availablePaymentModes",
-        "collectionTypes",
-        "allowedUserTypes",
-        "allowedProgrammes",
-        "allowedBatches",
-        "allowedUserStatus"
-      ],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
-        "name",
-        "description",
-        "isApplicationSpecific",
-        "isAvailableForAlumni",
-        "isCourierAvailable",
         "isSpecialService",
         "isActive",
         "maxUnits",
@@ -884,69 +832,40 @@
       ]
     },
     "SpecialService": {
-      "read:own": [
+      "read:any": [
         "*"
-      ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      ]
     },
     "InActiveResource": {
-      "read:own": [
+      "read:any": [
         "*"
-      ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      ]
     },
     "changeResourceStatus": {
-      "read:own": [],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
+      "read:any": []
+    },
+    "changeOrderStatus": {
+      "read:any": [],
+      "update:any": [
         "*"
       ]
     },
     "News": {
-      "read:own": [
+      "read:any": [
         "_id",
         "message",
         "createdOn"
-      ],
-      "create:own": [
-        "message"
-      ],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
-        "message"
       ]
     },
     "Notification": {
-      "read:own": [
+      "read:any": [
         "_id",
         "message",
         "createdOn"
-      ],
-      "create:own": [
-        "message"
-      ],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
-        "message"
       ]
     },
     "Courier": {
-      "read:own": [
+      "read:any": [
         "_id",
         "name",
         "contactNo",
@@ -962,15 +881,10 @@
         "courierServiceName",
         "orderId",
         "status"
-      ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      ]
     },
     "Collector": {
-      "read:own": [
+      "read:any": [
         "_id",
         "name",
         "daiictId",
@@ -981,86 +895,39 @@
         "createdBy",
         "orderId",
         "status"
-      ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      ]
     },
     "AccessLevel": {
-      "read:own": [],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      "read:any": []
     },
     "Role": {
-      "read:own": [],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      "read:any": []
     },
     "Parameter": {
-      "read:own": [
+      "read:any": [
         "_id",
         "name",
         "description",
         "baseCharge",
         "createdOn",
         "createdBy",
-        "isActive"
-      ],
-      "create:own": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge"
-      ],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
-        "name",
-        "description",
-        "baseCharge",
         "isActive"
       ]
     },
     "CollectionType": {
-      "read:own": [
+      "read:any": [
         "_id",
         "name",
         "description",
         "baseCharge",
         "createdOn",
         "createdBy",
-        "isActive",
-        "category"
-      ],
-      "create:own": [
-        "_id",
-        "name",
-        "description",
-        "baseCharge",
-        "category"
-      ],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
-        "name",
-        "description",
-        "baseCharge",
         "isActive",
         "category"
       ]
     },
     "Cart": {
-      "read:own": [
+      "read:any": [
         "_id",
         "orderId",
         "requestedBy",
@@ -1081,27 +948,21 @@
         "collectionType",
         "validityErrors",
         "cancelReason",
-        "statusChangeTime"
+        "statusChangeTime",
+        "comment"
       ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": [
+      "update:any": [
         "status",
         "cancelReason",
-        "statusChangeTime"
+        "statusChangeTime",
+        "comment"
       ]
     },
     "CourierInfo": {
-      "read:own": [],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      "read:any": []
     },
     "UserInfo": {
+      "read:any": [],
       "read:own": [
         "_id",
         "user_inst_id",
@@ -1126,12 +987,7 @@
         "user_adr_emailid",
         "user_batch",
         "user_programme"
-      ],
-      "create:own": [],
-      "delete:own": [
-        "*"
-      ],
-      "update:own": []
+      ]
     }
   }
 }

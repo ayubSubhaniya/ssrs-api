@@ -160,7 +160,7 @@ module.exports = {
 
             if (updatedCollectionType) {
                 const message = 'Collection type ' + updatedCollectionType.name + ' is now '
-                    + (updatedCollectionType.isActive ? 'activated' : 'deactivated');
+                    + (updatedCollectionType.isActive ? 'active' : 'inactive');
                 const news = new News({
                     message,
                     createdOn: new Date(),

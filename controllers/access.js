@@ -31,13 +31,80 @@ const grantDefaultAdminAccess = () => {
                 .forEach(adminType => {
                     if (adminTypes[adminType] !== adminTypes.superAdmin) {
                         accessControl.grant(adminTypes[adminType])
-                            .readOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead'])
-                            .createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
-                            .deleteOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
-                            .updateOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+                            .readAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead'])
+                            //.createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
+                            //.deleteOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
+                            //.updateOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
                     }
                 });
         });
+
+    /* Denying access, user and userinfo readAny permission
+        and granting readOwn permission for user and userInfo
+        to Admins
+    */
+    let resource = resources.accessLevel;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.deny(adminTypes[adminType])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
+            }
+        });
+
+    resource = resources.user;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.deny(adminTypes[adminType])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead']);
+
+                accessControl.grant(adminTypes[adminType])
+                    .readOwn(resource, fieldAccess[resource][adminType]['canRead']);
+            }
+        });
+
+    resource = resources.userInfo;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.deny(adminTypes[adminType])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead']);
+
+                accessControl.grant(adminTypes[adminType])
+                    .readOwn(resource, fieldAccess[resource][adminType]['canRead']);
+            }
+        });
+
+
+    /* Granting order and cart update permission to Admins */
+    resource = resources.order;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.grant(adminTypes[adminType])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+            }
+        });
+
+    resource = resources.cart;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.grant(adminTypes[adminType])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+            }
+        });
+
+    resource = resources.changeOrderStatus;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.grant(adminTypes[adminType])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+            }
+        });
+
 };
 
 const grantDefaultAccess = () => {

@@ -8,13 +8,14 @@ const PlacedCart = require('../models/placedCart');
 const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
 const Parameter = require('../models/parameter');
+const UserInfo = require('../models/userInfo');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
-
+const { sendMail } = require('../configuration/mail');
 
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits, user) => {
@@ -151,7 +152,6 @@ const getOrders = async (user, query, readableAttributes, parameterReadableAtt, 
 };
 
 module.exports = {
-    orderStatus,
 
     validateOrder,
 
@@ -302,9 +302,12 @@ module.exports = {
             .deleteOwn(resources.order);
 
         if (deleteOwnPermission.granted) {
-            const order = await Order.findById(orderId);
+            const order = await Order.findOne({
+                _id: orderId,
+                requestedBy: daiictId
+            });
 
-            if ((order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
+            if (order && (order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
@@ -364,6 +367,7 @@ module.exports = {
                             path: 'parameters',
                             select: readAnyParameterPermission.attributes
                         });
+                    await Cart.findByIdAndUpdate(orderInDB.cartId, { status: cartStatus.processing });
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
@@ -433,7 +437,7 @@ module.exports = {
         const { daiictId } = user;
         const { orderId } = req.params;
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.order);
 
@@ -441,7 +445,8 @@ module.exports = {
 
             const orderUpdateAtt = req.value.body;
 
-            const orderInDb = await Order.findById(orderId);
+            const orderInDb = await Order.findById(orderId)
+                .populate(['service', 'parameters']);
 
             if (!orderInDb) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -459,6 +464,20 @@ module.exports = {
                     .send(errorMessages.invalidStatusChange);
             }
 
+            const cart = await Cart.findById(orderInDb.cartId)
+                .populate({
+                    path: 'orders',
+                    select: 'status'
+                });
+
+            let parameters = [];
+            for (let i = 0; i < orderInDb.parameters.length; i++) {
+                parameters.push(orderInDb.parameters[i].name);
+            }
+
+            let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDb.requestedBy })).user_email_id;
+            let mailSubject = cart.orderId;
+            let mailText;
 
             switch (orderUpdateAtt.status) {
                 case orderStatus.ready:
@@ -469,6 +488,13 @@ module.exports = {
                             by: daiictId
                         }
                     };
+
+                    if (parameters.length > 0) {
+                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} with parameter(s) ${parameters.join(',')} is ready`;
+                    } else {
+                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} is ready`;
+                    }
+
                     break;
                 case orderStatus.onHold:
                     updateAtt.status = orderStatus.onHold;
@@ -479,18 +505,20 @@ module.exports = {
                             by: daiictId
                         }
                     };
+
+                    if (parameters.length > 0) {
+                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} with parameter(s) ${parameters.join(',')} has been put on hold due to ${updateAtt.holdReason}`;
+                    } else {
+                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} has been put on hold due to ${updateAtt.holdReason}`;
+                    }
+                    cart.status = cartStatus.onHold;
+
                     break;
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
 
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
-
-            const cart = await Cart.findById(orderInDb.cartId)
-                .populate({
-                    path: 'orders',
-                    select: 'status'
-                });
 
             let allReady = true;
             for (let i = 0; i < cart.orders.length; i++) {
@@ -516,9 +544,20 @@ module.exports = {
 
                 const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
                 await notification.save();
+
             }
             await cart.save();
 
+            await sendMail(mailTo, mailSubject, mailText);
+
+            if (allReady) {
+                if (cart.collectionTypeCategory === collectionTypes.delivery) {
+                    mailText = `Your order ${cart.orderId} with ${cart.orders.length} order(s) is ready and it will be delivered shortly.`;
+                } else {
+                    mailText = `Your order ${cart.orderId} with ${cart.orders.length} order(s) is ready. Please pickup.`;
+                }
+                await sendMail(mailTo, mailSubject, mailText);
+            }
 
             if (updatedOrder) {
                 const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status);
@@ -542,7 +581,7 @@ module.exports = {
         const { orderId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
 
         if (changeStatusPermission.granted) {
             const updatedOrder = req.value.body;
@@ -556,7 +595,9 @@ module.exports = {
                 }
             };
 
-            const orderInDB = await Order.findById(orderId);
+            const orderInDB = await Order.findById(orderId)
+                .populate(['service', 'parameters']);
+
             if (orderInDB) {
 
                 if (orderInDB.status >= orderStatus.placed && orderInDB.status < orderStatus.completed) {
@@ -567,7 +608,7 @@ module.exports = {
                         cancelReason: updatedOrder.cancelReason
                     });
 
-                    const notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
                     await notification.save();
 
                     const cart = await Cart.findById(orderInDB.cartId)
@@ -575,6 +616,21 @@ module.exports = {
                             path: 'orders',
                             select: 'status'
                         });
+
+                    let parameters = [];
+                    for (let i = 0; i < orderInDB.parameters.length; i++) {
+                        parameters.push(orderInDB.parameters[i].name);
+                    }
+
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
+                    let mailSubject = cart.orderId;
+                    let mailText;
+
+                    if (parameters.length > 0) {
+                        mailText = `Your order ${cart.orderId} of service  ${orderInDB.service.name} with parameter(s) ${parameters.join(',')} has been cancelled due to ${updatedOrder.cancelReason}`;
+                    } else {
+                        mailText = `Your order ${cart.orderId} of service  ${orderInDB.service.name} has been cancelled due to ${updatedOrder.cancelReason}`;
+                    }
 
                     let allReady = true;
                     let allCancel = true;
@@ -602,8 +658,7 @@ module.exports = {
                             };
                         }
 
-                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
-                        await notification.save();
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
                     }
 
                     if (allCancel) {
@@ -625,10 +680,12 @@ module.exports = {
                             await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
                         }
 
-                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
-                        await notification.save();
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
                     }
                     await cart.save();
+                    await notification.save();
+
+                    await sendMail(mailTo, mailSubject, mailText);
 
                     res.status(httpStatusCodes.OK)
                         .json({});
