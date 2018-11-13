@@ -14,7 +14,8 @@ html(lang='en')
                     strong
             center
                 font(size='+3')
-                    strong ₹ 100
+                    strong
+                    |  #{order.amount}
             p
             h1.display-3 Payment Failed
             p.lead
@@ -27,4 +28,4 @@ html(lang='en')
             p(style='color:#808080')
                 | #{order.date}
             p.lead
-                a.btn.btn-primary.btn-sm(href="http://ssrs.daiict.ac.in/", role='button') Continue to homepage
+                a.btn.btn-primary.btn-sm(href="https://ssrs.daiict.ac.in/", role='button') Continue to homepage
