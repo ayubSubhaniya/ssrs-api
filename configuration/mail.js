@@ -32,9 +32,11 @@ smtpTransport.verify(function (error, success) {
     }
 });
 
-const sendMail = async (toId, subject, text, html) => {
+const sendMail = async (toId, cc, bcc, subject, html, text) => {
     const info = await smtpTransport.sendMail({
         to: `${toId}@${daiictMailDomainName}`,
+        cc,
+        bcc,
         subject,
         text,
         html
