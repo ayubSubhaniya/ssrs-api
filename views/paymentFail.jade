@@ -1,0 +1,30 @@
+doctype html
+html(lang='en')
+    head
+        title SSRS-DAIICT
+        link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css')
+        script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js')
+        script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js')
+        link(rel='stylesheet', href='https://use.fontawesome.com/releases/v5.5.0/css/all.css', integrity='sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU', crossorigin='anonymous')
+    body
+        .jumbotron.text-xs-center
+            i.far.fa-times-circle.fa-align-center
+            p.lead
+                font(size='+3')
+                    strong
+            center
+                font(size='+3')
+                    strong ₹ 100
+            p
+            h1.display-3 Payment Failed
+            p.lead
+                strong Order Id
+                |  #{order.orderId}
+            p.lead
+                strong Transaction Id
+                |  #{order.transactionId}
+            hr
+            p(style='color:#808080')
+                | #{order.date}
+            p.lead
+                a.btn.btn-primary.btn-sm(href="http://ssrs-daiict.herokuapp.com/", role='button') Continue to homepage
