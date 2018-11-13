@@ -627,6 +627,27 @@ module.exports = {
             canUpdate: []
         },
     },
+    changeOrderStatus: {
+        superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [
+                '*'
+            ],
+        },
+        admin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [
+                '*'
+            ],
+        },
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
+        },
+    },
     Collector: {
         superAdmin: {
             canRead: [

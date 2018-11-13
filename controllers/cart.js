@@ -143,7 +143,7 @@ const checkForFailedOnlinePayment = async () => {
             }
             let mailBody = mustache.render(mailTemplates['paymentPendingOnline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-            
+
             /*Generate notification for payment*/
             const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online');
             await notification.save();
@@ -250,7 +250,7 @@ module.exports = {
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
 
-        if (readOwnCartPermission.granted) {
+        if (readOwnCartPermission.granted && user.userType===userTypes.student) {
 
             const cart = await Cart.findById(cartId)
                 .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
@@ -539,7 +539,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted) {
+        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
             const delivery = new Delivery(req.value.body);
             delivery.createdOn = timeStamp;
             delivery.createdBy = daiictId;
@@ -616,7 +616,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted) {
+        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
             const delivery = req.value.body;
 
             const cart = await Cart.findById(cartId)
@@ -689,7 +689,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted) {
+        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
             const pickup = new Collector(req.value.body);
             pickup.createdOn = timeStamp;
             pickup.createdBy = daiictId;
@@ -765,7 +765,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted) {
+        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
             const pickup = req.value.body;
 
             const cart = await Cart.findById(cartId)
@@ -831,7 +831,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted) {
+        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
                 .populate({
@@ -953,7 +953,7 @@ module.exports = {
                         cartLength: updatedCart.orders.length,
                         totalCost: updatedCart.totalCost,
                         paymentCode: updatedCart.paymentCode
-                    }
+                    };
                     let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -987,7 +987,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted) {
+        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
                 .populate({
@@ -1158,7 +1158,7 @@ module.exports = {
                     let options = {
                         orderId: cartInDb.orderId,
                         cartLength: cartInDb.orders.length,
-                    }
+                    };
                     let mailBody = mustache.render(mailTemplates['failedEasyPayPayment'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -1251,7 +1251,7 @@ module.exports = {
                         orderId: cartInDb.orderId,
                         cartLength: cartInDb.orders.length,
                         paymentId: cartInDb.paymentId
-                    }
+                    };
                     let mailBody = mustache.render(mailTemplates['successfulEasyPayPayment'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -1283,7 +1283,7 @@ module.exports = {
         const { paymentCode } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
 
@@ -1340,7 +1340,7 @@ module.exports = {
                     let options = {
                         orderId: cartInDb.orderId,
                         cartLength: cartInDb.orders.length,
-                    }
+                    };
                     let mailBody = mustache.render(mailTemplates['offlinePaymentAccepted'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -1368,7 +1368,7 @@ module.exports = {
         const { cartId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
         const readAnyOrderPermission = accessControl.can(user.userType)
@@ -1435,7 +1435,7 @@ module.exports = {
                                 cartLength: cartInDb.orders.length,
                                 courierServiceName: updatedDelivery.courierServiceName,
                                 trackingId: updatedDelivery.trackingId
-                            }
+                            };
                             mailBody = mustache.render(mailTemplates['orderCompleted-Delivery'].body, options);
 
                             if (!updatedDelivery) {
@@ -1447,7 +1447,7 @@ module.exports = {
                             const options = {
                                 orderId: cartInDb.orderId,
                                 cartLength: cartInDb.orders.length,
-                            }
+                            };
                             mailBody = mustache.render(mailTemplates['orderCompleted-Pickup'].body, options);
 
                             await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.completed });
@@ -1476,7 +1476,7 @@ module.exports = {
                 const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
 
                 await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-                
+
                 if (updatedCart) {
 
                     // Generating notification
@@ -1506,7 +1506,7 @@ module.exports = {
         const { cartId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
 
         if (changeStatusPermission.granted) {
 
@@ -1531,7 +1531,7 @@ module.exports = {
                     } else if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
                         await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.cancel });
                     }
-                                        
+
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.cancelled,
@@ -1565,10 +1565,10 @@ module.exports = {
                     const options = {
                         orderId: cartInDb.orderId,
                         cancelReason: cartInDb.cancelReason
-                    }
+                    };
                     let mailBody = mustache.render(mailTemplates['cancelReason'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-                    
+
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason);
                     await notification.save();
 

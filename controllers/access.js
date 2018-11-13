@@ -41,7 +41,7 @@ const grantDefaultAdminAccess = () => {
 
     /* Denying access, user and userinfo readAny permission
         and granting readOwn permission for user and userInfo
-        to Admins 
+        to Admins
     */
     let resource = resources.accessLevel;
     Object.keys(adminTypes)
@@ -70,7 +70,7 @@ const grantDefaultAdminAccess = () => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.deny(adminTypes[adminType])
                     .readAny(resource, fieldAccess[resource][adminType]['canRead']);
-                
+
                 accessControl.grant(adminTypes[adminType])
                     .readOwn(resource, fieldAccess[resource][adminType]['canRead']);
             }
@@ -88,6 +88,15 @@ const grantDefaultAdminAccess = () => {
         });
 
     resource = resources.cart;
+    Object.keys(adminTypes)
+        .forEach(adminType => {
+            if (adminTypes[adminType] !== adminTypes.superAdmin) {
+                accessControl.grant(adminTypes[adminType])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+            }
+        });
+
+    resource = resources.changeOrderStatus;
     Object.keys(adminTypes)
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {

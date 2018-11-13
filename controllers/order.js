@@ -302,9 +302,12 @@ module.exports = {
             .deleteOwn(resources.order);
 
         if (deleteOwnPermission.granted) {
-            const order = await Order.findById(orderId);
+            const order = await Order.findOne({
+                _id: orderId,
+                requestedBy: daiictId
+            });
 
-            if ((order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
+            if (order && (order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
@@ -364,7 +367,7 @@ module.exports = {
                             path: 'parameters',
                             select: readAnyParameterPermission.attributes
                         });
-                    await Cart.findByIdAndUpdate(orderInDB.cartId,{status:cartStatus.processing});
+                    await Cart.findByIdAndUpdate(orderInDB.cartId, { status: cartStatus.processing });
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
@@ -434,7 +437,7 @@ module.exports = {
         const { daiictId } = user;
         const { orderId } = req.params;
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.order);
 
@@ -578,7 +581,7 @@ module.exports = {
         const { orderId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
 
         if (changeStatusPermission.granted) {
             const updatedOrder = req.value.body;
