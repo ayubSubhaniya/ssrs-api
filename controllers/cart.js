@@ -24,7 +24,7 @@ const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
+const { homePage,easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail');
@@ -1120,8 +1120,13 @@ module.exports = {
                     let mailText = `Your easy pay payment of order ${cartInDb.orderId} with ${cartInDb.orders.length} order(s) has been failed. Please retry again.`;
                     await sendMail(mailTo, mailSubject, mailText);
 
-                    return res.status(httpStatusCodes.BAD_REQUEST)
-                        .json({ error: errorMessages.paymentFailed });
+                    const renderInfo = {};
+                    renderInfo.orderId = cartInDb.orderId;
+                    renderInfo.homePage = homePage;
+                    renderInfo.transactionnId = uniqueRefNo;
+                    renderInfo.date = new Date().toDateString();
+
+                    return res.render('paymentFail',{order:renderInfo});
                 }
 
                 const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
@@ -1204,8 +1209,13 @@ module.exports = {
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
 
-                    res.status(httpStatusCodes.OK)
-                        .json({});
+                    const renderInfo = {};
+                    renderInfo.orderId = cartInDb.orderId;
+                    renderInfo.homePage = homePage;
+                    renderInfo.transactionnId = uniqueRefNo;
+                    renderInfo.date = new Date().toDateString();
+
+                    return res.render('paymentSuccess',{order:renderInfo});
 
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
