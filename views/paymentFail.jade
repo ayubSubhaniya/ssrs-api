@@ -6,26 +6,84 @@ html(lang='en')
         script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js')
         script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js')
         link(rel='stylesheet', href='https://use.fontawesome.com/releases/v5.5.0/css/all.css', integrity='sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU', crossorigin='anonymous')
+        style.
+            svg {
+            width: 100px;
+            display: block;
+            margin: 40px auto 0;
+            }
+            .path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 0;
+            }
+            .path .circle {
+            -webkit-animation: dash .9s ease-in-out;
+            animation: dash .9s ease-in-out;
+            }
+            .path .line {
+            stroke-dashoffset: 1000;
+            -webkit-animation: dash .9s .35s ease-in-out forwards;
+            animation: dash .9s .35s ease-in-out forwards;
+            }
+            .path .check {
+            stroke-dashoffset: -100;
+            -webkit-animation: dash-check .9s .35s ease-in-out forwards;
+            animation: dash-check .9s .35s ease-in-out forwards;
+            }
+            @-webkit-keyframes dash {
+            0% {
+            stroke-dashoffset: 1000;
+            }
+            100% {
+            stroke-dashoffset: 0;
+            }
+            }
+            @keyframes dash {
+            0% {
+            stroke-dashoffset: 1000;
+            }
+            100% {
+            stroke-dashoffset: 0;
+            }
+            }
+            @-webkit-keyframes dash-check {
+            0% {
+            stroke-dashoffset: -100;
+            }
+            100% {
+            stroke-dashoffset: 900;
+            }
+            }
+            @keyframes dash-check {
+            0% {
+            stroke-dashoffset: -100;
+            }
+            100% {
+            stroke-dashoffset: 900;
+            }
+            }
     body
         .jumbotron.text-xs-center
-            i.far.fa-times-circle.fa-align-center
+            div
+                svg(version='1.1', xmlns='http://www.w3.org/2000/svg', viewBox='0 0 130.2 130.2')
+                    circle.path.circle(fill='none', stroke='#d9534f', stroke-width='6', stroke-miterlimit='10', cx='65.1', cy='65.1', r='62.1')
+                    line.path.line(fill='none', stroke='#d9534f', stroke-width='6', stroke-linecap='round', stroke-miterlimit='10', x1='40', y1='45', x2='90', y2='90')
+                    line.path.line(fill='none', stroke='#d9534f', stroke-width='6', stroke-linecap='round', stroke-miterlimit='10', x1='90', y1='45', x2='40', y2='90')
             p.lead
                 font(size='+3')
                     strong
             center
-                font(size='+3')
-                    strong
-                    | #{order.amount}
+                font(style='font-family: DejaVu Sans;', size='+3') ₹ #{order.amount}
             p
-            h1.display-3 Payment Failed
-            p.lead
-                strong Order Id
+            p.display-3(style='text-align: center; font-family: cursive; font-style: italic') Payment failed!
+            p.display-3(style="text-align: center; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif")
+                strong Order Id:
                 |  #{order.orderId}
-            p.lead
-                strong Transaction Id
+                br
+                strong Transaction Id:
                 |  #{order.transactionId}
+            p(style="color:#808080; text-align: center; font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif")
+                |  #{order.date}
             hr
-            p(style='color:#808080')
-                | #{order.date}
-            p.lead
-                a.btn.btn-primary.btn-sm(href="http://ssrs-daiict.herokuapp.com/", role='button') Continue to homepage
+            p(style='text-align: center')
+                a.btn.btn-danger.btn-lg(href='http://ssrs-daiict.herokuapp.com/', role='button') Go back and Retry
