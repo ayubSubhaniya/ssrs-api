@@ -25,6 +25,21 @@ const cartSchema = new Schema({
     paymentCode: {
         type: String,
     },
+    paymentStatus: {
+        type:Boolean,
+        default:false
+    },
+    paymentFailHistory:[{
+       paymentId:{
+           type:String,
+       },
+       paymentDate:{
+            type:String,
+       },
+        paymentType:{
+            type:String,
+        },
+    }],
     collectionType: {
         type: Schema.Types.ObjectId,
         ref: 'collectionType'

@@ -1148,6 +1148,13 @@ module.exports = {
                                 time: new Date(),
                                 by: systemAdmin
                             }
+                        },
+                        '$push':{
+                            'paymentFailHistory':{
+                                paymentId:uniqueRefNo,
+                                paymentDate:transactionDate,
+                                paymentType:'EasyPay'
+                            }
                         }
                     };
                     await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
@@ -1166,7 +1173,7 @@ module.exports = {
                     const renderInfo = {};
                     renderInfo.orderId = cartInDb.orderId;
                     renderInfo.homePage = homePage;
-                    renderInfo.transactionnId = uniqueRefNo;
+                    renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
 
                     return res.render('paymentFail',{order:renderInfo});
@@ -1176,7 +1183,8 @@ module.exports = {
                 if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
 
                     const cartUpdateAtt = {
-                        paymentId: uniqueRefNo
+                        paymentId: uniqueRefNo,
+                        paymentStatus:true
                     };
 
                     cartUpdateAtt.status = cartStatus.processing;
@@ -1262,7 +1270,7 @@ module.exports = {
                     const renderInfo = {};
                     renderInfo.orderId = cartInDb.orderId;
                     renderInfo.homePage = homePage;
-                    renderInfo.transactionnId = uniqueRefNo;
+                    renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
 
                     return res.render('paymentSuccess',{order:renderInfo});
