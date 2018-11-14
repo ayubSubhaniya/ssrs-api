@@ -1175,6 +1175,7 @@ module.exports = {
                     renderInfo.homePage = homePage;
                     renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
+                    renderInfo.amount = totalAmount;
 
                     return res.render('paymentFail',{order:renderInfo});
                 }
@@ -1272,6 +1273,7 @@ module.exports = {
                     renderInfo.homePage = homePage;
                     renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
+                    renderInfo.amount = totalAmount;
 
                     return res.render('paymentSuccess',{order:renderInfo});
 
