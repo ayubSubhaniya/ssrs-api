@@ -1,4 +1,5 @@
 const httpStatusCodes = require('http-status-codes');
+const mustache = require('mustache');
 
 const Service = require('../models/service');
 const Order = require('../models/order');
@@ -15,7 +16,9 @@ const { accessControl } = require('./access');
 const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
-const { sendMail } = require('../configuration/mail');
+
+const { sendMail } = require('../configuration/mail'),
+    mailTemplates = require('../configuration/mailTemplates.json');
 
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits, user) => {
@@ -617,21 +620,6 @@ module.exports = {
                             select: 'status'
                         });
 
-                    let parameters = [];
-                    for (let i = 0; i < orderInDB.parameters.length; i++) {
-                        parameters.push(orderInDB.parameters[i].name);
-                    }
-
-                    let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
-                    let mailSubject = cart.orderId;
-                    let mailText;
-
-                    if (parameters.length > 0) {
-                        mailText = `Your order ${cart.orderId} of service  ${orderInDB.service.name} with parameter(s) ${parameters.join(',')} has been cancelled due to ${updatedOrder.cancelReason}`;
-                    } else {
-                        mailText = `Your order ${cart.orderId} of service  ${orderInDB.service.name} has been cancelled due to ${updatedOrder.cancelReason}`;
-                    }
-
                     let allReady = true;
                     let allCancel = true;
                     for (let i = 0; i < cart.orders.length; i++) {
@@ -682,10 +670,55 @@ module.exports = {
 
                         notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
                     }
+
                     await cart.save();
+
                     await notification.save();
 
-                    await sendMail(mailTo, mailSubject, mailText);
+                    let templateName = 'cancelOrder';
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
+                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let options = {
+                        orderId: cart.orderId,
+                        cancelReason: updatedOrder.cancelReason
+                    };
+                    let mailBody = mustache.render(body, options);
+                    await sendMail(mailTo, cc, bcc, subject, mailBody);
+
+                    if (allReady){
+                        if (cart.collectionTypeCategory === collectionTypes.delivery) {
+                            let templateName = 'orderReady-Delivery';
+                            let {cc,bcc,subject,body} = mailTemplates[templateName];
+                            let options = {
+                                orderId: cart.orderId,
+                                cartLength: cart.orders.length
+                            };
+                            let mailBody = mustache.render(body, options);
+                            await sendMail(mailTo, cc, bcc, subject, mailBody);
+                        } else {
+                            let templateName = 'orderReady-Pickup';
+                            let {cc,bcc,subject,body} = mailTemplates[templateName];
+                            let options = {
+                                orderId: cart.orderId,
+                                cartLength: cart.orders.length
+                            };
+                            let mailBody = mustache.render(body, options);
+                            await sendMail(mailTo, cc, bcc, subject, mailBody);
+                        }
+                    }
+
+                    if (allCancel){
+                        let templateName = 'cancelCart';
+                        let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
+                        let {cc,bcc,subject,body} = mailTemplates[templateName];
+                        let options = {
+                            orderId: cart.orderId,
+                            cancelReason: updatedOrder.cancelReason,
+                            serviceName: orderInDB.service.name
+                        };
+                        let mailBody = mustache.render(body, options);
+                        await sendMail(mailTo, cc, bcc, subject, mailBody);
+                    }
 
                     res.status(httpStatusCodes.OK)
                         .json({});

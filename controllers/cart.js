@@ -1,5 +1,6 @@
 const httpStatusCodes = require('http-status-codes');
 const nodeSchedule = require('node-cron');
+const mustache = require('mustache');
 
 const { orderNoGeneratorSecret } = require('../configuration');
 const orderid = require('order-id')(orderNoGeneratorSecret);
@@ -60,7 +61,7 @@ const checkForOfflinePayment = async () => {
             let options = {
                 orderId: carts[i].orderId,
                 cartLength: carts[i].orders.length
-            }
+            };
             let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -81,7 +82,7 @@ const checkForOfflinePayment = async () => {
                 cartLength: carts[i].orders.length,
                 cancelledInDays,
                 paymentCode: carts[i].paymentCode
-            }
+            };
             let mailBody = mustache.render(mailTemplates['paymentPendingOffline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 

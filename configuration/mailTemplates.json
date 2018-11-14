@@ -1,108 +1,132 @@
 {
-    "signUp": {
-        "templateId": "5bhfnj67kcndhrknz25gdhctn",
-        "templateName": "Sign up",
-        "subject": "Verify your Email account",
-        "cc": [],
-        "bcc": [],
-        "body": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email.<br><a href={{link}}>Click here to verify</a>"
-    },
-    "forgetPassword": {
-        "templateId": "6bhjnkolcdswxlz85co4h7c2b0p",
-        "templateName": "Forget Password",
-        "subject": "Password Reset Link",
-        "cc": [
-            "003harsh008@gmail.com"
-        ],
-        "bcc": [],
-        "body": "Hello {{daiictId}}, <br>Please click on the link below to reset your password. <br><a href={{link}}>Click here to reset password</a>"
-    },
-    "passwordChanged": {
-        "templateId": "c8ks30lck7cjkrknz25c4l0dh",
-        "templateName": "Password successfully changed",
-        "subject": "Password successfully changed",
-        "cc": [],
-        "bcc": [],
-        "body": "Hello,<br><p>This is a confirmation mail for successful change in password for your account - {{daiictId}}<p>"
-    },
-    "orderCancel-PaymentDelay": {
-        "templateId": "xlso9lcingdjc98jf87chd8i",
-        "templateName": "Order cancel due to payment delay",
-        "subject": "Order has been cancelled",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} with {{cartLength}} order(s) has been cancelled due to delay in payment."
-    },
-    "pendingPaymentOffline": {
-        "templateId": "ids9scfjckd8skcs0xlzz7ssc9",
-        "templateName": "Offline Payment Pending",
-        "subject": "Reminder - Payment Pending",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} with {{cartLength}} order(s) has a pending payment. Please pay fast in {{cancelledInDays}} days to avoid auto cancellation.\nPayment code is {{paymentCode}}"
-    },
-    "pendingPaymentOnline": {
-        "templateId": "dhc8djnf9cmf04mc9rd5s4fx13",
-        "templateName": "Online Payment Pending",
-        "subject": "Reminder - Payment Pending",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} with {{cartLength}} order(s) has a failed payment. Please pay fast in {{cancelledInDays}} days to avoid auto cancellation.\nPayment code is {{paymentCode}}."
-    },
-    "orderPlaced": {
-        "templateId": "djf9dcmf9ssms0xms9ddd3n30d",
-        "templateName": "Order Placed",
-        "subject": "Order placed",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} with {{cartLength}} order(s) has been placed. Please pay ₹ {{totalCost}} to process order.\nPayment code is {{paymentCode}}."
-    },
-    "failedEasyPayPayment": {
-        "templateId": "knduc84kc9krns80m48cn48nc8",
-        "templateName": "EasyPay Payment Failed",
-        "subject": "Payment failed",
-        "cc": [],
-        "bcc": [],
-        "body": "Your EasyPay payment for order {{orderId}} with {{cartLength}} order(s) has failed. Please try again."
-    },
-    "successfulEasyPayPayment": {
-        "templateId": "kndfgbcur8dn880m48cn48nc8",
-        "templateName": "EasyPay Payment Successful",
-        "subject": "Payment successful",
-        "cc": [],
-        "bcc": [],
-        "body": "Your EasyPay payment for order {{orderId}} with {{cartLength}} order(s) has been successful. Your order is in process now. Transaction Id for payment is {{paymentId}}."
-    },
-    "offlinePaymentAccepted": {
-        "templateId": "jsjdkmckdlo94a89xmd674nc",
-        "templateName": "Offline Payment Accepted",
-        "subject": "Payment successful",
-        "cc": [],
-        "bcc": [],
-        "body": "Your payment of order {{orderId}} with {{cartLength}} order(s) has been successful. Your order is in process now."
-    },
-    "orderCompleted-Delivery": {
-        "templateId": "cmd0codl984jd6crf7cnfhsjamcdd",
-        "templateName": "Order Completed - Delivery",
-        "subject": "Order Completed",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} with {{cartLength}} order(s) has been dispatched through {{courierServiceName}}. Tracking Id for delivery is {{trackingId}}. "
-    },
-    "orderCompleted-Pickup": {
-        "templateId": "cmd0codl984jd6crf7cnfhoc0ldmfj",
-        "templateName": "Order Completed - Pickup",
-        "subject": "Order Completed",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} with {{cartLength}} order(s) has been picked up successfully."
-    },
-    "cancelCart": {
-        "templateId": "8ghfc7nc9mngj8krknz2584dh",
-        "templateName": "Cart Cancel",
-        "subject": "Order cancelled",
-        "cc": [],
-        "bcc": [],
-        "body": "Your order {{orderId}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
-    }
+  "signUp": {
+    "templateId": "5bhfnj67kcndhrknz25gdhctn",
+    "templateName": "Sign up",
+    "subject": "Verify your Email account",
+    "cc": [],
+    "bcc": [],
+    "body": "Welcome to Student Service Request System - DAIICT! <br><br> Please click on the below mentioned link to verify your email.<br><a href={{link}}>Click here to verify</a>"
+  },
+  "forgetPassword": {
+    "templateId": "6bhjnkolcdswxlz85co4h7c2b0p",
+    "templateName": "Forget Password",
+    "subject": "Password Reset Link",
+    "cc": [
+      "003harsh008@gmail.com"
+    ],
+    "bcc": [],
+    "body": "Hello {{daiictId}}, <br>Please click on the link below to reset your password. <br><a href={{link}}>Click here to reset password</a>"
+  },
+  "passwordChanged": {
+    "templateId": "c8ks30lck7cjkrknz25c4l0dh",
+    "templateName": "Password successfully changed",
+    "subject": "Password successfully changed",
+    "cc": [],
+    "bcc": [],
+    "body": "Hello,<br><p>This is a confirmation mail for successful change in password for your account - {{daiictId}}<p>"
+  },
+  "orderCancel-PaymentDelay": {
+    "templateId": "xlso9lcingdjc98jf87chd8i",
+    "templateName": "Order cancel due to payment delay",
+    "subject": "Order has been cancelled",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} with {{cartLength}} order(s) has been cancelled due to delay in payment."
+  },
+  "pendingPaymentOffline": {
+    "templateId": "ids9scfjckd8skcs0xlzz7ssc9",
+    "templateName": "Offline Payment Pending",
+    "subject": "Reminder - Payment Pending",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} with {{cartLength}} order(s) has a pending payment. Please pay fast in {{cancelledInDays}} days to avoid auto cancellation.\nPayment code is {{paymentCode}}"
+  },
+  "pendingPaymentOnline": {
+    "templateId": "dhc8djnf9cmf04mc9rd5s4fx13",
+    "templateName": "Online Payment Pending",
+    "subject": "Reminder - Payment Pending",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} with {{cartLength}} order(s) has a failed payment. Please pay fast in {{cancelledInDays}} days to avoid auto cancellation.\nPayment code is {{paymentCode}}."
+  },
+  "orderPlaced": {
+    "templateId": "djf9dcmf9ssms0xms9ddd3n30d",
+    "templateName": "Order Placed",
+    "subject": "Order placed",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} with {{cartLength}} order(s) has been placed. Please pay ₹ {{totalCost}} to process order.\nPayment code is {{paymentCode}}."
+  },
+  "failedEasyPayPayment": {
+    "templateId": "knduc84kc9krns80m48cn48nc8",
+    "templateName": "EasyPay Payment Failed",
+    "subject": "Payment failed",
+    "cc": [],
+    "bcc": [],
+    "body": "Your EasyPay payment for order {{orderId}} with {{cartLength}} order(s) has failed. Please try again."
+  },
+  "successfulEasyPayPayment": {
+    "templateId": "kndfgbcur8dn880m48cn48nc8",
+    "templateName": "EasyPay Payment Successful",
+    "subject": "Payment successful",
+    "cc": [],
+    "bcc": [],
+    "body": "Your EasyPay payment for order {{orderId}} with {{cartLength}} order(s) has been successful. Your order is in process now. Transaction Id for payment is {{paymentId}}."
+  },
+  "offlinePaymentAccepted": {
+    "templateId": "jsjdkmckdlo94a89xmd674nc",
+    "templateName": "Offline Payment Accepted",
+    "subject": "Payment successful",
+    "cc": [],
+    "bcc": [],
+    "body": "Your payment of order {{orderId}} with {{cartLength}} order(s) has been successful. Your order is in process now."
+  },
+  "orderCompleted-Delivery": {
+    "templateId": "cmd0codl984jd6crf7cnfhsjamcdd",
+    "templateName": "Order Completed - Delivery",
+    "subject": "Order Completed",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} with {{cartLength}} order(s) has been dispatched through {{courierServiceName}}. Tracking Id for delivery is {{trackingId}}. "
+  },
+  "orderCompleted-Pickup": {
+    "templateId": "cmd0codl984jd6crf7cnfhoc0ldmfj",
+    "templateName": "Order Completed - Pickup",
+    "subject": "Order Completed",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} with {{cartLength}} order(s) has been picked up successfully."
+  },
+  "orderReady-Delivery": {
+    "templateId": "ljcjacoaca6capkcna6cac",
+    "templateName": "Order Ready - Delivery",
+    "subject": "Order Ready",
+    "cc": [],
+    "bcc": [],
+    "body": "`Your order {{cart.orderId}} with {{cart.orders.length}} order(s) is ready and it will be delivered shortly.`"
+  },
+  "orderReady-Pickup": {
+    "templateId": "ajcjacoj6cjac6cklakc",
+    "templateName": "Order Ready - Pickup",
+    "subject": "Order Ready",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{cart.orderId}} with {{cart.orders.length}} order(s) is ready. Please pickup."
+  },
+  "cancelCart": {
+    "templateId": "8ghfc7nc9mngj8krknz2584dh",
+    "templateName": "Cart Cancel",
+    "subject": "Order cancelled",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
+  },
+  "cancelOrder": {
+    "templateId": "sshvbisdbvsduv5dvvsuvs55sdvsduuvbs5vsd",
+    "templateName": "Order Cancel",
+    "subject": "Order cancelled",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} of service {{serviceName}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
+  }
 }
