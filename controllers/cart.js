@@ -1306,6 +1306,8 @@ module.exports = {
             cartUpdateAtt.lastModifiedBy = daiictId;
             cartUpdateAtt.lastModified = new Date();
             cartUpdateAtt.status = cartStatus.paymentComplete;
+            cartUpdateAtt.paymentStatus = true;
+
             cartUpdateAtt['$set'] = {
                 'statusChangeTime.paymentComplete': {
                     time: new Date(),

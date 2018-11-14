@@ -337,7 +337,9 @@ module.exports = {
                 'validityErrors',
                 'cancelReason',
                 'statusChangeTime',
-                'comment'
+                'comment',
+                'paymentStatus',
+                'paymentFailHistory',
             ],
             canCreate: [
                 'comment'
@@ -372,7 +374,9 @@ module.exports = {
                 'validityErrors',
                 'cancelReason',
                 'statusChangeTime',
-                'comment'
+                'comment',
+                'paymentStatus',
+                'paymentFailHistory',
             ],
             canCreate: [
                 'comment'
@@ -407,7 +411,9 @@ module.exports = {
                 'validityErrors',
                 'cancelReason',
                 'statusChangeTime',
-                'comment'
+                'comment',
+                'paymentStatus',
+                'paymentFailHistory',
             ],
             canCreate: [
                 'orders',
