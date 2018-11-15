@@ -25,6 +25,21 @@ const cartSchema = new Schema({
     paymentCode: {
         type: String,
     },
+    paymentStatus: {
+        type:Boolean,
+        default:false
+    },
+    paymentFailHistory:[{
+       paymentId:{
+           type:String,
+       },
+       paymentDate:{
+            type:String,
+       },
+        paymentType:{
+            type:String,
+        },
+    }],
     collectionType: {
         type: Schema.Types.ObjectId,
         ref: 'collectionType'
@@ -128,6 +143,36 @@ const cartSchema = new Schema({
         refunded: {
             time: Date,
             by: String,
+        }
+    },
+    comment: {
+        processing: {
+            type: String,
+            default: ""
+        },
+        readyToDeliver: {
+            type: String,
+            default: ""
+        },
+        readyToPickup: {
+            type: String,
+            default: ""
+        },
+        completed: {
+            type: String,
+            default: ""
+        },
+        onHold: {
+            type: String,
+            default: ""
+        },
+        cancelled: {
+            type: String,
+            default: ""
+        },
+        refunded: {
+            type: String,
+            default: ""
         }
     }
 });

@@ -336,13 +336,19 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment',
+                'paymentStatus',
+                'paymentFailHistory',
             ],
-            canCreate: [],
+            canCreate: [
+                'comment'
+            ],
             canUpdate: [
                 'status',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
         },
         admin: {
@@ -367,13 +373,19 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment',
+                'paymentStatus',
+                'paymentFailHistory',
             ],
-            canCreate: [],
+            canCreate: [
+                'comment'
+            ],
             canUpdate: [
                 'status',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment'
             ],
         },
         student: {
@@ -398,7 +410,10 @@ module.exports = {
                 'collectionType',
                 'validityErrors',
                 'cancelReason',
-                'statusChangeTime'
+                'statusChangeTime',
+                'comment',
+                'paymentStatus',
+                'paymentFailHistory',
             ],
             canCreate: [
                 'orders',
@@ -598,6 +613,27 @@ module.exports = {
         },
     },
     changeResourceStatus: {
+        superAdmin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [
+                '*'
+            ],
+        },
+        admin: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: [
+                '*'
+            ],
+        },
+        student: {
+            canRead: [],
+            canCreate: [],
+            canUpdate: []
+        },
+    },
+    changeOrderStatus: {
         superAdmin: {
             canRead: [],
             canCreate: [],

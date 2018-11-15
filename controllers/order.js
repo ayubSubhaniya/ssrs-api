@@ -1,4 +1,5 @@
 const httpStatusCodes = require('http-status-codes');
+const mustache = require('mustache');
 
 const Service = require('../models/service');
 const Order = require('../models/order');
@@ -8,13 +9,16 @@ const PlacedCart = require('../models/placedCart');
 const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
 const Parameter = require('../models/parameter');
+const UserInfo = require('../models/userInfo');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
+const { adminTypes, userTypes, resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 
+const { sendMail } = require('../configuration/mail'),
+    mailTemplates = require('../configuration/mailTemplates.json');
 
 /*return -1 when invalid*/
 const calculateServiceCost = async (service, requiredUnits, user) => {
@@ -151,7 +155,6 @@ const getOrders = async (user, query, readableAttributes, parameterReadableAtt, 
 };
 
 module.exports = {
-    orderStatus,
 
     validateOrder,
 
@@ -302,9 +305,12 @@ module.exports = {
             .deleteOwn(resources.order);
 
         if (deleteOwnPermission.granted) {
-            const order = await Order.findById(orderId);
+            const order = await Order.findOne({
+                _id: orderId,
+                requestedBy: daiictId
+            });
 
-            if ((order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
+            if (order && (order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
@@ -353,17 +359,12 @@ module.exports = {
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
                         lastModified: new Date(),
-                        // '$set': {
-                        //     'statusChangeTime.processing': {
-                        //         time: new Date(),
-                        //         by: systemAdmin
-                        //     }
-                        // }
                     }, { new: true })
                         .populate({
                             path: 'parameters',
                             select: readAnyParameterPermission.attributes
                         });
+                    await Cart.findByIdAndUpdate(orderInDB.cartId, { status: cartStatus.processing });
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
@@ -433,7 +434,7 @@ module.exports = {
         const { daiictId } = user;
         const { orderId } = req.params;
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.order);
 
@@ -441,7 +442,8 @@ module.exports = {
 
             const orderUpdateAtt = req.value.body;
 
-            const orderInDb = await Order.findById(orderId);
+            const orderInDb = await Order.findById(orderId)
+                .populate(['service', 'parameters']);
 
             if (!orderInDb) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -459,6 +461,21 @@ module.exports = {
                     .send(errorMessages.invalidStatusChange);
             }
 
+            const cart = await Cart.findById(orderInDb.cartId)
+                .populate({
+                    path: 'orders',
+                    select: 'status'
+                });
+
+            let parameters = [];
+            for (let i = 0; i < orderInDb.parameters.length; i++) {
+                parameters.push(orderInDb.parameters[i].name);
+            }
+
+            let options={};
+            let templateName;
+            let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDb.requestedBy })).user_email_id;
+
 
             switch (orderUpdateAtt.status) {
                 case orderStatus.ready:
@@ -468,6 +485,11 @@ module.exports = {
                             time: new Date(),
                             by: daiictId
                         }
+                    };
+                    templateName = 'serviceOrderReady';
+                    options = {
+                        orderId: cart.orderId,
+                        serviceName:orderInDb.service.name
                     };
                     break;
                 case orderStatus.onHold:
@@ -479,18 +501,19 @@ module.exports = {
                             by: daiictId
                         }
                     };
+                    templateName = 'serviceOrderOnHold';
+                    options = {
+                        orderId: cart.orderId,
+                        holdReason: updateAtt.holdReason,
+                        serviceName:orderInDb.service.name
+                    };
+
                     break;
                 default :
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
 
             const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
-
-            const cart = await Cart.findById(orderInDb.cartId)
-                .populate({
-                    path: 'orders',
-                    select: 'status'
-                });
 
             let allReady = true;
             for (let i = 0; i < cart.orders.length; i++) {
@@ -513,12 +536,36 @@ module.exports = {
                         by: systemAdmin
                     };
                 }
-
-                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
-                await notification.save();
             }
             await cart.save();
 
+            let {cc,bcc,subject,body} = mailTemplates[templateName];
+            let mailBody = mustache.render(body, options);
+            await sendMail(mailTo, cc, bcc, subject, mailBody);
+
+            if (allReady){
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                await notification.save();
+                if (cart.collectionTypeCategory === collectionTypes.delivery) {
+                    let templateName = 'orderReady-Delivery';
+                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let options = {
+                        orderId: cart.orderId,
+                        cartLength: cart.orders.length
+                    };
+                    let mailBody = mustache.render(body, options);
+                    await sendMail(mailTo, cc, bcc, subject, mailBody);
+                } else {
+                    let templateName = 'orderReady-Pickup';
+                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let options = {
+                        orderId: cart.orderId,
+                        cartLength: cart.orders.length
+                    };
+                    let mailBody = mustache.render(body, options);
+                    await sendMail(mailTo, cc, bcc, subject, mailBody);
+                }
+            }
 
             if (updatedOrder) {
                 const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status);
@@ -542,7 +589,7 @@ module.exports = {
         const { orderId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
-            .updateAny(resources.changeResourceStatus);
+            .updateAny(resources.changeOrderStatus);
 
         if (changeStatusPermission.granted) {
             const updatedOrder = req.value.body;
@@ -556,7 +603,9 @@ module.exports = {
                 }
             };
 
-            const orderInDB = await Order.findById(orderId);
+            const orderInDB = await Order.findById(orderId)
+                .populate(['service', 'parameters']);
+
             if (orderInDB) {
 
                 if (orderInDB.status >= orderStatus.placed && orderInDB.status < orderStatus.completed) {
@@ -566,9 +615,6 @@ module.exports = {
                         status: orderStatus.cancelled,
                         cancelReason: updatedOrder.cancelReason
                     });
-
-                    const notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
-                    await notification.save();
 
                     const cart = await Cart.findById(orderInDB.cartId)
                         .populate({
@@ -601,9 +647,6 @@ module.exports = {
                                 by: systemAdmin
                             };
                         }
-
-                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
-                        await notification.save();
                     }
 
                     if (allCancel) {
@@ -624,11 +667,63 @@ module.exports = {
                         } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
                             await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
                         }
-
-                        const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
-                        await notification.save();
                     }
+
                     await cart.save();
+
+                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    await notification.save();
+
+                    let templateName = 'cancelOrder';
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
+                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let options = {
+                        orderId: cart.orderId,
+                        cancelReason: updatedOrder.cancelReason
+                    };
+                    let mailBody = mustache.render(body, options);
+                    await sendMail(mailTo, cc, bcc, subject, mailBody);
+
+                    if (allReady){
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
+
+                        if (cart.collectionTypeCategory === collectionTypes.delivery) {
+                            let templateName = 'orderReady-Delivery';
+                            let {cc,bcc,subject,body} = mailTemplates[templateName];
+                            let options = {
+                                orderId: cart.orderId,
+                                cartLength: cart.orders.length
+                            };
+                            let mailBody = mustache.render(body, options);
+                            await sendMail(mailTo, cc, bcc, subject, mailBody);
+                        } else {
+                            let templateName = 'orderReady-Pickup';
+                            let {cc,bcc,subject,body} = mailTemplates[templateName];
+                            let options = {
+                                orderId: cart.orderId,
+                                cartLength: cart.orders.length
+                            };
+                            let mailBody = mustache.render(body, options);
+                            await sendMail(mailTo, cc, bcc, subject, mailBody);
+                        }
+                    }
+
+                    if (allCancel) {
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
+
+                        let templateName = 'cancelCart';
+                        let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
+                        let { cc, bcc, subject, body } = mailTemplates[templateName];
+                        let options = {
+                            orderId: cart.orderId,
+                            cancelReason: updatedOrder.cancelReason,
+                            serviceName: orderInDB.service.name
+                        };
+                        let mailBody = mustache.render(body, options);
+                        await sendMail(mailTo, cc, bcc, subject, mailBody);
+                    }
 
                     res.status(httpStatusCodes.OK)
                         .json({});

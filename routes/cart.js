@@ -41,18 +41,32 @@ router.route('/pickup/:collectionType')
         cartController.updatePickup
     );
 
-router.route('/addPayment/')
-    .patch(
-        passport.authenticate('jwt', { session: false }),
-        validateBody(schemas.addPaymentSchema),
-        cartController.addPayment
-    );
-
 router.route('/addPayment/EasyPay')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.addPaymentSchema),
         cartController.addEasyPayPayment
+    );
+
+router.route('/addPayment/')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.addPaymentSchema),
+        cartController.addOfflinePayment
+    );
+
+router.route('/addPayment/EasyPay/:cartId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.addPaymentSchema),
+        cartController.retryEasyPayPayment
+    );
+
+router.route('/addPayment/:cartId')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.addPaymentSchema),
+        cartController.retryOfflinePayment
     );
 
 router.route('/acceptPayment/EasyPay')
@@ -82,9 +96,17 @@ router.route('/cancelCart/:cartId')
         cartController.cancelCart
     );
 
+router.route('/comment/:cartId')
+    .post(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'cartId'),
+        cartController.addComment
+    );
+
 router.route('/invoice/:cartId')
     .get(
         passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'cartId'),
         cartController.getInvoice
     );
 
