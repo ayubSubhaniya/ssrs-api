@@ -13,7 +13,7 @@ const UserInfo = require('../models/userInfo');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
+const { userTypes,adminTypes,resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 
