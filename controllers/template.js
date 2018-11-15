@@ -36,6 +36,8 @@ module.exports = {
             
             if (fileData.hasOwnProperty(templateKey)) {
 
+                newTemplate['templateId'] = fileData[templateKey].templateId;
+                newTemplate['templateName'] = fileData[templateKey].templateName;
                 fileData[templateKey] = newTemplate;
                 
                 // fs.writeFile(path, JSON.stringify(fileData), (err) => {
