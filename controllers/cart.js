@@ -1151,7 +1151,7 @@ module.exports = {
                             }
                         }
                     };
-                    await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt);
+                    await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt, { new: true });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['failedEasyPayPayment'].cc;
