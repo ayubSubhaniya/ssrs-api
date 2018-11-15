@@ -393,7 +393,33 @@ module.exports = {
             }
 
             if (cart.status > cartStatus.unplaced) {
+
+                if (cart.status < cartStatus.placed) {
+
+                    cart.orders = await validateOrder(cart.orders, user);
+
+                    const ordersCost = await calculateOrdersCost(cart);
+                    if (ordersCost === -1) {
+                        cart.status = cartStatus.invalid;
+                        cart.validityErrors.push(errorMessages.invalid);
+                    } else {
+                        cart.ordersCost = ordersCost;
+                    }
+
+                    const collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders);
+
+                    if (collectionTypeCost === -1) {
+                        cart.status = cartStatus.invalid;
+                        cart.validityErrors.push(errorMessages.invalidCollectionType);
+                    } else {
+                        cart.collectionTypeCost = collectionTypeCost;
+                    }
+
+                    cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
+                }
+
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
+
                 res.status(httpStatusCodes.OK)
                     .json({ cart: filteredCart });
             } else {
@@ -821,7 +847,7 @@ module.exports = {
         }
     },
 
-    addPayment: async (req, res, next) => {
+    addOfflinePayment: async (req, res, next) => {
         const { user } = req;
         const { daiictId, cartId } = user;
 
@@ -841,7 +867,159 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
+                if (cartInDb.status === cartStatus.unplaced) {
+                    const cartUpdateAtt = req.value.body;
+                    cartUpdateAtt.status = cartStatus.placed;
+                    cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.placed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
+
+                    cartUpdateAtt.lastModifiedBy = daiictId;
+                    cartUpdateAtt.lastModified = new Date();
+
+                    cartInDb.orders = await validateOrder(cartInDb.orders, user);
+
+                    const ordersCost = await calculateOrdersCost(cartInDb);
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        cartInDb.validityErrors.push(errorMessages.invalid);
+                    } else {
+                        cartInDb.ordersCost = ordersCost;
+                    }
+
+                    const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
+                    if (collectionTypeCost === -1) {
+                        res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidCollectionType);
+                        return;
+                    }
+                    cartInDb.collectionTypeCost = collectionTypeCost;
+                    cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
+
+                    if (cartInDb.orders.length === 0) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.noOrdersInCart);
+                    }
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalid);
+                    }
+
+                    if (cartInDb.delivery === undefined && cartInDb.pickup === undefined) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.noCollectionType);
+                    }
+
+                    if (!(await checkPaymentMode(cartInDb, cartUpdateAtt.paymentType))) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidPaymentType);
+                    }
+
+                    /* save final cart and orders*/
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].save();
+                    }
+
+                    await cartInDb.save();
+
+                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
+                    placedCartDoc.cartId = cartInDb._id;
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.placed,
+                            '$set': {
+                                'statusChangeTime.placed': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        }, { new: true })
+                            .populate('service');
+                        const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                        placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                        placedOrderDoc.orderId = order._id;
+
+                        const placedOrder = new PlacedOrder(placedOrderDoc);
+                        await placedOrder.save();
+                        placedCartDoc.orders[i] = placedOrder._id;
+                    }
+
+                    placedCartDoc.status = cartUpdateAtt.status;
+                    const placedCart = new PlacedCart(placedCartDoc);
+                    await placedCart.save();
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
+
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    const cart = new Cart({
+                        requestedBy: daiictId,
+                        createdOn: user.createdOn,
+                    });
+                    await cart.save();
+                    user.cartId = cart._id;
+                    await user.save();
+
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
+                    let cc = mailTemplates['orderPlaced'].cc;
+                    let bcc = mailTemplates['orderPlaced'].bcc;
+                    let mailSubject = mailTemplates['orderPlaced'].subject;
+                    let options = {
+                        orderId: updatedCart.orderId,
+                        cartLength: updatedCart.orders.length,
+                        totalCost: updatedCart.totalCost,
+                        paymentCode: updatedCart.paymentCode
+                    };
+                    let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
+
+                    const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
+
+                    res.status(httpStatusCodes.OK)
+                        .json({ cart: filteredCart });
+                } else if (cartInDb.status === cartStatus.processingPayment) {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.paymentInProcessing);
+                }
+                else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    retryOfflinePayment: async (req, res, next) => {
+        const { user, cartId } = req;
+        const { daiictId } = user;
+
+        const updateOwnCartPermission = accessControl.can(user.userType)
+            .updateOwn(resources.cart);
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
+
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
+
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
+
+            if (cartInDb) {
+                if (cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
                     cartUpdateAtt.status = cartStatus.placed;
                     cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
@@ -993,7 +1171,122 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
+                if (cartInDb.status === cartStatus.unplaced) {
+                    const cartUpdateAtt = req.value.body;
+                    cartUpdateAtt.status = cartStatus.processingPayment;
+                    cartUpdateAtt.paymentCode = orderid.generate();
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.processingPayment': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
+
+                    cartUpdateAtt.lastModifiedBy = daiictId;
+                    cartUpdateAtt.lastModified = new Date();
+
+                    cartInDb.orders = await validateOrder(cartInDb.orders, user);
+
+                    const ordersCost = await calculateOrdersCost(cartInDb);
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        cartInDb.validityErrors.push(errorMessages.invalid);
+                    } else {
+                        cartInDb.ordersCost = ordersCost;
+                    }
+
+                    const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
+                    if (collectionTypeCost === -1) {
+                        res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidCollectionType);
+                        return;
+                    }
+                    cartInDb.collectionTypeCost = collectionTypeCost;
+                    cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
+
+                    if (cartInDb.orders.length === 0) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.noOrdersInCart);
+                    }
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalid);
+                    }
+
+                    if (cartInDb.delivery === undefined && cartInDb.pickup === undefined) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.noCollectionType);
+                    }
+
+                    if (!(await checkPaymentMode(cartInDb, cartUpdateAtt.paymentType))) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidPaymentType);
+                    }
+
+                    /* save final cart and orders*/
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].save();
+                    }
+
+                    await cartInDb.save();
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    await notification.save();
+
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
+
+                    const cart = new Cart({
+                        requestedBy: daiictId,
+                        createdOn: user.createdOn,
+                    });
+                    await cart.save();
+                    user.cartId = cart._id;
+                    await user.save();
+
+                    res.status(httpStatusCodes.OK)
+                        .json({
+                            cart: filteredCart,
+                            url: getEasyPayUrl(updatedCart)
+                        });
+                } else if (cartInDb.status === cartStatus.processingPayment) {
+                    res.status(httpStatusCodes.BAD_REQUEST)
+                        .send(errorMessages.paymentInProcessing);
+                }
+                else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
+
+    retryEasyPayPayment: async (req, res, next) => {
+        const { user, cartId } = req;
+        const { daiictId } = user;
+
+        const updateOwnCartPermission = accessControl.can(user.userType)
+            .updateOwn(resources.cart);
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
+
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
+
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
+
+            if (cartInDb) {
+                if (cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
                     cartUpdateAtt.status = cartStatus.processingPayment;
                     cartUpdateAtt.paymentCode = orderid.generate();
