@@ -127,6 +127,22 @@
     "subject": "Order cancelled",
     "cc": [],
     "bcc": [],
-    "body": "Your order {{orderId}} of service {{serviceName}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
+    "body": "Your order {{orderId}} for service {{serviceName}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
+  },
+  "serviceOrderReady": {
+    "templateId": "sshvbisdbvsduv5dvvsuvs55sdvsduuvbs5vsd",
+    "templateName": "Service order ready",
+    "subject": "Service order ready",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} for service {{serviceName}} is ready."
+  },
+  "serviceOrderOnHold": {
+    "templateId": "sshvbisdbvsduv5dvvsuvs55sdvsduuvbs5vsd",
+    "templateName": "Service order on hold",
+    "subject": "Service order on hold",
+    "cc": [],
+    "bcc": [],
+    "body": "Your order {{orderId}} for service {{serviceName}} has been put on hold.<br>Reason for hold: {{holdReason}}."
   }
 }

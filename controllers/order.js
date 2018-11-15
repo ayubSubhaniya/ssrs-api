@@ -359,12 +359,6 @@ module.exports = {
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
                         lastModified: new Date(),
-                        // '$set': {
-                        //     'statusChangeTime.processing': {
-                        //         time: new Date(),
-                        //         by: systemAdmin
-                        //     }
-                        // }
                     }, { new: true })
                         .populate({
                             path: 'parameters',
@@ -478,9 +472,10 @@ module.exports = {
                 parameters.push(orderInDb.parameters[i].name);
             }
 
+            let options={};
+            let templateName;
             let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDb.requestedBy })).user_email_id;
-            let mailSubject = cart.orderId;
-            let mailText;
+
 
             switch (orderUpdateAtt.status) {
                 case orderStatus.ready:
@@ -491,13 +486,11 @@ module.exports = {
                             by: daiictId
                         }
                     };
-
-                    if (parameters.length > 0) {
-                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} with parameter(s) ${parameters.join(',')} is ready`;
-                    } else {
-                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} is ready`;
-                    }
-
+                    templateName = 'serviceOrderReady';
+                    options = {
+                        orderId: cart.orderId,
+                        serviceName:orderInDb.service.name
+                    };
                     break;
                 case orderStatus.onHold:
                     updateAtt.status = orderStatus.onHold;
@@ -508,13 +501,12 @@ module.exports = {
                             by: daiictId
                         }
                     };
-
-                    if (parameters.length > 0) {
-                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} with parameter(s) ${parameters.join(',')} has been put on hold due to ${updateAtt.holdReason}`;
-                    } else {
-                        mailText = `Your order ${cart.orderId} of service  ${orderInDb.service.name} has been put on hold due to ${updateAtt.holdReason}`;
-                    }
-                    cart.status = cartStatus.onHold;
+                    templateName = 'serviceOrderOnHold';
+                    options = {
+                        orderId: cart.orderId,
+                        holdReason: updateAtt.holdReason,
+                        serviceName:orderInDb.service.name
+                    };
 
                     break;
                 default :
@@ -544,22 +536,35 @@ module.exports = {
                         by: systemAdmin
                     };
                 }
-
-                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
-                await notification.save();
-
             }
             await cart.save();
 
-            await sendMail(mailTo, mailSubject, mailText);
+            let {cc,bcc,subject,body} = mailTemplates[templateName];
+            let mailBody = mustache.render(body, options);
+            await sendMail(mailTo, cc, bcc, subject, mailBody);
 
-            if (allReady) {
+            if (allReady){
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                await notification.save();
                 if (cart.collectionTypeCategory === collectionTypes.delivery) {
-                    mailText = `Your order ${cart.orderId} with ${cart.orders.length} order(s) is ready and it will be delivered shortly.`;
+                    let templateName = 'orderReady-Delivery';
+                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let options = {
+                        orderId: cart.orderId,
+                        cartLength: cart.orders.length
+                    };
+                    let mailBody = mustache.render(body, options);
+                    await sendMail(mailTo, cc, bcc, subject, mailBody);
                 } else {
-                    mailText = `Your order ${cart.orderId} with ${cart.orders.length} order(s) is ready. Please pickup.`;
+                    let templateName = 'orderReady-Pickup';
+                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let options = {
+                        orderId: cart.orderId,
+                        cartLength: cart.orders.length
+                    };
+                    let mailBody = mustache.render(body, options);
+                    await sendMail(mailTo, cc, bcc, subject, mailBody);
                 }
-                await sendMail(mailTo, mailSubject, mailText);
             }
 
             if (updatedOrder) {
@@ -611,9 +616,6 @@ module.exports = {
                         cancelReason: updatedOrder.cancelReason
                     });
 
-                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
-                    await notification.save();
-
                     const cart = await Cart.findById(orderInDB.cartId)
                         .populate({
                             path: 'orders',
@@ -645,8 +647,6 @@ module.exports = {
                                 by: systemAdmin
                             };
                         }
-
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
                     }
 
                     if (allCancel) {
@@ -667,12 +667,11 @@ module.exports = {
                         } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
                             await Collector.findByIdAndUpdate(cart.pickup, { status: collectionStatus.cancel });
                         }
-
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
                     }
 
                     await cart.save();
 
+                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
                     await notification.save();
 
                     let templateName = 'cancelOrder';
@@ -686,6 +685,9 @@ module.exports = {
                     await sendMail(mailTo, cc, bcc, subject, mailBody);
 
                     if (allReady){
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
+
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
                             let templateName = 'orderReady-Delivery';
                             let {cc,bcc,subject,body} = mailTemplates[templateName];
@@ -708,6 +710,9 @@ module.exports = {
                     }
 
                     if (allCancel) {
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        await notification.save();
+
                         let templateName = 'cancelCart';
                         let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
                         let { cc, bcc, subject, body } = mailTemplates[templateName];
