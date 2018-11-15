@@ -199,6 +199,12 @@ module.exports = {
             create: 'none',
             delete: 'none',
         },
+        changeOrderStatus: {
+            read: 'none',
+            update: 'none',
+            create: 'none',
+            delete: 'none',
+        },
         News: {
             read: 'none',
             update: 'none',

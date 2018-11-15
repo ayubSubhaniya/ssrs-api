@@ -85,7 +85,8 @@ const userSchema = new Schema({
     },
 
     resetPasswordRequest: {
-        type: Number
+        type: Number,
+        default:0
     },
 
     userInfo: {

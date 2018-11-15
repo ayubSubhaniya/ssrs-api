@@ -32,7 +32,8 @@ const userSchema = new Schema({
     },
 
     totalRequestSent: {
-        type: Number
+        type: Number,
+        default:0
     },
 
 });
