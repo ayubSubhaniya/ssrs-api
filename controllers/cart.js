@@ -5,7 +5,7 @@ const mustache = require('mustache');
 const { orderNoGeneratorSecret } = require('../configuration');
 const orderid = require('order-id')(orderNoGeneratorSecret);
 
-const {logger} = require('../configuration/logger');
+const { logger } = require('../configuration/logger');
 const Service = require('../models/service');
 const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
@@ -25,7 +25,7 @@ const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { homePage,easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
+const { adminTypes, userTypes, homePage, easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail'),
@@ -122,7 +122,7 @@ const checkForFailedOnlinePayment = async () => {
             let options = {
                 orderId: carts[i].orderId,
                 cartLength: carts[i].orders.length
-            }
+            };
             let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -141,7 +141,7 @@ const checkForFailedOnlinePayment = async () => {
                 cartLength: carts[i].orders.length,
                 cancelledInDays,
                 paymentCode: carts[i].paymentCode
-            }
+            };
             let mailBody = mustache.render(mailTemplates['paymentPendingOnline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -251,7 +251,7 @@ module.exports = {
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
 
-        if (readOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cart = await Cart.findById(cartId)
                 .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
@@ -540,7 +540,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
             const delivery = new Delivery(req.value.body);
             delivery.createdOn = timeStamp;
             delivery.createdBy = daiictId;
@@ -617,7 +617,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
             const delivery = req.value.body;
 
             const cart = await Cart.findById(cartId)
@@ -690,7 +690,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
             const pickup = new Collector(req.value.body);
             pickup.createdOn = timeStamp;
             pickup.createdBy = daiictId;
@@ -766,7 +766,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
             const pickup = req.value.body;
 
             const cart = await Cart.findById(cartId)
@@ -832,7 +832,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
                 .populate({
@@ -843,18 +843,14 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
-                    if (cartUpdateAtt.paymentType === paymentTypes.offline) {
-                        cartUpdateAtt.status = cartStatus.placed;
-                        cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
-                        cartUpdateAtt['$set'] = {
-                            'statusChangeTime.placed': {
-                                time: new Date(),
-                                by: systemAdmin
-                            }
-                        };
-                    } else {
-                        res.sendStatus(httpStatusCodes.BAD_REQUEST);
-                    }
+                    cartUpdateAtt.status = cartStatus.placed;
+                    cartUpdateAtt.paymentCode = paymentCodeGenerator.generate();
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.placed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
@@ -988,7 +984,7 @@ module.exports = {
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
 
-        if (updateOwnCartPermission.granted && user.userType===userTypes.student) {
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
                 .populate({
@@ -999,16 +995,14 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced || cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
-                    if (cartUpdateAtt.paymentType === paymentTypes.online) {
-                        cartUpdateAtt.status = cartStatus.processingPayment;
-                        cartUpdateAtt.paymentCode = orderid.generate();
-                        cartUpdateAtt['$set'] = {
-                            'statusChangeTime.processingPayment': {
-                                time: new Date(),
-                                by: systemAdmin
-                            }
-                        };
-                    }
+                    cartUpdateAtt.status = cartStatus.processingPayment;
+                    cartUpdateAtt.paymentCode = orderid.generate();
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.processingPayment': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
@@ -1149,11 +1143,11 @@ module.exports = {
                                 by: systemAdmin
                             }
                         },
-                        '$push':{
-                            'paymentFailHistory':{
-                                paymentId:uniqueRefNo,
-                                paymentDate:transactionDate,
-                                paymentType:'EasyPay'
+                        '$push': {
+                            'paymentFailHistory': {
+                                paymentId: uniqueRefNo,
+                                paymentDate: transactionDate,
+                                paymentType: 'EasyPay'
                             }
                         }
                     };
@@ -1177,7 +1171,7 @@ module.exports = {
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
 
-                    return res.render('paymentFail',{order:renderInfo});
+                    return res.render('paymentFail', { order: renderInfo });
                 }
 
                 const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
@@ -1185,7 +1179,7 @@ module.exports = {
 
                     const cartUpdateAtt = {
                         paymentId: uniqueRefNo,
-                        paymentStatus:true
+                        paymentStatus: true
                     };
 
                     cartUpdateAtt.status = cartStatus.processing;
@@ -1275,7 +1269,7 @@ module.exports = {
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
 
-                    return res.render('paymentSuccess',{order:renderInfo});
+                    return res.render('paymentSuccess', { order: renderInfo });
 
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -1607,13 +1601,13 @@ module.exports = {
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
 
-        if(readAnyCartPermission.granted) {
+        if (readAnyCartPermission.granted) {
 
             const cartInDb = await Cart.findById(cartId);
 
-            if(cartInDb.status >= cartStatus.processing) {
-                const {comment} = req.body;
-                switch(cartInDb.status) {
+            if (cartInDb.status >= cartStatus.processing) {
+                const { comment } = req.body;
+                switch (cartInDb.status) {
                     case cartStatus.processing:
                         cartInDb.comment.processing = comment;
                         break;
@@ -1641,7 +1635,8 @@ module.exports = {
                 }
 
                 await cartInDb.save();
-                res.status(httpStatusCodes.OK).json({});
+                res.status(httpStatusCodes.OK)
+                    .json({});
             } else {
                 res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }

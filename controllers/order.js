@@ -13,7 +13,7 @@ const UserInfo = require('../models/userInfo');
 
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
+const { adminTypes, userTypes, resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
 
@@ -677,7 +677,7 @@ module.exports = {
 
                     let templateName = 'cancelOrder';
                     let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
-                    let {cc,bcc,subject,body} = mailTemplates[templateName];
+                    let { cc, bcc, subject, body } = mailTemplates[templateName];
                     let options = {
                         orderId: cart.orderId,
                         cancelReason: updatedOrder.cancelReason
@@ -685,10 +685,10 @@ module.exports = {
                     let mailBody = mustache.render(body, options);
                     await sendMail(mailTo, cc, bcc, subject, mailBody);
 
-                    if (allReady){
+                    if (allReady) {
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
                             let templateName = 'orderReady-Delivery';
-                            let {cc,bcc,subject,body} = mailTemplates[templateName];
+                            let { cc, bcc, subject, body } = mailTemplates[templateName];
                             let options = {
                                 orderId: cart.orderId,
                                 cartLength: cart.orders.length
@@ -697,7 +697,7 @@ module.exports = {
                             await sendMail(mailTo, cc, bcc, subject, mailBody);
                         } else {
                             let templateName = 'orderReady-Pickup';
-                            let {cc,bcc,subject,body} = mailTemplates[templateName];
+                            let { cc, bcc, subject, body } = mailTemplates[templateName];
                             let options = {
                                 orderId: cart.orderId,
                                 cartLength: cart.orders.length
@@ -707,10 +707,10 @@ module.exports = {
                         }
                     }
 
-                    if (allCancel){
+                    if (allCancel) {
                         let templateName = 'cancelCart';
                         let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
-                        let {cc,bcc,subject,body} = mailTemplates[templateName];
+                        let { cc, bcc, subject, body } = mailTemplates[templateName];
                         let options = {
                             orderId: cart.orderId,
                             cancelReason: updatedOrder.cancelReason,
