@@ -6,7 +6,7 @@ module.exports = {
     systemAdmin: 'system',
     homePage: 'https://ssrs.daiict.ac.in:8080/',
     sortQueryName: 'sort',
-    httpProtocol: 'http',
+    httpProtocol: 'https',
     daiictMailDomainName: 'daiict.ac.in',
     orderNoGeneratorSecret: 'ssrs-orders',
     JWT_SECRET: 'ssrs-daiict-authentication',
