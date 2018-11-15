@@ -59,7 +59,7 @@ router.route('/addPayment/EasyPay/:cartId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.addPaymentSchema),
-        cartController.retryEasyPayPayment()
+        cartController.retryEasyPayPayment
     );
 
 router.route('/addPayment/:cartId')
