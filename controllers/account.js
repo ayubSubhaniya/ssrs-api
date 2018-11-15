@@ -102,7 +102,7 @@ module.exports = {
                 createdOn,
                 randomHash
             };
-            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true });
+            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true, new:true });
         } else {
 
             const newUser = {
@@ -124,10 +124,10 @@ module.exports = {
             } else {
                 newUser.totalRequestSent = tempUserInDB.totalRequestSent + 1;
             }
+            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true, new:true });
         }
 
         const info = await smtpTransport.sendMail(mailOptions);
-
         res.status(HttpStatus.CREATED)
             .end('Response: Verification link sent');
 
@@ -210,7 +210,7 @@ module.exports = {
             res.redirect(homePage);
         }
         else {
-            res.end('<h2>Bad Request</h2>');
+            res.status(HttpStatus.BAD_REQUEST).end('<h2>Bad Request</h2>');
         }
     },
 
@@ -242,9 +242,9 @@ module.exports = {
             } else {
                 randomHash = foundUser.resetPasswordToken;
                 foundUser.resetPasswordRequest++;
-                await foundUser.save();
             }
         } else {
+            randomHash = randomstring.generate();
             foundUser.resetPasswordRequestTime = new Date();
             foundUser.resetPasswordRequest = 1;
         }
@@ -271,8 +271,9 @@ module.exports = {
 
         foundUser.resetPasswordToken = randomHash;
         foundUser.resetPasswordExpires = linkExpiryTime;
-        await foundUser.save();
-        const info = await smtpTransport.sendMail(mailOptions);
+        const updatedUser = await foundUser.save();
+
+        await smtpTransport.sendMail(mailOptions);
 
         res.status(HttpStatus.OK)
             .end('Response: Password reset link sent');
