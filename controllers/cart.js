@@ -1000,7 +1000,8 @@ module.exports = {
     },
 
     retryOfflinePayment: async (req, res, next) => {
-        const { user, cartId } = req;
+        const { user } = req;
+        const { cartId } = req.params;
         const { daiictId } = user;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
@@ -1267,7 +1268,8 @@ module.exports = {
     },
 
     retryEasyPayPayment: async (req, res, next) => {
-        const { user, cartId } = req;
+        const { user } = req;
+        const { cartId } = req.params;
         const { daiictId } = user;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
