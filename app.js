@@ -140,6 +140,10 @@ app.get('/SSRS/user/payment_response', function (req, res, next) {
     cartController.acceptEasyPayPayment(req, res, next);
 });
 
+app.get('/', function (req, res) {
+    res.render('error',{status:404,message:'Not Found'});
+});
+
 // Routes
 app.use('/account', account);
 app.use('/news', news);
