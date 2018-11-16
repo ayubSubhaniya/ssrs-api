@@ -4,7 +4,7 @@ module.exports = {
     easyPaySuccessResponse: 'E000',
     sessionSecret:'SSRS-DAIICT-SESSION',
     systemAdmin: 'system',
-    homePage: 'https://ssrs.daiict.ac.in:8080/',
+    homePage: 'https://ssrs-daiict.herokuapp.com/',
     sortQueryName: 'sort',
     httpProtocol: 'http',
     daiictMailDomainName: 'daiict.ac.in',

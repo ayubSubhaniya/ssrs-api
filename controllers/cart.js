@@ -1173,14 +1173,14 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced) {
                     const cartUpdateAtt = req.value.body;
-                    cartUpdateAtt.status = cartStatus.processingPayment;
+                    cartUpdateAtt.status = cartStatus.paymentFailed;
                     cartUpdateAtt.paymentCode = orderid.generate();
-                    cartUpdateAtt['$set'] = {
-                        'statusChangeTime.processingPayment': {
-                            time: new Date(),
-                            by: systemAdmin
-                        }
-                    };
+                    // cartUpdateAtt['$set'] = {
+                    //     'statusChangeTime.processingPayment': {
+                    //         time: new Date(),
+                    //         by: systemAdmin
+                    //     }
+                    // };
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
@@ -1468,7 +1468,7 @@ module.exports = {
                 }
 
                 const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
-                if (cartInDb.status === cartStatus.processingPayment && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
+                if (cartInDb.status === cartStatus.paymentFailed && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
 
                     const cartUpdateAtt = {
                         paymentId: uniqueRefNo,
