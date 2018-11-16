@@ -11,9 +11,7 @@
     "templateId": "6bhjnkolcdswxlz85co4h7c2b0p",
     "templateName": "Forget Password",
     "subject": "Password Reset Link",
-    "cc": [
-      "003harsh008@gmail.com"
-    ],
+    "cc": [],
     "bcc": [],
     "body": "Hello {{daiictId}}, <br>Please click on the link below to reset your password. <br><a href={{link}}>Click here to reset password</a>"
   },
