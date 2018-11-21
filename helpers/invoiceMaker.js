@@ -14,7 +14,9 @@ const invoicePdfDir = './data/invoice_pdf';
 const generateInvoice = async (cartId) => {
 
     const cart = await Cart.findById(cartId)
-        .populate('orders');
+        .populate('orders')
+        .populate('pickup')
+        .populate('delivery'); 
 
     const user = await UserInfo.findOne({ user_inst_id: cart.requestedBy });
 
@@ -43,6 +45,7 @@ const generateInvoice = async (cartId) => {
                 totalCost: 0,
                 paymentType: '',
                 paymentID: '',
+                isPickup: false,
                 info: {}
             },
             tasks: []
@@ -60,7 +63,7 @@ const generateInvoice = async (cartId) => {
     myInvoice.options.data.invoice.number = cart.orderId;
     const currdate = new Date();
     myInvoice.options.data.invoice.date = currdate.getDate()
-        .toString() + '/' + currdate.getMonth()
+        .toString() + '/' + (currdate.getMonth()+1)
         .toString() + '/' + currdate.getFullYear()
         .toString();
     myInvoice.options.data.invoice.collectionType = cart.collectionTypeCategory;
@@ -68,14 +71,15 @@ const generateInvoice = async (cartId) => {
     myInvoice.options.data.invoice.paymentType = cart.paymentType;
     myInvoice.options.data.invoice.subTotal = cart.ordersCost.toFixed(2);
     myInvoice.options.data.invoice.totalCost = cart.totalCost.toFixed(2);
+    myInvoice.options.data.invoice.paymentID = cart.paymentId;
 
-    // if (myInvoice.options.data.invoice.collectionType === collectionTypes.delivery) {
-    //     myInvoice.options.data.invoice.paymentID = cart.paymentId;
-    //     myInvoice.options.data.invoice.info = cart.courier;
-    // } else {
-    //     myInvoice.options.data.invoice.paymentID = cart.paymentCode;
-    //     myInvoice.options.data.invoice.info = cart.pickup;
-    // }
+    if (myInvoice.options.data.invoice.collectionType === collectionTypes.delivery) {
+        myInvoice.options.data.invoice.info = cart.delivery;
+        myInvoice.options.data.invoice.isPickup = false;
+    } else {
+        myInvoice.options.data.invoice.info = cart.pickup;
+        myInvoice.options.data.invoice.isPickup = true;
+    }
 
     for (let i = 0; i < cart.orders.length; i++) {
         const subTask = {
