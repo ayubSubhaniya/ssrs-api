@@ -72,29 +72,29 @@
                 <tbody>
                     <tr>
                         <td style="width: 230px;">Invoice-Number:</td>
-                        <td>{{invoice.number}}</td>
+                        <td>2018-7013-607921-7865</td>
                     </tr>
                     <tr>
                         <td>Invoice-Date:</td>
-                        <td>{{invoice.date}}</td>
+                        <td>21&#x2F;11&#x2F;2018</td>
                     </tr>
                     <tr><td> </td><td> </td></tr>
                     <tr>
                         <td>DA-IICT ID:</td>
-                        <td>{{buyer.daiictId}}</td>
+                        <td>201501433</td>
                     </tr>
                     <tr>
                         <td>Customer name:</td>
-                        <td>{{buyer.firstName}} {{buyer.lastName}}</td>
+                        <td>Ayub Subhaniya</td>
                     </tr>
                     <tr><td> </td><td> </td></tr>
                     <tr>
                         <td>Payment type:</td>
-                        <td>{{invoice.paymentType}}</td>
+                        <td>offline</td>
                     </tr>
                     <tr>
                         <td>Payment ID:</td>
-                        <td>{{invoice.paymentID}}</td>
+                        <td>vRCR-hHY2</td>
                     </tr>
                 </tbody>
             </table>
@@ -121,21 +121,30 @@
                     </tr>
                 </thead>
                 <tbody class="text-top">
-                    {{{description_rows}}}
                     <tr>
-                        <td colspan="5" class="text-right" style="border-bottom-width: 0px">
+    <td class="text-center">1</td>
+    <!-- <td>&quot;Available for all&quot; service<br/>Get order fast</td> -->
+    <td >&quot;Available for all&quot; service</td>
+    <td class="text-center">1</td>
+    <td class="text-center">50.00</td>
+    <td class="text-center">0.00</td>    
+    <td class="text-right">50.00</td>
+</tr>
+
+                    <tr>
+                        <td colspan="5" class="text-right">
                             <strong>Invoice Sub-total (₹) </strong>
                         </td>
-                        <td class="text-right" style="border-bottom-width: 0px">
-                            <strong>{{invoice.subTotal}}</strong>
+                        <td class="text-right">
+                            <strong>50.00</strong>
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="text-right" style="border-top-width: 0px">
+                        <td colspan="5" class="text-right">
                             <strong>Collection Cost (₹) </strong>
                         </td>
-                        <td class="text-right" style="border-top-width: 0px">
-                            <strong>+ {{invoice.collectionCost}}</strong>
+                        <td class="text-right">
+                            <strong>+ 0.00</strong>
                         </td>
                     </tr>
                     <tr>
@@ -143,7 +152,7 @@
                             <strong>Grand Total (₹) </strong>
                         </td>
                         <td class="text-right">
-                            <strong>= {{invoice.totalCost}}</strong>
+                            <strong>= 50.00</strong>
                         </td>
                     </tr>
                 </tbody>
@@ -152,29 +161,17 @@
             <table class="bordered padded mt-s mb-s monospaced">
                 <thead>
                     <tr>
-                        <th style="max-width: 15%"><strong>Collection type - {{invoice.collectionType}}</strong></td>
+                        <th style="max-width: 15%"><strong>Collection type - Pickup</strong></td>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>
-                        {{#invoice.isPickup}}
-                            <strong>Name:</strong> {{invoice.info.name}} <br>
-                            {{#invoice.info.daiictId}}
-                                <strong>DAIICT ID:</strong> {{invoice.info.daiictId}} <br>
-                            {{/invoice.info.daiictId}}
-                            <strong>Contact No:</strong> {{invoice.info.contactNo}} <br>
-                            <strong>Email:</strong> {{invoice.info.email}}
-                        {{/invoice.isPickup}}
-                        {{^invoice.isPickup}}
-                            <strong>Name:</strong> {{invoice.info.name}} <br>
-                            <strong>Contact No:</strong> {{invoice.info.contactNo}} <br>
-                            <strong>Address:</strong> {{invoice.info.address.line1}} <br>
-                            <strong>City:</strong> {{invoice.info.city}} <br>
-                            <strong>State:</strong> {{invoice.info.state}} <br>
-                            <strong>Country:</strong> {{invoice.info.country}} <br>
-                            <strong>Email:</strong> {{invoice.info.email}}
-                        {{/invoice.isPickup}}
+                            <strong>Name:</strong> Sagar Savaliya <br>
+                                <strong>DAIICT ID:</strong> 201501407 <br>
+                            <strong>Contact No:</strong> 9429795959 <br>
+                            <strong>Email:</strong> 201501407@daiict.ac.in <br>
+<br>
                         </td>
                     </tr>
                 </tbody>
