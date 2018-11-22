@@ -1292,12 +1292,12 @@ module.exports = {
                     const cartUpdateAtt = req.value.body;
                     cartUpdateAtt.status = cartStatus.paymentFailed;
                     cartUpdateAtt.paymentCode = orderid.generate();
-                    //cartUpdateAtt['$set'] = {
-                      //  'statusChangeTime.processingPayment': {
-                        //    time: new Date(),
-                          //  by: systemAdmin
-                        //}
-                    //};
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.paymentFailed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
