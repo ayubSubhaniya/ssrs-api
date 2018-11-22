@@ -1290,14 +1290,14 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.paymentFailed) {
                     const cartUpdateAtt = req.value.body;
-                    cartUpdateAtt.status = cartStatus.processingPayment;
+                    cartUpdateAtt.status = cartStatus.paymentFailed;
                     cartUpdateAtt.paymentCode = orderid.generate();
-                    cartUpdateAtt['$set'] = {
-                        'statusChangeTime.processingPayment': {
-                            time: new Date(),
-                            by: systemAdmin
-                        }
-                    };
+                    //cartUpdateAtt['$set'] = {
+                      //  'statusChangeTime.processingPayment': {
+                        //    time: new Date(),
+                          //  by: systemAdmin
+                        //}
+                    //};
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
