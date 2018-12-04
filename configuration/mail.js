@@ -3,7 +3,7 @@ const { logger } = require('../configuration/logger');
 
 const { daiictMailDomainName } = require('../configuration');
 
-const mailAccountUserName = process.env.MAIL_USER;
+const mailAccountEmailId = process.env.MAIL_USER;
 const mailAccountPassword = process.env.MAIL_PASS;
 
 /*
@@ -15,7 +15,7 @@ const smtpTransport = nodemailer.createTransport({
     port: 465,
     secureConnection: true,
     auth: {
-        user: mailAccountUserName,
+        user: mailAccountEmailId,
         pass: mailAccountPassword
     },
     tls: {
@@ -34,6 +34,7 @@ smtpTransport.verify(function (error, success) {
 
 const sendMail = async (toId, cc, bcc, subject, html, text) => {
     const info = await smtpTransport.sendMail({
+        from: mailAccountEmailId,
         to: `${toId}@${daiictMailDomainName}`,
         cc,
         bcc,
