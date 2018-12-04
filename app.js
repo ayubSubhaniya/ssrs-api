@@ -206,4 +206,9 @@ process.on('uncaughtException', async (er) => {
 // start server
 const port = process.env.PORT || 8443;
 
-app.listen(port, () => console.log(`Server is listnening on port ${port}`));
+// app.listen(port, () => console.log(`Server is listnening on port ${port}`));
+https.createServer({
+    key: fs.readFileSync('../SSL/commercial.key'),
+    cert: fs.readFileSync('../SSL/f2e066dddbc1a42e.crt'),
+    ca: [fs.readFileSync('../SSL/gd1.crt'), fs.readFileSync('../SSL/gd2.crt'), fs.readFileSync('../SSL/gd3.crt')]
+}, app).listen(port, () => console.log(`Server is listnening on port ${port}`));
