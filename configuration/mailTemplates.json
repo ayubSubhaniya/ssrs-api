@@ -101,7 +101,7 @@
     "subject": "Order Ready",
     "cc": [],
     "bcc": [],
-    "body": "`Your order {{cart.orderId}} with {{cart.orders.length}} order(s) is ready and it will be delivered shortly.`"
+    "body": "Your order {{cart.orderId}} with {{cart.orders.length}} order(s) is ready and it will be delivered shortly."
   },
   "orderReady-Pickup": {
     "templateId": "ajcjacoj6cjac6cklakc",
