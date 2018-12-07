@@ -1861,14 +1861,14 @@ module.exports = {
                     });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
-                    let cc = mailTemplates['cancelReason'].cc;
-                    let bcc = mailTemplates['cancelReason'].bcc;
-                    let mailSubject = mailTemplates['cancelReason'].subject;
+                    let cc = mailTemplates['cancelCart'].cc;
+                    let bcc = mailTemplates['cancelCart'].bcc;
+                    let mailSubject = mailTemplates['cancelCart'].subject;
                     const options = {
                         orderId: cartInDb.orderId,
                         cancelReason: cartInDb.cancelReason
                     };
-                    let mailBody = mustache.render(mailTemplates['cancelReason'].body, options);
+                    let mailBody = mustache.render(mailTemplates['cancelCart'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason);
