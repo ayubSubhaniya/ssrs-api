@@ -22,6 +22,7 @@ const compression = require('compression');
 const { logger } = require('./configuration/logger');
 const {} = require('./configuration/dotenv');
 
+const sentryUrl = 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244';
 const name = 'SSRS-DAIICT';
 debug('booting %o', name);
 
@@ -41,7 +42,7 @@ internetAvailable()
     });
 
 if (isInternetAvaliable) {
-    Sentry.init({ dsn: 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244' });
+    Sentry.init({ dsn: sentryUrl });
 }
 
 const app = express();
@@ -172,7 +173,7 @@ app.use((req, res, next) => {
 });
 
 // Error handler function
-app.use((err, req, res, next) => {
+app.use(async (err, req, res, next) => {
     const error = app.get('env') === 'development' ? err : {};
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -184,6 +185,7 @@ app.use((err, req, res, next) => {
     console.error(err);
     debug(req.method + ' ' + req.url + ' %O', error);
     logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
+    await sendMail(developersMail, [], [], er.message,[], er.stack);
 });
 
 
@@ -199,7 +201,7 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, er.message, er.stack);
+        await sendMail(developersMail, [], [], er.message,[], er.stack);
     }
 });
 
