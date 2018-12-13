@@ -173,7 +173,7 @@ app.use((req, res, next) => {
 });
 
 // Error handler function
-app.use((err, req, res, next) => {
+app.use(async (err, req, res, next) => {
     const error = app.get('env') === 'development' ? err : {};
     const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
 
