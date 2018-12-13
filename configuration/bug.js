@@ -1,4 +1,4 @@
-const developersMail = ['20150433@daiict.ac.in'];
+const developersMail = ['ayub.subhaniya@gmail.com'];
 
 module.exports = {
   developersMail,
