@@ -8,7 +8,6 @@ const easyPayPaymentInfo = new Schema({
     },
     uniqueRefNo: {
         type: String,
-        unique: true,
     },
     serviceTaxAmount: {
         type: String,

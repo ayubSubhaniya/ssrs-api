@@ -1469,7 +1469,7 @@ module.exports = {
                     return res.render('paymentFail', { order: renderInfo });
                 }
 
-                const fieldsValidity = transactionAmount === cartInDb.totalCost && subMerchantId === process.env.submerchantid && id === process.env.merchantid;
+                const fieldsValidity = subMerchantId === process.env.submerchantid && id === process.env.merchantid;
                 if (cartInDb.status === cartStatus.paymentFailed && cartInDb.paymentType === paymentTypes.online && fieldsValidity) {
 
                     const cartUpdateAtt = {
@@ -1573,7 +1573,7 @@ module.exports = {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
         } else {
-            res.sendStatus(httpStatusCodes.BAD_REQUEST);
+            res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
         }
     },
 
