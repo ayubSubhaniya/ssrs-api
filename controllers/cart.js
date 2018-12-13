@@ -1573,7 +1573,7 @@ module.exports = {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
         } else {
-            res.sendStatus(httpStatusCodes.BAD_REQUEST);
+            res.sendStatus(httpStatusCodes.PRECONDITION_FAILED);
         }
     },
 
