@@ -243,7 +243,7 @@ module.exports = {
         if (createOwnPermission.granted) {
             let orderAtt = req.value.body.order;
             const newOrder = new Order(orderAtt);
-
+            console.log(orderAtt);
             newOrder.requestedBy = daiictId;
             newOrder.createdOn = timeStamp;
             newOrder.status = orderStatus.unplaced;
