@@ -954,7 +954,7 @@ module.exports = {
                     const placedCart = new PlacedCart(placedCartDoc);
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -1107,7 +1107,7 @@ module.exports = {
                     const placedCart = new PlacedCart(placedCartDoc);
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
