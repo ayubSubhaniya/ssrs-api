@@ -66,7 +66,7 @@ const checkForOfflinePayment = async () => {
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for cancel*/
-            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
+            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason, carts[i].id);
             await notification.save();
 
         } else {
@@ -87,7 +87,7 @@ const checkForOfflinePayment = async () => {
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'offline');
+            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'offline', carts[i].id);
             await notification.save();
         }
     }
@@ -127,7 +127,7 @@ const checkForFailedOnlinePayment = async () => {
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for cancel*/
-            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason);
+            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason, carts[i].id);
             await notification.save();
         } else {
             const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
@@ -146,7 +146,7 @@ const checkForFailedOnlinePayment = async () => {
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online');
+            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online', carts[i].id);
             await notification.save();
         }
     }
@@ -954,7 +954,7 @@ module.exports = {
                     const placedCart = new PlacedCart(placedCartDoc);
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -1107,7 +1107,7 @@ module.exports = {
                     const placedCart = new PlacedCart(placedCartDoc);
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -1232,7 +1232,7 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -1348,7 +1348,7 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
                     await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
@@ -1554,7 +1554,7 @@ module.exports = {
                     let mailBody = mustache.render(mailTemplates['successfulEasyPayPayment'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
                     await notification.save();
 
                     const renderInfo = {};
@@ -1646,7 +1646,7 @@ module.exports = {
                     let mailBody = mustache.render(mailTemplates['offlinePaymentAccepted'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status);
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
                     await notification.save();
 
                     const filteredCart = filterResourceData(updatedCart, readAnyCartPermission.attributes);
@@ -1782,7 +1782,7 @@ module.exports = {
                 if (updatedCart) {
 
                     // Generating notification
-                    const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, daiictId, updatedCart.orders.length, updatedCart.status);
+                    const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, daiictId, updatedCart.orders.length, updatedCart.status, '-', updatedCart.id);
                     await notification.save();
 
                     // Generating invoice
@@ -1871,7 +1871,7 @@ module.exports = {
                     let mailBody = mustache.render(mailTemplates['cancelCart'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason);
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason, cartInDb.id);
                     await notification.save();
 
                     res.status(httpStatusCodes.OK)

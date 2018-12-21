@@ -37,7 +37,6 @@ const filterResourceData = (resourcesData, attributes) => {
         for (let i = 0; i < resourcesData.length; i++) {
             const resourceData = resourcesData[i];
             let filteredData = {};
-
             attributes.forEach(attribute => {
                 if (resourceData[attribute] !== undefined) {
                     filteredData[attribute] = resourceData[attribute];
