@@ -57,10 +57,10 @@ const placedOrderSchema = new Schema({
     comment: {
         type: String,
     },
-    parameters: [{
-        type: Schema.Types.ObjectId,
-        ref: 'parameter',
-    }],
+    // parameters: [{
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'parameter',
+    // }],
     cancelReason: {
         type: String
     }
