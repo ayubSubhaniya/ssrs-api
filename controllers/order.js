@@ -36,18 +36,18 @@ const calculateServiceCost = async (service, requiredUnits, user) => {
 };
 
 /*return -1 when invalid*/
-const calculateParameterCost = async (parameters, requiredUnits, availableParameters) => {
+const calculateParameterCost = async (parameter, requiredUnits, availableParameters) => {
 
     let totalCost = 0;
 
     if (availableParameters) {
         availableParameters = convertToStringArray(availableParameters);
-        for (let i = 0; i < parameters.length; i++) {
+       // for (let i = 0; i < parameters.length; i++) {
             let parameterId;
-            if (parameters[i]._id) {
-                parameterId = parameters[i]._id;
+            if (parameter._id) {
+                parameterId = parameter._id;
             } else {
-                parameterId = parameters[i];
+                parameterId = parameter;
             }
 
             const parameter = await Parameter.findById(parameterId);
@@ -58,12 +58,12 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
             totalCost += parameter.baseCharge;
         }
     } else {
-        for (let i = 0; i < parameters.length; i++) {
+        //for (let i = 0; i < parameters.length; i++) {
             let parameterId;
-            if (parameters[i]._id) {
-                parameterId = parameters[i]._id;
+            if (parameter._id) {
+                parameterId = parameter._id;
             } else {
-                parameterId = parameters[i];
+                parameterId = parameter;
             }
             const parameter = await Parameter.findById(parameterId);
             if (!parameter || !parameter.isActive) {
@@ -80,7 +80,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
 
-    order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
+    order.parameterCost = await calculateParameterCost(order.parameter, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested, user);
     order.totalCost = 0;
 
@@ -132,7 +132,7 @@ const validateOrder = async (orders, user) => {
 
 const validateAddedOrder = async (cartId, service, unitsRequested) => {
     const cart = await Cart.findById(cartId)
-        .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup']);
+        .deepPopulate(['orders.service', 'orders.parameter', 'delivery', 'pickup']);
     const { orders } = cart;
     let count = unitsRequested;
     for (let i = 0; i < orders.length; i++) {
@@ -147,7 +147,7 @@ const getOrders = async (user, query, readableAttributes, parameterReadableAtt, 
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({
-            path: 'parameters',
+            path: 'parameter',
             select: parameterReadableAtt
         });
     const validatedOrder = await validateOrder(orders, user);
@@ -264,7 +264,7 @@ module.exports = {
             }
             newOrder.serviceCost = serviceCost;
 
-            const parameterCost = await calculateParameterCost(newOrder.parameters, newOrder.unitsRequested, service.availableParameters);
+            const parameterCost = await calculateParameterCost(newOrder.parameter, newOrder.unitsRequested, service.availableParameters);
             if (parameterCost === -1) {
                 res.status(httpStatusCodes.PRECONDITION_FAILED)
                     .send(errorMessages.invalidParameter);
@@ -361,7 +361,7 @@ module.exports = {
                         lastModified: new Date(),
                     }, { new: true })
                         .populate({
-                            path: 'parameters',
+                            path: 'parameter',
                             select: readAnyParameterPermission.attributes
                         });
                     await Cart.findByIdAndUpdate(orderInDB.cartId, { status: cartStatus.processing });
@@ -388,9 +388,9 @@ module.exports = {
                         updatedOrder.serviceCost = serviceCost;
                     }
 
-                    if (updatedOrder.parameters !== undefined) {
+                    if (updatedOrder.parameter !== undefined) {
                         const service = await Service.findById(orderInDB.service);
-                        const parameterCost = await calculateParameterCost(updatedOrder.parameters, orderInDB.unitsRequested, service.availableParameters);
+                        const parameterCost = await calculateParameterCost(updatedOrder.parameter, orderInDB.unitsRequested, service.availableParameters);
 
                         if (parameterCost === -1) {
                             return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -405,7 +405,7 @@ module.exports = {
                         requestedBy: daiictId
                     }, updatedOrder, { new: true })
                         .populate({
-                            path: 'parameters',
+                            path: 'parameter',
                             select: readAnyParameterPermission.attributes
                         });
 
@@ -443,7 +443,7 @@ module.exports = {
             const orderUpdateAtt = req.value.body;
 
             const orderInDb = await Order.findById(orderId)
-                .populate(['service', 'parameters']);
+                .populate(['service', 'parameter']);
 
             if (!orderInDb) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -461,10 +461,10 @@ module.exports = {
                     .send(errorMessages.invalidStatusChange);
             }
 
-            let parameters = [];
-            for (let i = 0; i < orderInDb.parameters.length; i++) {
-                parameters.push(orderInDb.parameters[i].name);
-            }
+            // let parameters = [];
+            // for (let i = 0; i < orderInDb.parameters.length; i++) {
+            //     parameters.push(orderInDb.parameters[i].name);
+            // }
 
             let options = {};
             let templateName;
@@ -606,7 +606,7 @@ module.exports = {
             };
 
             const orderInDB = await Order.findById(orderId)
-                .populate(['service', 'parameters']);
+                .populate(['service', 'parameter']);
 
             if (orderInDB) {
 

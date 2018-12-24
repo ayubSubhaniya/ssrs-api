@@ -54,10 +54,10 @@ const orderSchema = new Schema({
     comment: {
         type: String,
     },
-    parameters: [{
+    parameter: {
         type: Schema.Types.ObjectId,
         ref: 'parameter',
-    }],
+    },
     validityErrors: [{
         type: String,
     }],
