@@ -12,7 +12,6 @@ const Collector = require('../models/collector');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
-const parameter = require('../models/parameter');
 const Cart = require('../models/cart');
 const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
@@ -233,18 +232,8 @@ const checkPaymentMode = async (cart, paymentMode) => {
     return true;
 };
 
-const validateCart = async (orders, user) => {
+const validateCart = async (cart, user) => {
     console.log(cart);
-
-    // for (let i = 0; i < orders.length; i++) {
-    //     const service = await Service.findById(orders[i].service);
-    //     const parameter = await parameter.findById(orders[i].parameters);
-
-    //     if (!collectionTypes.includes(collectionTypeDoc._id.toString())) {
-    //         return -1;
-    //     }
-    // }
-
     return true;
 }
 
@@ -271,7 +260,7 @@ module.exports = {
         if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameter', 'delivery', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -285,7 +274,7 @@ module.exports = {
                         'orders.service': {
                             select: readAnyServicePermission.attributes
                         },
-                        'orders.parameter': {
+                        'orders.parameters': {
                             select: readAnyParameterPermission.attributes
                         }
                     }
@@ -349,7 +338,7 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameter', 'delivery', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readAnyOrderPermission.attributes
@@ -363,7 +352,7 @@ module.exports = {
                         'orders.service': {
                             select: readAnyServicePermission.attributes
                         },
-                        'orders.parameter': {
+                        'orders.parameters': {
                             select: readAnyParameterPermission.attributes
                         }
                     }
@@ -385,7 +374,7 @@ module.exports = {
                 _id: cartId,
                 requestedBy: daiictId
             })
-                .deepPopulate(['orders.service', 'orders.parameter', 'delivery', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -399,7 +388,7 @@ module.exports = {
                         'orders.service': {
                             select: readAnyServicePermission.attributes
                         },
-                        'orders.parameter': {
+                        'orders.parameters': {
                             select: readAnyParameterPermission.attributes
                         }
                     }
@@ -518,7 +507,7 @@ module.exports = {
 
         const cart = await Cart.find(query)
             .sort(sortQuery)
-            .deepPopulate(['orders.service', 'orders.parameter', 'delivery', 'pickup'], {
+            .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                 populate: {
                     'orders': {
                         select: orderAttributesPermission
@@ -532,7 +521,7 @@ module.exports = {
                     'orders.service': {
                         select: readAnyServicePermission.attributes
                     },
-                    'orders.parameter': {
+                    'orders.parameters': {
                         select: readAnyParameterPermission.attributes
                     }
                 }
@@ -898,7 +887,7 @@ module.exports = {
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
 
-                    const result = await validateCart(cartInDb.orders,user);               /* ***************************** */
+                    const result = await validateCart(cartInDb,user);               /* ***************************** */
                     if(!result) {
                         console.log("this is not good.");
                     }

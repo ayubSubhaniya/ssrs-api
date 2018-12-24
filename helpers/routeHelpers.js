@@ -275,7 +275,8 @@ module.exports = {
                         .regex(/^[0-9a-fA-F]{24}$/)
                         .required(),
                     unitsRequested: Joi.number(),
-                    parameter: Joi.string()
+                    parameters: Joi.array()
+                        .items(Joi.string()
                             .regex(/^[0-9a-fA-F]{24}$/)),
                     comment: Joi.string(),
                 },
@@ -284,7 +285,8 @@ module.exports = {
             .keys({
                 unitsRequested: Joi.number(),
                 comment: Joi.string(),
-                parameter: Joi.string()
+                parameters: Joi.array()
+                    .items(Joi.string()
                         .regex(/^[0-9a-fA-F]{24}$/)),
             }),
         addPaymentSchema: Joi.object()
