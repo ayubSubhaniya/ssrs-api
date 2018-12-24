@@ -42,7 +42,7 @@ const calculateParameterCost = async (parameter, requiredUnits, availableParamet
 
     if (availableParameters) {
         availableParameters = convertToStringArray(availableParameters);
-        //for (let i = 0; i < parameters.length; i++) {
+       // for (let i = 0; i < parameters.length; i++) {
             let parameterId;
             if (parameter._id) {
                 parameterId = parameter._id;
@@ -56,7 +56,7 @@ const calculateParameterCost = async (parameter, requiredUnits, availableParamet
             }
 
             totalCost += parameter.baseCharge;
-        //}
+        }
     } else {
         //for (let i = 0; i < parameters.length; i++) {
             let parameterId;
@@ -71,7 +71,7 @@ const calculateParameterCost = async (parameter, requiredUnits, availableParamet
             }
 
             totalCost += parameter.baseCharge;
-        //}
+        }
     }
 
     return totalCost * requiredUnits;
