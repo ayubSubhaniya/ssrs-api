@@ -236,17 +236,14 @@ const checkPaymentMode = async (cart, paymentMode) => {
 const validateCart = async (orders, user) => {
     console.log(cart);
 
-    for (let i = 0; i < orders.length; i++) {
-        const service = await Service.findById(orders[i].service);
-        const parameter = await parameter.findById(orders[i].parameters);
+    // for (let i = 0; i < orders.length; i++) {
+    //     const service = await Service.findById(orders[i].service);
+    //     const parameter = await parameter.findById(orders[i].parameters);
 
-        if (!service) {
-            return 'services are changed in mean time.';
-        }
-        if (!parameter) {
-            return 'parameters are changed in mean time.';
-        }
-    }
+    //     if (!collectionTypes.includes(collectionTypeDoc._id.toString())) {
+    //         return -1;
+    //     }
+    // }
 
     return true;
 }
