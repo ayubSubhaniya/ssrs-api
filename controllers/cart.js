@@ -232,6 +232,12 @@ const checkPaymentMode = async (cart, paymentMode) => {
     return true;
 };
 
+const validateCart = async (cart, user) => {
+    console.log(cart);
+    return true;
+}
+
+
 module.exports = {
     getMyCart: async (req, res, next) => {
 
@@ -880,6 +886,11 @@ module.exports = {
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
+
+                    const result = await validateCart(cartInDb,user);               /* ***************************** */
+                    if(!result) {
+                        console.log("this is not good.");
+                    }
 
                     cartInDb.orders = await validateOrder(cartInDb.orders, user);
 
