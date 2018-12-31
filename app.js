@@ -185,7 +185,7 @@ app.use(async (err, req, res, next) => {
     console.error(err);
     debug(req.method + ' ' + req.url + ' %O', error);
     logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
-    await sendMail(developersMail, [], [], er.message,[], er.stack);
+    await sendMail(developersMail, [], [], err.message,[], err.stack);
 });
 
 

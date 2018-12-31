@@ -574,7 +574,7 @@ module.exports = {
             cart[i].totalCost = cart[i].collectionTypeCost + cart[i].ordersCost;
         }
 
-        cart.concat(await PlacedCart.find(query)
+        cart = cart.concat(await PlacedCart.find(query)
             .sort(sortQuery));
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
@@ -971,7 +971,8 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate('service','parameters');
+                            .populate(['service','parameters']);
+
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                         placedOrderDoc.parameters = filterResourceData(placedOrderDoc.parameters, placedOrderParameterAttributes);
@@ -1012,9 +1013,9 @@ module.exports = {
                     let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await cartInDb.orders[i].remove();
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
                     }
-                    await cartInDb.remove();
+                    await Cart.findByIdAndRemove(cartId);
 
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -1174,9 +1175,9 @@ module.exports = {
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await cartInDb.orders[i].remove();
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
                     }
-                    await cartInDb.remove();
+                    await Cart.findByIdAndRemove(cartId);
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
@@ -1603,10 +1604,10 @@ module.exports = {
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
 
-                    for (let i = 0; i < updatedCart.orders.length; i++) {
-                        await updatedCart.orders[i].remove();
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
                     }
-                    await updatedCart.remove();
+                    await Cart.findByIdAndRemove(cartId);
 
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
                     await notification.save();
