@@ -350,7 +350,8 @@ module.exports = {
             .readAny(resources.collector);
 
         if (readAnyCartPermission.granted) {
-            let cart = await PlacedCart.findById(cartId).populate(['orders','delivery','pickup']);
+            let cart = await PlacedCart.findById(cartId)
+                .populate(['orders', 'delivery', 'pickup']);
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
@@ -390,7 +391,8 @@ module.exports = {
             let cart = await PlacedCart.findOne({
                 _id: cartId,
                 requestedBy: daiictId
-            });
+            })
+                .populate(['orders', 'delivery', 'pickup']);
 
             if (!cart) {
                 cart = await Cart.findOne({
@@ -551,7 +553,7 @@ module.exports = {
                 }
             });
 
-        for (let i=0;i<cart.length;i++){
+        for (let i = 0; i < cart.length; i++) {
             cart[i].orders = await validateOrder(cart[i].orders, user);
 
             const ordersCost = await calculateOrdersCost(cart[i]);
@@ -575,7 +577,8 @@ module.exports = {
         }
 
         cart = cart.concat(await PlacedCart.find(query)
-            .sort(sortQuery));
+            .sort(sortQuery))
+            .populate(['orders', 'delivery', 'pickup']);
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
@@ -973,7 +976,7 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate(['service','parameters']);
+                            .populate(['service', 'parameters']);
 
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
@@ -1133,7 +1136,7 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate(['service','parameters']);
+                            .populate(['service', 'parameters']);
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                         placedOrderDoc.orderId = order._id;
@@ -1575,7 +1578,7 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate(['service','parameters']);
+                            .populate(['service', 'parameters']);
 
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
