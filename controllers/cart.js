@@ -577,8 +577,8 @@ module.exports = {
         }
 
         cart = cart.concat(await PlacedCart.find(query)
-            .sort(sortQuery))
-            .populate(['orders', 'delivery', 'pickup']);
+            .sort(sortQuery)
+            .populate(['orders', 'delivery', 'pickup']));
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
