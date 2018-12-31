@@ -25,7 +25,26 @@ const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { adminTypes, userTypes, homePage, easyPaySuccessResponse, systemAdmin, resources, collectionTypes, sortQueryName, paymentTypes, cartStatus, orderStatus, collectionStatus, placedOrderAttributes, placedOrderServiceAttributes, placedCartAttributes, ORDER_CANCEL_TIME_IN_PAYMENT_DELAY, CHECK_FOR_OFFLINE_PAYMENT } = require('../configuration');
+const {
+    adminTypes,
+    userTypes,
+    homePage,
+    easyPaySuccessResponse,
+    systemAdmin,
+    resources,
+    collectionTypes,
+    sortQueryName,
+    paymentTypes,
+    cartStatus,
+    orderStatus,
+    collectionStatus,
+    placedOrderAttributes,
+    placedOrderServiceAttributes,
+    placedOrderParameterAttributes,
+    placedCartAttributes,
+    ORDER_CANCEL_TIME_IN_PAYMENT_DELAY,
+    CHECK_FOR_OFFLINE_PAYMENT,
+} = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail'),
@@ -37,7 +56,7 @@ const checkForOfflinePayment = async () => {
     const failedOrderTime = new Date();
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
-    const carts = await Cart.find({
+    const carts = await PlacedCart.find({
         status: cartStatus.placed,
     });
 
@@ -331,26 +350,30 @@ module.exports = {
             .readAny(resources.collector);
 
         if (readAnyCartPermission.granted) {
-            const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
-                    populate: {
-                        'orders': {
-                            select: readAnyOrderPermission.attributes
-                        },
-                        'delivery': {
-                            select: readAnyCourierPermission.attributes
-                        },
-                        'pickup': {
-                            select: readAnyPickupPermission.attributes
-                        },
-                        'orders.service': {
-                            select: readAnyServicePermission.attributes
-                        },
-                        'orders.parameters': {
-                            select: readAnyParameterPermission.attributes
+            let cart = await PlacedCart.findById(cartId);
+
+            if (!cart) {
+                cart = await Cart.findById(cartId)
+                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
+                        populate: {
+                            'orders': {
+                                select: readAnyOrderPermission.attributes
+                            },
+                            'delivery': {
+                                select: readAnyCourierPermission.attributes
+                            },
+                            'pickup': {
+                                select: readAnyPickupPermission.attributes
+                            },
+                            'orders.service': {
+                                select: readAnyServicePermission.attributes
+                            },
+                            'orders.parameters': {
+                                select: readAnyParameterPermission.attributes
+                            }
                         }
-                    }
-                });
+                    });
+            }
 
             if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -364,29 +387,36 @@ module.exports = {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
         } else if (readOwnCartPermission.granted) {
-            const cart = await Cart.findOne({
+            let cart = await PlacedCart.findOne({
                 _id: cartId,
                 requestedBy: daiictId
-            })
-                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
-                    populate: {
-                        'orders': {
-                            select: readOwnOrderPermission.attributes
-                        },
-                        'delivery': {
-                            select: readOwnCourierPermission.attributes
-                        },
-                        'pickup': {
-                            select: readOwnPickupPermission.attributes
-                        },
-                        'orders.service': {
-                            select: readAnyServicePermission.attributes
-                        },
-                        'orders.parameters': {
-                            select: readAnyParameterPermission.attributes
+            });
+
+            if (!cart) {
+                cart = await Cart.findOne({
+                    _id: cartId,
+                    requestedBy: daiictId
+                })
+                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
+                        populate: {
+                            'orders': {
+                                select: readOwnOrderPermission.attributes
+                            },
+                            'delivery': {
+                                select: readOwnCourierPermission.attributes
+                            },
+                            'pickup': {
+                                select: readOwnPickupPermission.attributes
+                            },
+                            'orders.service': {
+                                select: readAnyServicePermission.attributes
+                            },
+                            'orders.parameters': {
+                                select: readAnyParameterPermission.attributes
+                            }
                         }
-                    }
-                });
+                    });
+            }
 
             if (!cart) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -499,7 +529,7 @@ module.exports = {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
 
-        const cart = await Cart.find(query)
+        let cart = await Cart.find(query)
             .sort(sortQuery)
             .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                 populate: {
@@ -521,30 +551,31 @@ module.exports = {
                 }
             });
 
-        /*for (let i = 0; i < cart.length; i++) {
-            if (cart[i].status < cartStatus.placed) {
-                cart[i].orders = await validateOrder(cart[i].orders, user);
+        for (let i=0;i<cart.length;i++){
+            cart[i].orders = await validateOrder(cart[i].orders, user);
 
-                const ordersCost = await calculateOrdersCost(cart[i]);
-                if (ordersCost === -1) {
-                    cart[i].status = cartStatus.invalid;
-                    cart[i].validityErrors.push(errorMessages.invalid);
-                } else {
-                    cart[i].ordersCost = ordersCost;
-                }
-
-                const collectionTypeCost = await calculateCollectionTypeCost(cart[i].collectionType, cart[i].orders);
-
-                if (collectionTypeCost === -1) {
-                    cart[i].status = cartStatus.invalid;
-                    cart[i].validityErrors.push(errorMessages.invalidCollectionType);
-                } else {
-                    cart[i].collectionTypeCost = collectionTypeCost;
-                }
-
-                cart[i].totalCost = cart[i].collectionTypeCost + cart[i].ordersCost;
+            const ordersCost = await calculateOrdersCost(cart[i]);
+            if (ordersCost === -1) {
+                cart[i].status = cartStatus.invalid;
+                cart[i].validityErrors.push(errorMessages.invalid);
+            } else {
+                cart[i].ordersCost = ordersCost;
             }
-        }*/
+
+            const collectionTypeCost = await calculateCollectionTypeCost(cart[i].collectionType, cart[i].orders);
+
+            if (collectionTypeCost === -1) {
+                cart[i].status = cartStatus.invalid;
+                cart[i].validityErrors.push(errorMessages.invalidCollectionType);
+            } else {
+                cart[i].collectionTypeCost = collectionTypeCost;
+            }
+
+            cart[i].totalCost = cart[i].collectionTypeCost + cart[i].ordersCost;
+        }
+
+        cart.concat(await PlacedCart.find(query)
+            .sort(sortQuery));
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
@@ -866,6 +897,7 @@ module.exports = {
                     select: readOwnOrderPermission.attributes
                 });
 
+
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced) {
                     const cartUpdateAtt = req.value.body;
@@ -928,7 +960,6 @@ module.exports = {
                     await cartInDb.save();
 
                     const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
-                    placedCartDoc.cartId = cartInDb._id;
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
@@ -940,9 +971,10 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate('service');
+                            .populate('service','parameters');
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                        placedOrderDoc.parameters = filterResourceData(placedOrderDoc.parameters, placedOrderParameterAttributes);
                         placedOrderDoc.orderId = order._id;
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
@@ -978,6 +1010,12 @@ module.exports = {
                         paymentCode: updatedCart.paymentCode
                     };
                     let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].remove();
+                    }
+                    await cartInDb.remove();
+
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
@@ -1134,6 +1172,11 @@ module.exports = {
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].remove();
+                    }
+                    await cartInDb.remove();
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
@@ -1512,11 +1555,14 @@ module.exports = {
                     }
 
 
-                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
-                    placedCartDoc.cartId = cartInDb._id;
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
 
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                    const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
+                    //placedCartDoc.cartId = cartInDb._id;
+                    const placedCart = new PlacedCart(placedCartDoc);
+
+                    for (let i = 0; i < updatedCart.orders.length; i++) {
+                        const order = await Order.findByIdAndUpdate(updatedCart.orders[i], {
                             status: orderStatus.processing,
                             '$set': {
                                 'statusChangeTime.placed': {
@@ -1536,11 +1582,13 @@ module.exports = {
                         placedOrderDoc.orderId = order._id;
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
+                        placedOrder.cartId = placedCart._id;
                         await placedOrder.save();
-                        placedCartDoc.orders[i] = placedOrder._id;
+
+                        placedCart.orders[i] = placedOrder._id;
                     }
 
-                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
+                    await placedCart.save();
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['successfulEasyPayPayment'].cc;
@@ -1552,9 +1600,15 @@ module.exports = {
                         paymentId: cartInDb.paymentId
                     };
                     let mailBody = mustache.render(mailTemplates['successfulEasyPayPayment'].body, options);
-                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
+
+                    for (let i = 0; i < updatedCart.orders.length; i++) {
+                        await updatedCart.orders[i].remove();
+                    }
+                    await updatedCart.remove();
+
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
                     await notification.save();
 
                     const renderInfo = {};
@@ -1608,7 +1662,7 @@ module.exports = {
                 }
             };
 
-            const cartInDb = await Cart.findOne({ paymentCode });
+            const cartInDb = await PlacedCart.findOne({ paymentCode });
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
@@ -1620,7 +1674,7 @@ module.exports = {
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                        await PlacedOrder.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.processing,
                             '$set': {
                                 'statusChangeTime.processing': {
@@ -1633,7 +1687,7 @@ module.exports = {
 
                     cartUpdateAtt.status = cartStatus.processing;
 
-                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
+                    const updatedCart = await PlacedCart.findOneAndUpdate({ paymentCode }, cartUpdateAtt, { new: true });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['offlinePaymentAccepted'].cc;
@@ -1680,7 +1734,7 @@ module.exports = {
 
             const cartUpdateAtt = req.value.body;
 
-            const cartInDb = await Cart.findById(cartId)
+            const cartInDb = await PlacedCart.findById(cartId)
                 .populate({
                     path: 'orders',
                     select: readAnyOrderPermission.attributes
@@ -1756,7 +1810,7 @@ module.exports = {
                         }
                         for (let i = 0; i < cartInDb.orders.length; i++) {
                             if (cartInDb.orders[i].status !== orderStatus.cancelled) {
-                                await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                                await PlacedOrder.findByIdAndUpdate(cartInDb.orders[i], {
                                     status: orderStatus.completed,
                                     '$set': {
                                         'statusChangeTime.completed': {
@@ -1765,7 +1819,7 @@ module.exports = {
                                         },
                                     }
                                 });
-                                await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, { status: orderStatus.completed });
+                                //await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, { status: orderStatus.completed });
                             }
 
                         }
@@ -1774,8 +1828,8 @@ module.exports = {
                         return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
 
-                await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
-                const updatedCart = await Cart.findByIdAndUpdate(cartId, updateAtt, { new: true });
+                //await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
+                const updatedCart = await PlacedCart.findByIdAndUpdate(cartId, updateAtt, { new: true });
 
                 await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -1823,7 +1877,7 @@ module.exports = {
                 }
             };
 
-            const cartInDb = await Cart.findById(cartId);
+            const cartInDb = await PlacedCart.findById(cartId);
 
             if (cartInDb) {
                 if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
@@ -1835,7 +1889,7 @@ module.exports = {
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                        await PlacedOrder.findByIdAndUpdate(cartInDb.orders[i], {
                             status: orderStatus.cancelled,
                             lastModified: cartUpdateAtt.lastModified,
                             lastModifiedBy: daiictId,
@@ -1848,17 +1902,17 @@ module.exports = {
                             }
                         });
 
-                        await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, {
-                            status: orderStatus.cancelled,
-                            cancelReason: cartUpdateAtt.cancelReason
-                        });
+                        // await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, {
+                        //     status: orderStatus.cancelled,
+                        //     cancelReason: cartUpdateAtt.cancelReason
+                        // });
                     }
 
-                    await Cart.findByIdAndUpdate(cartId, cartUpdateAtt);
-                    await PlacedCart.findOneAndUpdate({ cartId }, {
-                        status: cartStatus.cancelled,
-                        cancelReason: cartUpdateAtt.cancelReason
-                    });
+                    await PlacedCart.findByIdAndUpdate(cartId, cartUpdateAtt);
+                    // await PlacedCart.findOneAndUpdate({ cartId }, {
+                    //     status: cartStatus.cancelled,
+                    //     cancelReason: cartUpdateAtt.cancelReason
+                    // });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['cancelCart'].cc;
@@ -1898,7 +1952,7 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
 
-            const cartInDb = await Cart.findById(cartId);
+            const cartInDb = await PlacedCart.findById(cartId);
 
             if (cartInDb.status >= cartStatus.processing) {
                 const { comment } = req.body;
@@ -1950,7 +2004,7 @@ module.exports = {
             .readOwn(resources.cart);
 
         if (readOwnCartPermission.granted) {
-            const cart = await Cart.findById(cartId);
+            const cart = await PlacedCart.findById(cartId);
             // const invoiceFile = './data/invoice_pdf/' + cart.orderId + '.pdf';
             // res.attachment(invoiceFile);          // sends 200 OK alongwith invoiceFile
             // res.sendStatus(httpStatusCodes.OK);

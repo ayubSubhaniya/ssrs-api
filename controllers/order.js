@@ -107,7 +107,7 @@ const validateOrder = async (orders, user) => {
 
         for (let i = 0; i < orders.length; i++) {
 
-            if (orders[i].status === orderStatus.unplaced || orders[i].status === orderStatus.invalidOrder) {
+            if (orders[i].status < orderStatus.placed) {
                 newOrders.push(await recalculateOrderCost(orders[i], user));
             } else {
                 newOrders.push(orders[i]);
@@ -118,7 +118,7 @@ const validateOrder = async (orders, user) => {
     } else if (orders !== undefined) {
         let newOrder = {};
 
-        if (orders.status === orderStatus.unplaced || orders.status === orderStatus.invalidOrder) {
+        if (orders.status < orderStatus.placed) {
             newOrder = await recalculateOrderCost(orders, user);
         } else {
             newOrder = orders;
@@ -144,13 +144,24 @@ const validateAddedOrder = async (cartId, service, unitsRequested) => {
 };
 
 const getOrders = async (user, query, readableAttributes, parameterReadableAtt, sortQuery) => {
+
+    const placedOrder = await PlacedOrder.find(query)
+        .sort(sortQuery);
+    // if (query.status){
+    //     if (query.status['$lte']){
+    //         if (query.status['$lte']<=orderStatus){
+    //
+    //         }
+    //     }
+    // }
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({
             path: 'parameters',
             select: parameterReadableAtt
         });
-    const validatedOrder = await validateOrder(orders, user);
+    let validatedOrder = await validateOrder(orders, user);
+    validatedOrder = validatedOrder.concat(placedOrder);
     return filterResourceData(validatedOrder, readableAttributes);
 };
 
@@ -343,15 +354,22 @@ module.exports = {
         if (updateOwnPermission.granted) {
             const updatedOrder = req.value.body;
 
-            const orderInDB = await Order.findOne({
+            let orderInDB = await PlacedOrder.findOne({
                 _id: orderId,
                 requestedBy: daiictId
             });
 
+            if (!orderInDB){
+                orderInDB = await Order.findOne({
+                    _id: orderId,
+                    requestedBy: daiictId
+                });
+            }
+
             if (orderInDB) {
                 if (orderInDB.status === orderStatus.onHold) {
 
-                    const order = await Order.findOneAndUpdate({
+                    const order = await PlacedOrder.findOneAndUpdate({
                         _id: orderId,
                         requestedBy: daiictId
                     }, {
@@ -359,12 +377,9 @@ module.exports = {
                         comment: updatedOrder.comment,
                         lastModifiedBy: daiictId,
                         lastModified: new Date(),
-                    }, { new: true })
-                        .populate({
-                            path: 'parameters',
-                            select: readAnyParameterPermission.attributes
-                        });
-                    await Cart.findByIdAndUpdate(orderInDB.cartId, { status: cartStatus.processing });
+                    }, { new: true });
+
+                    await PlacedCart.findByIdAndUpdate(orderInDB.cartId, { status: cartStatus.processing });
 
                     if (order) {
                         const filteredOrder = filterResourceData(order, readOwnPermission.attributes);
@@ -374,7 +389,7 @@ module.exports = {
                         res.sendStatus(httpStatusCodes.NOT_FOUND);
                     }
                 }
-                else if (orderInDB.status === orderStatus.unplaced || orderInDB.status === orderStatus.invalidOrder) {
+                else if (orderInDB.status < orderStatus.placed) {
 
                     if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.service);
@@ -442,8 +457,7 @@ module.exports = {
 
             const orderUpdateAtt = req.value.body;
 
-            const orderInDb = await Order.findById(orderId)
-                .populate(['service', 'parameters']);
+            const orderInDb = await PlacedOrder.findById(orderId);
 
             if (!orderInDb) {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
@@ -505,9 +519,9 @@ module.exports = {
                     return res.sendStatus(httpStatusCodes.BAD_REQUEST);
             }
 
-            const updatedOrder = await Order.findByIdAndUpdate(orderId, updateAtt, { new: true });
+            const updatedOrder = await PlacedOrder.findByIdAndUpdate(orderId, updateAtt, { new: true });
 
-            const cart = await Cart.findById(orderInDb.cartId)
+            const cart = await PlacedCart.findById(orderInDb.cartId)
                 .populate({
                     path: 'orders',
                     select: 'status'
@@ -605,20 +619,19 @@ module.exports = {
                 }
             };
 
-            const orderInDB = await Order.findById(orderId)
-                .populate(['service', 'parameters']);
+            const orderInDB = await PlacedOrder.findById(orderId);
 
             if (orderInDB) {
 
                 if (orderInDB.status >= orderStatus.placed && orderInDB.status < orderStatus.completed) {
 
-                    const order = await Order.findByIdAndUpdate(orderId, updatedOrder);
-                    const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
-                        status: orderStatus.cancelled,
-                        cancelReason: updatedOrder.cancelReason
-                    });
+                    const order = await PlacedOrder.findByIdAndUpdate(orderId, updatedOrder);
+                    // const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
+                    //     status: orderStatus.cancelled,
+                    //     cancelReason: updatedOrder.cancelReason
+                    // });
 
-                    const cart = await Cart.findById(orderInDB.cartId)
+                    const cart = await PlacedCart.findById(orderInDB.cartId)
                         .populate({
                             path: 'orders',
                             select: 'status'
@@ -659,10 +672,10 @@ module.exports = {
                             by: systemAdmin
                         };
 
-                        await PlacedCart.findOneAndUpdate({ cartId: cart._id }, {
-                            status: cartStatus.cancelled,
-                            cancelReason: 'All orders cancelled'
-                        });
+                        // await PlacedCart.findOneAndUpdate({ cartId: cart._id }, {
+                        //     status: cartStatus.cancelled,
+                        //     cancelReason: 'All orders cancelled'
+                        // });
 
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
                             await Delivery.findByIdAndUpdate(cart.delivery, { status: collectionStatus.cancel });

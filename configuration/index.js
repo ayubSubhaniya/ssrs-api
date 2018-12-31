@@ -107,14 +107,7 @@ module.exports = {
         cancel: 50
     },
 
-    placedOrderServiceAttributes: [
-        'name',
-        'description',
-        'baseCharge'
-    ],
-
     placedOrderAttributes: [
-        'orderId',
         'requestedBy',
         'service',
         'cartId',
@@ -126,7 +119,23 @@ module.exports = {
         'status',
         'parameters',
         'unitsRequested',
-        'cancelReason'
+        'cancelReason',
+        'holdReason',
+        'statusChangeTime',
+        'lastModifiedBy',
+        'lastModified'
+    ],
+
+    placedOrderServiceAttributes: [
+        'name',
+        'description',
+        'baseCharge'
+    ],
+
+    placedOrderParameterAttributes: [
+        'name',
+        'description',
+        'baseCharge'
     ],
 
     placedCartAttributes: [
@@ -142,10 +151,17 @@ module.exports = {
         'paymentType',
         'paymentId',
         'paymentCode',
+        'paymentStatus',
+        'paymentFailHistory',
         'delivery',
         'pickup',
         'collectionType',
-        'cancelReason'
+        'collectionTypeCategory',
+        'cancelReason',
+        'statusChangeTime',
+        'comment',
+        'lastModified',
+        'lastModifiedBy'
     ],
 
     allowedCartStatusChanges: {

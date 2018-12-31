@@ -60,7 +60,7 @@ const deliverySchema = new Schema({
     },
     cartId: {
         type: Schema.Types.ObjectId,
-        ref: 'cart',
+        ref: 'placedCart',
         required: true,
     },
     status: {
