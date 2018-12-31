@@ -18,7 +18,7 @@ const CollectionType = require('../models/collectionType');
 const EasyPayPaymentInfo = require('../models/easyPayPaymentInfo');
 
 const paymentCodeGenerator = require('shortid');
-paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$');
+paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&$');
 
 const { generateCartStatusChangeNotification, generatePendingPaymentNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
@@ -350,7 +350,7 @@ module.exports = {
             .readAny(resources.collector);
 
         if (readAnyCartPermission.granted) {
-            let cart = await PlacedCart.findById(cartId);
+            let cart = await PlacedCart.findById(cartId).populate(['orders','delivery','pickup']);
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
@@ -1019,7 +1019,7 @@ module.exports = {
 
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
-                    const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
+                    const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
@@ -1171,7 +1171,7 @@ module.exports = {
                     let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
-                    const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
+                    const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         await Order.findByIdAndRemove(cartInDb.orders[i]);
