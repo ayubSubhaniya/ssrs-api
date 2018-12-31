@@ -959,7 +959,9 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
@@ -989,8 +991,6 @@ module.exports = {
 
                     const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
-
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const cart = new Cart({
                         requestedBy: daiictId,
@@ -1118,8 +1118,9 @@ module.exports = {
                     }
 
                     await cartInDb.save();
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
-                    const placedCartDoc = filterResourceData(cartInDb, placedCartAttributes);
+                    const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     placedCartDoc.cartId = cartInDb._id;
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -1132,7 +1133,7 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate('service');
+                            .populate(['service','parameters']);
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                         placedOrderDoc.orderId = order._id;
@@ -1148,8 +1149,6 @@ module.exports = {
 
                     const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
                     await notification.save();
-
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const cart = new Cart({
                         requestedBy: daiictId,
@@ -1576,7 +1575,7 @@ module.exports = {
                                 },
                             }
                         }, { new: true })
-                            .populate('service');
+                            .populate(['service','parameters']);
 
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
