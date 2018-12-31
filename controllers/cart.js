@@ -965,6 +965,7 @@ module.exports = {
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
+                    const placedCart = new PlacedCart(placedCartDoc);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
@@ -982,14 +983,16 @@ module.exports = {
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                         placedOrderDoc.parameters = filterResourceData(placedOrderDoc.parameters, placedOrderParameterAttributes);
                         placedOrderDoc.orderId = order._id;
+                        placedOrderDoc.cartId = placedCart._id;
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
                         await placedOrder.save();
-                        placedCartDoc.orders[i] = placedOrder._id;
+
+                        placedCart.orders[i] = placedOrder._id;
                     }
 
-                    placedCartDoc.status = cartUpdateAtt.status;
-                    const placedCart = new PlacedCart(placedCartDoc);
+                    placedCart.status = cartUpdateAtt.status;
+
                     await placedCart.save();
 
                     const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
@@ -1124,7 +1127,7 @@ module.exports = {
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
-                    placedCartDoc.cartId = cartInDb._id;
+                    const placedCart = new PlacedCart(placedCartDoc);
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
                         const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
@@ -1140,14 +1143,14 @@ module.exports = {
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                         placedOrderDoc.orderId = order._id;
+                        placedOrderDoc.cartId = placedCart._id;
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
                         await placedOrder.save();
                         placedCartDoc.orders[i] = placedOrder._id;
                     }
 
-                    placedCartDoc.status = cartUpdateAtt.status;
-                    const placedCart = new PlacedCart(placedCartDoc);
+                    placedCart.status = cartUpdateAtt.status;
                     await placedCart.save();
 
                     const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status);
@@ -1583,9 +1586,9 @@ module.exports = {
                         const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
                         placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
                         placedOrderDoc.orderId = order._id;
+                        placedOrderDoc.cartId = placedCart._id;
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
-                        placedOrder.cartId = placedCart._id;
                         await placedOrder.save();
 
                         placedCart.orders[i] = placedOrder._id;
