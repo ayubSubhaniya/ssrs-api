@@ -12,6 +12,7 @@ const Collector = require('../models/collector');
 const Order = require('../models/order');
 const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
+const Parameter = require('../models/parameter');
 const Cart = require('../models/cart');
 const UserInfo = require('../models/userInfo');
 const CollectionType = require('../models/collectionType');
@@ -20,7 +21,7 @@ const EasyPayPaymentInfo = require('../models/easyPayPaymentInfo');
 const paymentCodeGenerator = require('shortid');
 paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&$');
 
-const { generateCartStatusChangeNotification, generatePendingPaymentNotification } = require('../helpers/notificationHelper');
+const { generateCartStatusChangeNotification, generatePendingPaymentNotification, generateCurreptedOrderRemovalNotification } = require('../helpers/notificationHelper');
 const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
@@ -226,6 +227,143 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
     return collectionTypeDoc.baseCharge;
 };
 
+const corruptedOrderRemoval = async (cartId,user) => {
+    let cart = await Cart.findById(cartId);
+    if(!cart)
+    {
+        return ;
+    }
+    const { orders } = cart;
+    
+    let flag = 0;
+    
+    for(let i=0;i< orders.length; i++) {
+        let innerFlag = 0;
+        const order = await Order.findOne({
+            _id: orders[i]
+        });
+
+        if(!order)
+        {
+            flag = 1;
+            innerFlag = 1;
+            await Cart.findByIdAndUpdate(cart._id, {
+                'pull': {
+                    'orders': orders[i]
+                }
+            });
+            continue;
+        }
+
+        const prmtr = order.parameters;
+        const srvc = order.service;
+        const service = await Service.findById(srvc);
+        const requiredUnits = order.unitsRequested;
+        if(!service)
+        {
+            flag = 1;
+            innerFlag = 1;
+            await Order.findByIdAndRemove(order._id);
+
+            await Cart.findByIdAndUpdate(cart._id, {
+                    'pull': {
+                        'orders': orders[i]
+                    }
+            });
+        }
+        if(innerFlag === 1)
+        {
+            continue;
+        }
+        
+        const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
+        const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes('*') || service.allowedBatches.includes(user.userInfo.user_batch))) &&
+            (!user.userInfo.user_programme || (service.allowedProgrammes.includes('*') || service.allowedProgrammes.includes(user.userInfo.user_programme))) &&
+            (!user.userInfo.user_status || (service.allowedUserStatus.includes('*') || service.allowedUserStatus.includes(user.userInfo.user_status)));
+    
+        if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
+            flag = 1;
+            innerFlag = 1;
+
+            await Order.findByIdAndRemove(order._id);
+
+            await Cart.findByIdAndUpdate(cart._id, {
+                    'pull': {
+                        'orders': orders[i]
+                    }
+            });
+        }
+        if(innerFlag === 1)
+        {
+            continue;
+        }
+
+        const parameters = await Parameter.findById(prmtr);
+        let availableParameters = service.availableParameters;
+
+        if (availableParameters) {
+            availableParameters = convertToStringArray(availableParameters);
+            for (let i = 0; i < parameters.length; i++) {
+                let parameterId;
+                if (parameters[i]._id) {
+                    parameterId = parameters[i]._id;
+                } else {
+                    parameterId = parameters[i];
+                }
+    
+                const parameter = await Parameter.findById(parameterId);
+                if (!parameter || !parameter.isActive || !availableParameters.includes(parameterId.toString())) {
+                    flag = 1;
+                    innerFlag = 1;
+                    await Order.findByIdAndRemove(order._id);
+
+                    await Cart.findByIdAndUpdate(cart._id, {
+                            'pull': {
+                                'orders': orders[i]
+                            }
+                    });
+                    break;
+                }
+            }
+        } else {
+            for (let i = 0; i < parameters.length; i++) {
+                let parameterId;
+                if (parameters[i]._id) {
+                    parameterId = parameters[i]._id;
+                } else {
+                    parameterId = parameters[i];
+                }
+                const parameter = await Parameter.findById(parameterId);
+                if (!parameter || !parameter.isActive) {
+                    flag = 1;
+                    innerFlag = 1;
+
+                    await Order.findByIdAndRemove(order._id);
+
+                    await Cart.findByIdAndUpdate(cart._id, {
+                            'pull': {
+                                'orders': orders[i]
+                            }
+                    });
+                    break;
+                }    
+            }
+        }
+    }
+
+    if(flag === 1)
+    {
+        let message = "One or more order(s) from your cart are deleted due to Service/paraemeter description change.Please try again."
+        const notification = generateCurreptedOrderRemovalNotification(cart.requestedBy,systemAdmin,message);
+        await notification.save();
+//        return "Order description is changed";
+    }
+    // else
+    // {
+    //     return "all okay";
+    // }
+};
+
 const calculateOrdersCost = async (cart) => {
     let cost = 0;
     const { orders } = cart;
@@ -272,6 +410,8 @@ module.exports = {
 
         if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
+            await corruptedOrderRemoval(cartId,user);
+            
             const cart = await Cart.findById(cartId)
                 .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                     populate: {
@@ -292,6 +432,8 @@ module.exports = {
                         }
                     }
                 });
+
+            
 
             cart.orders = await validateOrder(cart.orders, user);
 
@@ -348,12 +490,13 @@ module.exports = {
             .readAny(resources.delivery);
         const readAnyPickupPermission = accessControl.can(user.userType)
             .readAny(resources.collector);
-
+        
         if (readAnyCartPermission.granted) {
             let cart = await PlacedCart.findById(cartId)
                 .populate(['orders', 'delivery', 'pickup']);
 
             if (!cart) {
+                await corruptedOrderRemoval(cartId,user);
                 cart = await Cart.findById(cartId)
                     .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
                         populate: {
@@ -395,6 +538,7 @@ module.exports = {
                 .populate(['orders', 'delivery', 'pickup']);
 
             if (!cart) {
+                await corruptedOrderRemoval(cartId,user);
                 cart = await Cart.findOne({
                     _id: cartId,
                     requestedBy: daiictId
@@ -554,6 +698,9 @@ module.exports = {
             });
 
         for (let i = 0; i < cart.length; i++) {
+
+            //await corruptedOrderRemoval(cart[i]._id,user);
+            
             cart[i].orders = await validateOrder(cart[i].orders, user);
 
             const ordersCost = await calculateOrdersCost(cart[i]);
@@ -604,6 +751,8 @@ module.exports = {
             const delivery = new Delivery(req.value.body);
             delivery.createdOn = timeStamp;
             delivery.createdBy = daiictId;
+
+            await corruptedOrderRemoval(cartId,user);
 
             const cart = await Cart.findById(cartId)
                 .populate({
@@ -680,6 +829,8 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
             const delivery = req.value.body;
 
+            await corruptedOrderRemoval(cartId,user);
+
             const cart = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
@@ -755,6 +906,8 @@ module.exports = {
             pickup.createdOn = timeStamp;
             pickup.createdBy = daiictId;
 
+            await corruptedOrderRemoval(cartId,user);
+
             const cart = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
@@ -829,6 +982,8 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
             const pickup = req.value.body;
 
+            await corruptedOrderRemoval(cartId,user);
+
             const cart = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
@@ -893,6 +1048,8 @@ module.exports = {
             .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
+
+            await corruptedOrderRemoval(cartId,user);
 
             const cartInDb = await Cart.findById(cartId)
                 .populate({
@@ -1058,6 +1215,8 @@ module.exports = {
 
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
+            await corruptedOrderRemoval(cartId,user);
+
             const cartInDb = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
@@ -1214,6 +1373,8 @@ module.exports = {
 
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
+            await corruptedOrderRemoval(cartId,user);
+
             const cartInDb = await Cart.findById(cartId)
                 .populate({
                     path: 'orders',
@@ -1329,6 +1490,8 @@ module.exports = {
             .readOwn(resources.order);
 
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
+
+            await corruptedOrderRemoval(cartId,user);
 
             const cartInDb = await Cart.findById(cartId)
                 .populate({
