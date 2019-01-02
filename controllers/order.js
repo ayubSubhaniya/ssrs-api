@@ -80,6 +80,19 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
 
+    if (!service) {
+        await Order.findByIdAndRemove(order._id);
+
+        await Cart.findByIdAndUpdate(order.cartId, {
+            'pull': {
+                'orders': order._id
+            }
+        });
+
+        /* Add notification here*/
+        return null;
+    }
+
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested, user);
     order.totalCost = 0;
@@ -108,7 +121,10 @@ const validateOrder = async (orders, user) => {
         for (let i = 0; i < orders.length; i++) {
 
             if (orders[i].status < orderStatus.placed) {
-                newOrders.push(await recalculateOrderCost(orders[i], user));
+                const newOrder = await recalculateOrderCost(orders[i], user);
+                if (newOrder) {
+                    newOrders.push(newOrder);
+                }
             } else {
                 newOrders.push(orders[i]);
             }
@@ -147,13 +163,7 @@ const getOrders = async (user, query, readableAttributes, parameterReadableAtt, 
 
     const placedOrder = await PlacedOrder.find(query)
         .sort(sortQuery);
-    // if (query.status){
-    //     if (query.status['$lte']){
-    //         if (query.status['$lte']<=orderStatus){
-    //
-    //         }
-    //     }
-    // }
+
     const orders = await Order.find(query)
         .sort(sortQuery)
         .populate({
@@ -359,7 +369,7 @@ module.exports = {
                 requestedBy: daiictId
             });
 
-            if (!orderInDB){
+            if (!orderInDB) {
                 orderInDB = await Order.findOne({
                     _id: orderId,
                     requestedBy: daiictId
