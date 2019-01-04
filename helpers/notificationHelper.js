@@ -108,10 +108,21 @@ const generatePendingPaymentNotification = (userId, adminId, cartLength, payment
     });
 
     return notification;
-}
+};
+
+const generateCurreptedOrderRemovalNotification = (userId, adminId, message) => {
+    const notification = new Notification({
+        createdBy: adminId,
+        createdOn: new Date(),
+        message: message,
+        userId: userId
+    });
+    return notification;
+};
 
 module.exports = {
     generateOrderStatusChangeNotification,
     generateCartStatusChangeNotification,
     generatePendingPaymentNotification,
+    generateCurreptedOrderRemovalNotification
 };

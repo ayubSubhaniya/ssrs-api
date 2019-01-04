@@ -15,7 +15,7 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { adminTypes, userTypes, resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification, generateCurreptedOrderRemovalNotification} = require('../helpers/notificationHelper');
 
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
@@ -90,6 +90,10 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
+        let message = "your order with service : " + order.serviceName + "is removed due to service/parameter description change.Please try again.";
+        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message);
+        await notification.save();
+        
         return null;
     }
 
