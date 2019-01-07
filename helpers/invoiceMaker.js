@@ -4,6 +4,7 @@ const PdfMaker = require('html-pdf');
 
 const { collectionTypes } = require('../configuration/index');
 const Cart = require('../models/cart');
+const PlacedCart = require('../models/placedCart');
 const UserInfo = require('../models/userInfo');
 
 const indexFilePath = __dirname + '/templates/index.html';
@@ -13,7 +14,7 @@ const invoicePdfDir = './data/invoice_pdf';
 
 const generateInvoice = async (cartId) => {
 
-    const cart = await Cart.findById(cartId)
+    const cart = await PlacedCart.findById(cartId)
         .populate('orders')
         .populate('pickup')
         .populate('delivery'); 
