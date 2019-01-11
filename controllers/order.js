@@ -673,7 +673,7 @@ module.exports = {
             }
 
             if (updatedOrder) {
-                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status, '-', orderInDb.cartId);
+                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status, orderInDb.cartId);
                 await notification.save();
 
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
@@ -814,7 +814,7 @@ module.exports = {
                     }
 
                     if (allCancel) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDB.cartId);
                         await notification.save();
 
                         let templateName = 'cancelCart';
