@@ -1,7 +1,7 @@
 const { orderStatus, cartStatus } = require('../configuration/index');
 const Notification = require('../models/notification');
 
-const generateOrderStatusChangeNotification = (userId, adminId, orderName, orderStatusNum) => {
+const generateOrderStatusChangeNotification = (userId, adminId, orderName, orderStatusNum, cartId) => {
     let orderStatusMsg = 'Your order ' + orderName + ' ';
     switch (orderStatusNum) {
         case orderStatus.unplaced:
@@ -41,13 +41,14 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
         createdBy: adminId,
         createdOn: new Date(),
         message: orderStatusMsg,
-        userId: userId
+        userId: userId,
+        cartId: cartId
     });
 
     return notification;
 };
 
-const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum, cancelReason) => {
+const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum, cancelReason, cartId) => {
     let cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
     switch (cartStatusNum) {
         case cartStatus.unplaced:
@@ -93,29 +94,32 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
         createdBy: adminId,
         createdOn: new Date(),
         message: cartStatusMsg,
-        userId: userId
+        userId: userId,
+        cartId: cartId
     });
 
     return notification;
 };
 
-const generatePendingPaymentNotification = (userId, adminId, cartLength, paymentType) => {
+const generatePendingPaymentNotification = (userId, adminId, cartLength, paymentType, cartId) => {
     const notification = new Notification({
         createdBy: adminId,
         createdOn: new Date(),
         message: "Your cart with " + cartLength + " order(s) has a pending " + paymentType + " payment. Pay fast or your order will get cancel.",
-        userId: userId
+        userId: userId,
+        cartId: cartId
     });
 
     return notification;
 };
 
-const generateCurreptedOrderRemovalNotification = (userId, adminId, message) => {
+const generateCurreptedOrderRemovalNotification = (userId, adminId, message, cartId) => {
     const notification = new Notification({
         createdBy: adminId,
         createdOn: new Date(),
         message: message,
-        userId: userId
+        userId: userId,
+        cartId: cartId
     });
     return notification;
 };

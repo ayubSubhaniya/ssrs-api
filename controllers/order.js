@@ -91,7 +91,7 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
-        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message);
+        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
         await notification.save();
         return null;
     }
@@ -114,7 +114,7 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
-        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message);
+        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
         await notification.save();
         return null;
     }
@@ -141,7 +141,7 @@ const recalculateOrderCost = async (order, user) => {
                 });
 
                 /* Add notification here*/
-                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message);
+                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
                 await notification.save();
                 return null;
             }
@@ -165,7 +165,7 @@ const recalculateOrderCost = async (order, user) => {
                 });
 
                 /* Add notification here*/
-                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message);
+                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
                 await notification.save();
                 return null;
             }    
@@ -649,7 +649,7 @@ module.exports = {
             await sendMail(mailTo, cc, bcc, subject, mailBody);
 
             if (allReady) {
-                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
                 await notification.save();
                 if (cart.collectionTypeCategory === collectionTypes.delivery) {
                     let templateName = 'orderReady-Delivery';
@@ -673,7 +673,7 @@ module.exports = {
             }
 
             if (updatedOrder) {
-                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status);
+                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status, '-', orderInDb.cartId);
                 await notification.save();
 
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
@@ -775,7 +775,7 @@ module.exports = {
 
                     await cart.save();
 
-                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled, order.cartId);
                     await notification.save();
 
                     let templateName = 'cancelOrder';
@@ -789,7 +789,7 @@ module.exports = {
                     await sendMail(mailTo, cc, bcc, subject, mailBody);
 
                     if (allReady) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
                         await notification.save();
 
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
@@ -814,7 +814,7 @@ module.exports = {
                     }
 
                     if (allCancel) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
                         await notification.save();
 
                         let templateName = 'cancelCart';

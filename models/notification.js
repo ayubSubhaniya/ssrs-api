@@ -18,6 +18,10 @@ const notificationSchema = new Schema({
     userId: {
         type: String,
         required: true,
+    },
+    cartId: {
+        type: String,
+        default: 'None',
     }
 });
 
