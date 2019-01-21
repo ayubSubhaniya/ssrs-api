@@ -15,7 +15,7 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { adminTypes, userTypes, resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification } = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification, generateCurreptedOrderRemovalNotification} = require('../helpers/notificationHelper');
 
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
@@ -79,6 +79,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 
 const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
+    let message = "your order with service : " + order.serviceName + "is removed due to service/parameter description change.Please try again.";
 
     if (!service) {
         await Order.findByIdAndRemove(order._id);
@@ -90,9 +91,87 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
+        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+        await notification.save();
         return null;
     }
 
+    const prmtr = order.parameters;
+    const requiredUnits = order.unitsRequested;
+
+    const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
+    const useServiceValidation = (!user.userInfo.user_batch || (service.allowedBatches.includes('*') || service.allowedBatches.includes(user.userInfo.user_batch))) &&
+        (!user.userInfo.user_programme || (service.allowedProgrammes.includes('*') || service.allowedProgrammes.includes(user.userInfo.user_programme))) &&
+        (!user.userInfo.user_status || (service.allowedUserStatus.includes('*') || service.allowedUserStatus.includes(user.userInfo.user_status)));
+
+    if (!specialServiceValidation || !useServiceValidation || !service.isActive || requiredUnits > service.maxUnits || requiredUnits <= 0) {
+        await Order.findByIdAndRemove(order._id);
+
+        await Cart.findByIdAndUpdate(order.cartId, {
+            'pull': {
+                'orders': order._id
+            }
+        });
+
+        /* Add notification here*/
+        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+        await notification.save();
+        return null;
+    }
+
+    let availableParameters = service.availableParameters;
+
+    if (availableParameters) {
+        availableParameters = convertToStringArray(availableParameters);
+        for (let i = 0; i < prmtr.length; i++) {
+            const ith_parameter = await Parameter.findById(prmtr[i]);
+            let parameterId;
+            if (ith_parameter._id) {
+                parameterId = ith_parameter._id;
+            } else {
+                parameterId = ith_parameter;
+            }
+            const parameter = await Parameter.findById(parameterId);
+            if (!parameter || !parameter.isActive || !availableParameters.includes(parameterId.toString())) {
+                await Order.findByIdAndRemove(order._id);
+                await Cart.findByIdAndUpdate(order.cartId, {
+                    'pull': {
+                        'orders': order._id
+                    }
+                });
+
+                /* Add notification here*/
+                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+                await notification.save();
+                return null;
+            }
+        }
+    } else {
+        for (let i = 0; i < prmtr.length; i++) {
+            const ith_parameter = await Parameter.findById(prmtr[i]);
+            let parameterId;
+            if (ith_parameter._id) {
+                parameterId = ith_parameter._id;
+            } else {
+                parameterId = ith_parameter;
+            }
+            const parameter = await Parameter.findById(parameterId);
+            if (!parameter || !parameter.isActive) {
+                await Order.findByIdAndRemove(order._id);
+                await Cart.findByIdAndUpdate(order.cartId, {
+                    'pull': {
+                        'orders': order._id
+                    }
+                });
+
+                /* Add notification here*/
+                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+                await notification.save();
+                return null;
+            }    
+        }
+    }
+    
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested, user);
     order.totalCost = 0;
@@ -570,7 +649,7 @@ module.exports = {
             await sendMail(mailTo, cc, bcc, subject, mailBody);
 
             if (allReady) {
-                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                const notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
                 await notification.save();
                 if (cart.collectionTypeCategory === collectionTypes.delivery) {
                     let templateName = 'orderReady-Delivery';
@@ -594,7 +673,7 @@ module.exports = {
             }
 
             if (updatedOrder) {
-                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status);
+                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status, orderInDb.cartId);
                 await notification.save();
 
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
@@ -636,10 +715,6 @@ module.exports = {
                 if (orderInDB.status >= orderStatus.placed && orderInDB.status < orderStatus.completed) {
 
                     const order = await PlacedOrder.findByIdAndUpdate(orderId, updatedOrder);
-                    // const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
-                    //     status: orderStatus.cancelled,
-                    //     cancelReason: updatedOrder.cancelReason
-                    // });
 
                     const cart = await PlacedCart.findById(orderInDB.cartId)
                         .populate({
@@ -682,11 +757,6 @@ module.exports = {
                             by: systemAdmin
                         };
 
-                        // await PlacedCart.findOneAndUpdate({ cartId: cart._id }, {
-                        //     status: cartStatus.cancelled,
-                        //     cancelReason: 'All orders cancelled'
-                        // });
-
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
                             await Delivery.findByIdAndUpdate(cart.delivery, { status: collectionStatus.cancel });
                         } else if (cart.collectionTypeCategory === collectionTypes.pickup) {
@@ -696,7 +766,7 @@ module.exports = {
 
                     await cart.save();
 
-                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled);
+                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled, order.cartId);
                     await notification.save();
 
                     let templateName = 'cancelOrder';
@@ -710,7 +780,7 @@ module.exports = {
                     await sendMail(mailTo, cc, bcc, subject, mailBody);
 
                     if (allReady) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
                         await notification.save();
 
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
@@ -735,7 +805,7 @@ module.exports = {
                     }
 
                     if (allCancel) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDB.cartId);
                         await notification.save();
 
                         let templateName = 'cancelCart';
