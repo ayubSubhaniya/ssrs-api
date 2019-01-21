@@ -65,12 +65,5 @@ const serviceSchema = new Schema({
     }]
 });
 
-// serviceSchema.pre('save', function (next) {
-//     this.availableParameters.map(function (x) {
-//        return x.toLowerCase();
-//     });
-//     next();
-// });
-
 const Service = moongose.model('service', serviceSchema);
 module.exports = Service;

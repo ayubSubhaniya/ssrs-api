@@ -158,6 +158,7 @@ module.exports = {
                 '_id',
                 'message',
                 'createdOn',
+                'cartId',
             ],
             canCreate: [
                 'message',
@@ -171,6 +172,7 @@ module.exports = {
                 '_id',
                 'message',
                 'createdOn',
+                'cartId',
             ],
             canCreate: [
                 'message',
@@ -184,6 +186,7 @@ module.exports = {
                 '_id',
                 'message',
                 'createdOn',
+                'cartId',
             ],
             canCreate: [],
             canUpdate: [],
