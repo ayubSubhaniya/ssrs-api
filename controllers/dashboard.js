@@ -1,8 +1,8 @@
 const HttpStatus = require('http-status-codes');
 
-const Order = require('../models/order');
+const PlacedOrder = require('../models/placedOrder');
 const Service = require('../models/service');
-const Cart = require('../models/cart');
+const PlacedCart = require('../models/placedCart');
 const CollectionType = require('../models/collectionType');
 
 const { orderStatus, cartStatus, userTypes, adminTypes } = require('../configuration');
@@ -29,7 +29,7 @@ module.exports = {
                 endDate = new Date(Number(endDateArray[0]), Number(endDateArray[1]) - 1, Number(endDateArray[2]), 23, 59, 59);
             }
 
-            const totalStats = await Cart.aggregate([
+            const totalStats = await PlacedCart.aggregate([
                 {
                     $match: {
                         status: {
@@ -55,7 +55,7 @@ module.exports = {
                 }
             ]);
 
-            const collectionTypeStats = await Cart.aggregate([
+            const collectionTypeStats = await PlacedCart.aggregate([
                 {
                     $match: {
                         status: {
@@ -94,7 +94,7 @@ module.exports = {
                 select: ['name']
             });
 
-            const paymentStats = await Cart.aggregate([
+            const paymentStats = await PlacedCart.aggregate([
                 {
                     $match: {
                         status: {
@@ -128,7 +128,7 @@ module.exports = {
                 }
             ]);
 
-            const orderStats = await Order.aggregate([
+            const orderStats = await PlacedOrder.aggregate([
                 {
                     $match: {
                         status: {
