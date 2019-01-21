@@ -715,10 +715,6 @@ module.exports = {
                 if (orderInDB.status >= orderStatus.placed && orderInDB.status < orderStatus.completed) {
 
                     const order = await PlacedOrder.findByIdAndUpdate(orderId, updatedOrder);
-                    // const placedOrder = await PlacedOrder.findOneAndUpdate({ orderId: order._id }, {
-                    //     status: orderStatus.cancelled,
-                    //     cancelReason: updatedOrder.cancelReason
-                    // });
 
                     const cart = await PlacedCart.findById(orderInDB.cartId)
                         .populate({
@@ -760,11 +756,6 @@ module.exports = {
                             time: new Date(),
                             by: systemAdmin
                         };
-
-                        // await PlacedCart.findOneAndUpdate({ cartId: cart._id }, {
-                        //     status: cartStatus.cancelled,
-                        //     cancelReason: 'All orders cancelled'
-                        // });
 
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
                             await Delivery.findByIdAndUpdate(cart.delivery, { status: collectionStatus.cancel });

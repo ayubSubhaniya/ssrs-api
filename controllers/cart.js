@@ -1247,12 +1247,6 @@ module.exports = {
                     const cartUpdateAtt = req.value.body;
                     cartUpdateAtt.status = cartStatus.paymentFailed;
                     cartUpdateAtt.paymentCode = orderid.generate();
-                    // cartUpdateAtt['$set'] = {
-                    //     'statusChangeTime.processingPayment': {
-                    //         time: new Date(),
-                    //         by: systemAdmin
-                    //     }
-                    // };
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
                     cartUpdateAtt.lastModified = new Date();
@@ -1586,7 +1580,6 @@ module.exports = {
                     const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
-                    //placedCartDoc.cartId = cartInDb._id;
                     const placedCart = new PlacedCart(placedCartDoc);
 
                     for (let i = 0; i < updatedCart.orders.length; i++) {
@@ -1851,7 +1844,6 @@ module.exports = {
                                         },
                                     }
                                 });
-                                //await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, { status: orderStatus.completed });
                             }
 
                         }
@@ -1860,7 +1852,6 @@ module.exports = {
                         return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
 
-                //await PlacedCart.findOneAndUpdate({ cartId }, { status: cartStatus.completed });
                 const updatedCart = await PlacedCart.findByIdAndUpdate(cartId, updateAtt, { new: true });
 
                 await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
@@ -1933,18 +1924,9 @@ module.exports = {
                                 }
                             }
                         });
-
-                        // await PlacedOrder.findOneAndUpdate({ orderId: cartInDb.orders[i] }, {
-                        //     status: orderStatus.cancelled,
-                        //     cancelReason: cartUpdateAtt.cancelReason
-                        // });
                     }
 
                     await PlacedCart.findByIdAndUpdate(cartId, cartUpdateAtt);
-                    // await PlacedCart.findOneAndUpdate({ cartId }, {
-                    //     status: cartStatus.cancelled,
-                    //     cancelReason: cartUpdateAtt.cancelReason
-                    // });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['cancelCart'].cc;

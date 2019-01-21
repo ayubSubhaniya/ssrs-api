@@ -39,16 +39,6 @@ module.exports = {
                 newTemplate['templateId'] = fileData[templateKey].templateId;
                 newTemplate['templateName'] = fileData[templateKey].templateName;
                 fileData[templateKey] = newTemplate;
-                
-                // fs.writeFile(path, JSON.stringify(fileData), (err) => {
-                //     if (err){
-                //         console.log(err);
-                //         res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-                //     } else {
-                //         console.log('File saved!');
-                //         res.status(HttpStatus.OK).json({});
-                //     }
-                // });
 
                 fs.writeFileSync(path, JSON.stringify(fileData));
                 res.status(HttpStatus.OK).json({});

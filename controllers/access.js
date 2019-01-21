@@ -31,10 +31,7 @@ const grantDefaultAdminAccess = () => {
                 .forEach(adminType => {
                     if (adminTypes[adminType] !== adminTypes.superAdmin) {
                         accessControl.grant(adminTypes[adminType])
-                            .readAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead'])
-                            //.createOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canCreate'])
-                            //.deleteOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canDelete'])
-                            //.updateOwn(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canUpdate']);
+                            .readAny(resources[resourceType], fieldAccess[resources[resourceType]][adminType]['canRead']);
                     }
                 });
         });
