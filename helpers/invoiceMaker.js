@@ -100,7 +100,7 @@ const generateInvoice = async (cartId) => {
         subTask.quantity = cart.orders[i].unitsRequested;
         subTask.serviceCost = cart.orders[i].serviceCost.toFixed(2);
         subTask.parameterCost = cart.orders[i].parameterCost.toFixed(2);
-        subTask.subTotal = (cart.orders[i].unitsRequested * (cart.orders[i].serviceCost + cart.orders[i].parameterCost)).toFixed(2);
+        subTask.subTotal = (cart.orders[i].serviceCost + cart.orders[i].parameterCost).toFixed(2);
 
         myInvoice.options.data.tasks.push(subTask);
     }
