@@ -93,7 +93,7 @@ const generateInvoice = async (cartId) => {
             subTotal: 0
         };
 
-        subTask.servicename = cart.orders[i].serviceName;
+        subTask.servicename = cart.orders[i].service.name;
         if (cart.orders[i].comment) {
             subTask.comment = cart.orders[i].comment;
         }
