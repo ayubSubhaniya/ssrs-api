@@ -23,7 +23,8 @@ module.exports = {
     },
     paymentTypes: {
         offline: 'offline',
-        online: 'online'
+        online: 'online',
+        noPayment: 'noPayment'
     },
     permissions: {
         readAny: 'readAny',

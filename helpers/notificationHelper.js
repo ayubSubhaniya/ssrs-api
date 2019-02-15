@@ -1,4 +1,4 @@
-const { orderStatus, cartStatus } = require('../configuration/index');
+const { orderStatus, cartStatus, systemAdmin } = require('../configuration/index');
 const Notification = require('../models/notification');
 
 const generateOrderStatusChangeNotification = (userId, adminId, orderName, orderStatusNum, cartId) => {
@@ -59,7 +59,7 @@ const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartS
             break;
         case cartStatus.processing:
             cartStatusMsg += 'has completed payment and is in process';
-            if (adminId !== 'System') {
+            if (adminId !== systemAdmin) {
                 cartStatusMsg += '. Payment accepted by ' + adminId;
             }
             break;
