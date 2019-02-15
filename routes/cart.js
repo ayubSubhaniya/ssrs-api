@@ -110,6 +110,13 @@ router.route('/invoice/:cartId')
         cartController.getInvoice
     );
 
+router.route('/zeroCostPayment')
+    .patch(
+        passport.authenticate('jwt', { session: false }),
+        validateBody(schemas.addPaymentSchema),
+        cartController.addZeroCostPayment
+    );
+
 router.route('/:cartId')
     .get(
         passport.authenticate('jwt', { session: false }),
