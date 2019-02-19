@@ -673,7 +673,7 @@ module.exports = {
             }
 
             if (updatedOrder) {
-                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status, orderInDb.cartId);
+                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.service.name, updateAtt.status, orderInDb.cartId);
                 await notification.save();
 
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
