@@ -2047,5 +2047,184 @@ module.exports = {
         } else {
             res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
-    }
+    },
+
+    addZeroCostPayment: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId, cartId } = user;
+        const cartUpdateAtt = req.value.body;
+
+        const updateOwnCartPermission = accessControl.can(user.userType)
+            .updateOwn(resources.cart);
+        const readOwnCartPermission = accessControl.can(user.userType)
+            .readOwn(resources.cart);
+        const readOwnOrderPermission = accessControl.can(user.userType)
+            .readOwn(resources.order);
+
+        if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
+
+            const cartInDb = await Cart.findById(cartId)
+                .populate({
+                    path: 'orders',
+                    select: readOwnOrderPermission.attributes
+                });
+
+            if (cartInDb) {
+                if (cartInDb.totalCost > 0) {
+                    return res.sendStatus(httpStatusCodes.METHOD_NOT_ALLOWED);
+                }
+
+                if (cartUpdateAtt.paymentType !== paymentTypes.noPayment) {
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                        .send(errorMessages.invalidPaymentType);
+                }
+
+                if (cartInDb.status === cartStatus.unplaced) {
+                    
+                    cartUpdateAtt.status = cartStatus.processing;
+                    cartUpdateAtt.paymentStatus = true;
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.placed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        },
+                        'statusChangeTime.paymentComplete': {
+                            time: new Date(),
+                            by: systemAdmin
+                        },
+                        'statusChangeTime.processing': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
+
+                    cartUpdateAtt.lastModifiedBy = daiictId;
+                    cartUpdateAtt.lastModified = new Date();
+
+                    cartInDb.orders = await validateOrder(cartInDb.orders, user);
+
+                    const ordersCost = await calculateOrdersCost(cartInDb);
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        cartInDb.validityErrors.push(errorMessages.invalid);
+                    } else {
+                        cartInDb.ordersCost = ordersCost;
+                    }
+
+                    const collectionTypeCost = await calculateCollectionTypeCost(cartInDb.collectionType, cartInDb.orders);
+                    if (collectionTypeCost === -1) {
+                        res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalidCollectionType);
+                        return;
+                    }
+                    cartInDb.collectionTypeCost = collectionTypeCost;
+                    cartInDb.totalCost = cartInDb.collectionTypeCost + cartInDb.ordersCost;
+
+                    if (cartInDb.orders.length === 0) {
+                        return res.status(httpStatusCodes.BAD_REQUEST)
+                            .send(errorMessages.noOrdersInCart);
+                    }
+                    if (ordersCost === -1) {
+                        cartInDb.status = cartStatus.invalid;
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.invalid);
+                    }
+
+                    if (cartInDb.delivery === undefined && cartInDb.pickup === undefined) {
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED)
+                            .send(errorMessages.noCollectionType);
+                    }
+
+                    /* save final cart and orders*/
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await cartInDb.orders[i].save();
+                    }
+
+                    await cartInDb.save();
+
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+
+                    const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
+                    const placedCart = new PlacedCart(placedCartDoc);
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        const order = await Order.findByIdAndUpdate(cartInDb.orders[i], {
+                            status: orderStatus.processing,
+                            '$set': {
+                                'statusChangeTime.placed': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                                'statusChangeTime.processing': {
+                                    time: new Date(),
+                                    by: systemAdmin
+                                },
+                            }
+                        }, { new: true })
+                            .populate(['service', 'parameters']);
+
+                        const placedOrderDoc = filterResourceData(order, placedOrderAttributes);
+                        placedOrderDoc.service = filterResourceData(placedOrderDoc.service, placedOrderServiceAttributes);
+                        placedOrderDoc.parameters = filterResourceData(placedOrderDoc.parameters, placedOrderParameterAttributes);
+                        placedOrderDoc.orderId = order._id;
+                        placedOrderDoc.cartId = placedCart._id;
+
+                        const placedOrder = new PlacedOrder(placedOrderDoc);
+                        await placedOrder.save();
+
+                        placedCart.orders[i] = placedOrder._id;
+                    }
+
+                    placedCart.status = cartUpdateAtt.status;
+
+                    await placedCart.save();
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.placed, '-', placedCart.id);
+                    await notification.save();
+
+
+                    /* Update all notification with old cartID */
+                    await updateCartIdInNotification(cartId, placedCart.id);
+
+                    const cart = new Cart({
+                        requestedBy: daiictId,
+                        createdOn: user.createdOn,
+                    });
+                    await cart.save();
+                    user.cartId = cart._id;
+                    await user.save();
+
+                    let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
+                    let cc = mailTemplates['orderPlaced'].cc;
+                    let bcc = mailTemplates['orderPlaced'].bcc;
+                    let mailSubject = mailTemplates['orderPlaced'].subject;
+                    let options = {
+                        orderId: updatedCart.orderId,
+                        cartLength: updatedCart.orders.length,
+                        totalCost: updatedCart.totalCost,
+                        paymentCode: updatedCart.paymentCode
+                    };
+                    let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
+                    }
+                    await Cart.findByIdAndRemove(cartId);
+
+                    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
+
+                    const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
+
+                    res.status(httpStatusCodes.OK)
+                        .json({ cart: filteredCart });
+                } else {
+                    res.sendStatus(httpStatusCodes.BAD_REQUEST);
+                }
+            } else {
+                res.sendStatus(httpStatusCodes.NOT_FOUND);
+            }
+        } else {
+            res.sendStatus(httpStatusCodes.FORBIDDEN);
+        }
+    },
 };
