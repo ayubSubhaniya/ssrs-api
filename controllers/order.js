@@ -79,7 +79,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 
 const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
-    let message = "your order with service : " + order.serviceName + "is removed due to service/parameter description change.Please try again.";
+    let message = "Your order with service : " + order.service.name + "is removed due to service/parameter description change.Please try again.";
 
     if (!service) {
         await Order.findByIdAndRemove(order._id);
@@ -673,7 +673,7 @@ module.exports = {
             }
 
             if (updatedOrder) {
-                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.serviceName, updateAtt.status, orderInDb.cartId);
+                const notification = generateOrderStatusChangeNotification(orderInDb.requestedBy, daiictId, orderInDb.service.name, updateAtt.status, orderInDb.cartId);
                 await notification.save();
 
                 const filteredOrder = filterResourceData(updatedOrder, readPermission.attributes);
@@ -766,7 +766,7 @@ module.exports = {
 
                     await cart.save();
 
-                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.serviceName, orderStatus.cancelled, order.cartId);
+                    let notification = generateOrderStatusChangeNotification(order.requestedBy, daiictId, order.service.name, orderStatus.cancelled, order.cartId);
                     await notification.save();
 
                     let templateName = 'cancelOrder';
