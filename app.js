@@ -22,7 +22,7 @@ const compression = require('compression');
 const { logger } = require('./configuration/logger');
 const {} = require('./configuration/dotenv');
 
-const sentryUrl = 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244';
+const sentryUrl = process.env.sentry_url;
 const name = 'SSRS-DAIICT';
 debug('booting %o', name);
 
