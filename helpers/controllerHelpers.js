@@ -79,7 +79,7 @@ const filterActiveData = (resourcesData) => {
     } else if (resourcesData) {
         let filteredResourceData = {};
 
-        if (resourcesData.isActive == true) {
+        if (resourcesData.isActive === true) {
             filteredResourceData = resourcesData;
         }
 
