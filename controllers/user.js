@@ -283,8 +283,7 @@ module.exports = {
             if (address) {
                 res.status(HttpStatus.OK)
                     .json({ address: address });
-            }
-            else {
+            } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
         } else {
@@ -309,12 +308,10 @@ module.exports = {
             if (updatedAddress) {
                 res.status(HttpStatus.OK)
                     .json({ address: updatedAddress });
-            }
-            else {
+            } else {
                 res.sendStatus(HttpStatus.NOT_FOUND);
             }
-        }
-        else {
+        } else {
             res.status(HttpStatus.FORBIDDEN);
         }
 

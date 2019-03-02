@@ -51,13 +51,12 @@ const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
-const updateCartIdInNotification = async(oldCartId, newCartId) => {
+const updateCartIdInNotification = async (oldCartId, newCartId) => {
 
     const notifications = await Notification.find({
         cartId: oldCartId,
     });
-    for(let i=0;i < notifications.length; i++)
-    {
+    for (let i = 0; i < notifications.length; i++) {
         await Notification.findByIdAndUpdate(notifications[i]._id, {
             cartId: newCartId
         });
@@ -1051,8 +1050,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1211,8 +1209,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1320,8 +1317,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1436,8 +1432,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -2080,7 +2075,7 @@ module.exports = {
                 }
 
                 if (cartInDb.status === cartStatus.unplaced) {
-                    
+
                     cartUpdateAtt.status = cartStatus.processing;
                     cartUpdateAtt.paymentStatus = true;
                     cartUpdateAtt['$set'] = {

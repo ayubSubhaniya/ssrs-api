@@ -105,7 +105,7 @@ const generatePendingPaymentNotification = (userId, adminId, cartLength, payment
     const notification = new Notification({
         createdBy: adminId,
         createdOn: new Date(),
-        message: "Your cart with " + cartLength + " order(s) has a pending " + paymentType + " payment. Pay fast or your order will get cancel.",
+        message: 'Your cart with ' + cartLength + ' order(s) has a pending ' + paymentType + ' payment. Pay fast or your order will get cancel.',
         userId: userId,
         cartId: cartId
     });
