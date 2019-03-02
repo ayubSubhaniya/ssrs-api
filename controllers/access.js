@@ -45,7 +45,7 @@ const grantDefaultAdminAccess = () => {
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.deny(adminTypes[adminType])
-                    .readAny(resource, fieldAccess[resource][adminType]['canRead'])
+                    .readAny(resource, fieldAccess[resource][adminType]['canRead']);
             }
         });
 
@@ -80,7 +80,7 @@ const grantDefaultAdminAccess = () => {
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.grant(adminTypes[adminType])
-                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate']);
             }
         });
 
@@ -89,7 +89,7 @@ const grantDefaultAdminAccess = () => {
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.grant(adminTypes[adminType])
-                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate']);
             }
         });
 
@@ -98,7 +98,7 @@ const grantDefaultAdminAccess = () => {
         .forEach(adminType => {
             if (adminTypes[adminType] !== adminTypes.superAdmin) {
                 accessControl.grant(adminTypes[adminType])
-                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate'])
+                    .updateAny(resource, fieldAccess[resource][adminType]['canUpdate']);
             }
         });
 

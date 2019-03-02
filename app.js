@@ -142,7 +142,10 @@ app.get('/SSRS/user/payment_response', function (req, res, next) {
 });
 
 app.get('/', function (req, res) {
-    res.render('error',{status:404,message:'Not Found'});
+    res.render('error', {
+        status: 404,
+        message: 'Not Found'
+    });
 });
 
 // Routes
@@ -185,7 +188,7 @@ app.use(async (err, req, res, next) => {
     console.error(err);
     debug(req.method + ' ' + req.url + ' %O', error);
     logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
-    await sendMail(developersMail, [], [], err.message,[], err.stack);
+    await sendMail(developersMail, [], [], err.message, [], err.stack);
 });
 
 
@@ -201,7 +204,7 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, [], [], er.message,[], er.stack);
+        await sendMail(developersMail, [], [], er.message, [], er.stack);
     }
 });
 

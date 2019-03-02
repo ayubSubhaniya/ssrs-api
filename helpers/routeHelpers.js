@@ -397,12 +397,14 @@ module.exports = {
         editEmailTemplate: Joi.object()
             .keys({
                 subject: Joi.string(),
-                cc: Joi.array().items(
-                    Joi.string()
-                ),
-                bcc: Joi.array().items(
-                    Joi.string()
-                ),
+                cc: Joi.array()
+                    .items(
+                        Joi.string()
+                    ),
+                bcc: Joi.array()
+                    .items(
+                        Joi.string()
+                    ),
                 body: Joi.string()
             }),
     },
