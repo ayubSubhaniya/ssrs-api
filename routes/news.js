@@ -5,6 +5,7 @@ const passportConf = require('../passport');
 const newsController = require('../controllers/news');
 const { validateBody, validateParam, schemas } = require('../helpers/routeHelpers');
 
+/* Code for further release
 router.route('/my')
     .get(
         passport.authenticate('jwt', { session: false }),
@@ -14,7 +15,7 @@ router.route('/my')
         passport.authenticate('jwt', { session: false }),
         newsController.deleteNewsCreatedByMe
     );
-
+*/
 router.route('/:newsId')
     .get(
         passport.authenticate('jwt', { session: false }),
