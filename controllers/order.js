@@ -410,7 +410,7 @@ module.exports = {
                 requestedBy: daiictId
             });
 
-            if (order && (order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
+            if (order && (order.status < orderStatus.placed) && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
