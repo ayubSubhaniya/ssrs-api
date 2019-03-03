@@ -10,10 +10,9 @@ module.exports = {
         if (user.userType.toLowerCase() === 'superadmin') {
             fs.readFile(path, (err, data) => {
                 if (err) {
-                    console.log(err)
+                    console.log(err);
                     res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-                else {
+                } else {
                     data = JSON.parse(data);
                     res.status(HttpStatus.OK)
                         .json({ template: data });
@@ -33,7 +32,7 @@ module.exports = {
 
             let fileData = fs.readFileSync(path);
             fileData = JSON.parse(fileData);
-            
+
             if (fileData.hasOwnProperty(templateKey)) {
 
                 newTemplate['templateId'] = fileData[templateKey].templateId;
@@ -41,7 +40,8 @@ module.exports = {
                 fileData[templateKey] = newTemplate;
 
                 fs.writeFileSync(path, JSON.stringify(fileData));
-                res.status(HttpStatus.OK).json({});
+                res.status(HttpStatus.OK)
+                    .json({});
             } else {
                 res.sendStatus(HttpStatus.NOT_ACCEPTABLE);
             }
@@ -50,4 +50,4 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     }
-}
+};

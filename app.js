@@ -22,7 +22,7 @@ const compression = require('compression');
 const { logger } = require('./configuration/logger');
 const {} = require('./configuration/dotenv');
 
-const sentryUrl = 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244';
+const sentryUrl = process.env.sentry_url;
 const name = 'SSRS-DAIICT';
 debug('booting %o', name);
 
@@ -142,7 +142,10 @@ app.get('/SSRS/user/payment_response', function (req, res, next) {
 });
 
 app.get('/', function (req, res) {
-    res.render('error',{status:404,message:'Not Found'});
+    res.render('error', {
+        status: 404,
+        message: 'Not Found'
+    });
 });
 
 // Routes
@@ -185,7 +188,7 @@ app.use(async (err, req, res, next) => {
     console.error(err);
     debug(req.method + ' ' + req.url + ' %O', error);
     logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
-    await sendMail(developersMail, [], [], err.message,[], err.stack);
+    await sendMail(developersMail, [], [], err.message, [], err.stack, 'gmail.com');
 });
 
 
@@ -195,13 +198,13 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, er.message, er.stack);
+        await sendMail(developersMail, [], [], er.message, [],  er.stack, 'gmail.com');
     } else {
         console.error(er.stack);
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, [], [], er.message,[], er.stack);
+        await sendMail(developersMail, [], [], er.message, [], er.stack, 'gmail.com');
     }
 });
 

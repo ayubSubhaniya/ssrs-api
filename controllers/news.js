@@ -215,7 +215,8 @@ module.exports = {
             .readOwn(resources.news);
 
         const newNews = {
-            message: req.body.message
+            message: req.body.message,
+            createdOn: new Date()
         };
 
         if (updateAnyPermission.granted) {

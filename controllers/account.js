@@ -102,7 +102,10 @@ module.exports = {
                 createdOn,
                 randomHash
             };
-            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true, new:true });
+            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, {
+                upsert: true,
+                new: true
+            });
         } else {
 
             const newUser = {
@@ -124,7 +127,10 @@ module.exports = {
             } else {
                 newUser.totalRequestSent = tempUserInDB.totalRequestSent + 1;
             }
-            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, { upsert: true, new:true });
+            const savedUser = await tempUser.findOneAndUpdate({ daiictId }, newUser, {
+                upsert: true,
+                new: true
+            });
         }
 
         const info = await smtpTransport.sendMail(mailOptions);
@@ -181,9 +187,7 @@ module.exports = {
         // if user has been verified already
         if (!user) {
             res.end('<h2>This link has been used already and is now invalid.</h2>');
-        }
-
-        else if (req.query.id === user.randomHash) {
+        } else if (req.query.id === user.randomHash) {
             //crete new Cart
             const cart = new Cart({
                 requestedBy: daiictId,
@@ -208,9 +212,9 @@ module.exports = {
 
             req.flash('User sucessfully verified');
             res.redirect(homePage);
-        }
-        else {
-            res.status(HttpStatus.BAD_REQUEST).end('<h2>Bad Request</h2>');
+        } else {
+            res.status(HttpStatus.BAD_REQUEST)
+                .end('<h2>Bad Request</h2>');
         }
     },
 

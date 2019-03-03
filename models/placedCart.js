@@ -22,18 +22,18 @@ const placedCartSchema = new Schema({
         type: String,
     },
     paymentStatus: {
-        type:Boolean,
-        default:false
+        type: Boolean,
+        default: false
     },
-    paymentFailHistory:[{
-        paymentId:{
-            type:String,
+    paymentFailHistory: [{
+        paymentId: {
+            type: String,
         },
-        paymentDate:{
-            type:String,
+        paymentDate: {
+            type: String,
         },
-        paymentType:{
-            type:String,
+        paymentType: {
+            type: String,
         },
     }],
     collectionType: {
@@ -133,31 +133,31 @@ const placedCartSchema = new Schema({
     comment: {
         processing: {
             type: String,
-            default: ""
+            default: ''
         },
         readyToDeliver: {
             type: String,
-            default: ""
+            default: ''
         },
         readyToPickup: {
             type: String,
-            default: ""
+            default: ''
         },
         completed: {
             type: String,
-            default: ""
+            default: ''
         },
         onHold: {
             type: String,
-            default: ""
+            default: ''
         },
         cancelled: {
             type: String,
-            default: ""
+            default: ''
         },
         refunded: {
             type: String,
-            default: ""
+            default: ''
         }
     },
     lastModified: {

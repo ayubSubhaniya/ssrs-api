@@ -51,13 +51,12 @@ const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
-const updateCartIdInNotification = async(oldCartId, newCartId) => {
+const updateCartIdInNotification = async (oldCartId, newCartId) => {
 
     const notifications = await Notification.find({
         cartId: oldCartId,
     });
-    for(let i=0;i < notifications.length; i++)
-    {
+    for (let i = 0; i < notifications.length; i++) {
         await Notification.findByIdAndUpdate(notifications[i]._id, {
             cartId: newCartId
         });
@@ -1051,8 +1050,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1166,7 +1164,7 @@ module.exports = {
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
                         await placedOrder.save();
-                        placedCartDoc.orders[i] = placedOrder._id;
+                        placedCart.orders[i] = placedOrder._id;
                     }
 
                     placedCart.status = cartUpdateAtt.status;
@@ -1211,8 +1209,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1297,9 +1294,6 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
-
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
@@ -1320,8 +1314,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1413,9 +1406,6 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
-
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
@@ -1436,8 +1426,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1530,6 +1519,9 @@ module.exports = {
                     renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
+                    await notification.save();
 
                     return res.render('paymentFail', { order: renderInfo });
                 }
@@ -2071,7 +2063,7 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.totalCost > 0) {
-                    return res.sendStatus(httpStatusCodes.METHOD_NOT_ALLOWED);
+                    return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
 
                 if (cartUpdateAtt.paymentType !== paymentTypes.noPayment) {
@@ -2080,7 +2072,7 @@ module.exports = {
                 }
 
                 if (cartInDb.status === cartStatus.unplaced) {
-                    
+
                     cartUpdateAtt.status = cartStatus.processing;
                     cartUpdateAtt.paymentStatus = true;
                     cartUpdateAtt['$set'] = {
@@ -2179,7 +2171,7 @@ module.exports = {
 
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.placed, '-', placedCart.id);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.processing, '-', placedCart.id);
                     await notification.save();
 
 

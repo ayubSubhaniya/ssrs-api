@@ -2,7 +2,7 @@ module.exports = {
     userBlockageTimeForTooManySignUpRequests: 1, // unit hour
     maximumSignUpRequestBeforeBlocking: 5,
     easyPaySuccessResponse: 'E000',
-    sessionSecret:'SSRS-DAIICT-SESSION',
+    sessionSecret: 'SSRS-DAIICT-SESSION',
     systemAdmin: 'system',
     homePage: 'https://ssrs-daiict.herokuapp.com/',
     sortQueryName: 'sort',

@@ -17,7 +17,7 @@ const generateInvoice = async (cartId) => {
     const cart = await PlacedCart.findById(cartId)
         .populate('orders')
         .populate('pickup')
-        .populate('delivery'); 
+        .populate('delivery');
 
     const user = await UserInfo.findOne({ user_inst_id: cart.requestedBy });
 
@@ -64,7 +64,7 @@ const generateInvoice = async (cartId) => {
     myInvoice.options.data.invoice.number = cart.orderId;
     const currdate = new Date();
     myInvoice.options.data.invoice.date = currdate.getDate()
-        .toString() + '/' + (currdate.getMonth()+1)
+        .toString() + '/' + (currdate.getMonth() + 1)
         .toString() + '/' + currdate.getFullYear()
         .toString();
     myInvoice.options.data.invoice.collectionType = cart.collectionTypeCategory;
@@ -125,7 +125,7 @@ const generateInvoice = async (cartId) => {
                     console.log(res);
                 });
         }
-    })
+    });
 };
 
 module.exports = {

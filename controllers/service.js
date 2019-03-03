@@ -147,6 +147,7 @@ module.exports = {
         }
     },
 
+    /* Further improvement
     getAllSpecialServices: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -286,6 +287,7 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+    */
 
     getService: async (req, res, next) => {
         const { user } = req;
@@ -373,6 +375,7 @@ module.exports = {
         }
     },
 
+    /* Further improvement
     getSpecialService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -510,6 +513,7 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+    */
 
     addService: async (req, res, next) => {
         const { user } = req;
@@ -545,7 +549,6 @@ module.exports = {
         }
     },
 
-    //should add special service and inActive access control for update?
     updateService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
