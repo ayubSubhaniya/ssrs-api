@@ -32,6 +32,8 @@ const updateCartWithDeletedCollection = async (collectionId) => {
         carts[i].collectionType = undefined;
         carts[i].collectionTypeCategory = undefined;
         carts[i].collectionTypeCost = 0;
+        carts[i].delivery = undefined;
+        carts[i].pickup = undefined;
         await carts[i].save();
 
         /** Generate cart update notification */
