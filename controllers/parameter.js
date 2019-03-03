@@ -1,9 +1,47 @@
 const HttpStatus = require('http-status-codes');
 
+const Service = require('../models/service');
+const Order = require('../models/order');
 const Parameter = require('../models/parameter');
-const { resources } = require('../configuration');
+const Cart = require('../models/cart');
+const { resources, systemAdmin } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
+const { generateCurreptedOrderRemovalNotification } = require('../helpers/notificationHelper');
+
+const removeDeletedParameterFromService = async (parameterId) => {
+    const services = await Service.find({ availableParameters: parameterId });
+    for (let i=0;i<services.length;i++){
+        await Service.findByIdAndUpdate(services[i]._id,{
+            'pull':{
+                'availableParameters':parameterId
+            }
+        })
+    }
+    /* notification for superAdmin*/
+};
+
+
+const removeOrderWithDeletedParameter = async (parameterId) => {
+
+    let message = "Some orders in your cart has became invalid and removed from cart. Please try adding them again!";
+
+    const orders = await Order.find({ parameters: parameterId });
+
+    for (let i=0;i<orders.length;i++){
+
+        await Order.findByIdAndRemove(orders[i]._id);
+
+        await Cart.findByIdAndUpdate(orders[i].cartId, {
+            'pull': {
+                'orders': orders[i]._id
+            }
+        });
+
+        const notification = generateCurreptedOrderRemovalNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
+        await notification.save();
+    }
+};
 
 module.exports = {
 
@@ -49,6 +87,9 @@ module.exports = {
             res.status(HttpStatus.OK)
                 .json({});
         } else if (deleteOwnPermission.granted) {
+
+            await removeOrderWithDeletedParameter(requestedParameterId);
+            await removeDeletedParameterFromService(requestedParameterId);
 
             const deletedParameter = await Parameter.findOneAndRemove({
                 _id: requestedParameterId,
