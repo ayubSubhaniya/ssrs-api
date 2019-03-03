@@ -108,6 +108,7 @@ app.set('view engine', 'jade');
 //Middlewares
 if (isInternetAvaliable) {
     app.use(Sentry.Handlers.requestHandler());
+    app.use(Sentry.Handlers.errorHandler());
 }
 
 if (app.get('env') === 'development') {
@@ -198,7 +199,7 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, er.message, er.stack);
+        await sendMail(developersMail, [], [], er.message, [],  er.stack);
     } else {
         console.error(er.stack);
         logger.error(er);
