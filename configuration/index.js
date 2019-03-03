@@ -13,8 +13,8 @@ module.exports = {
     JWT_ISSUER: 'ssrs-daiict',
     JWT_EXPIRY_TIME: 1, //unit day
     RESET_PASSWORD_EXPIRY_TIME: 1, //unit day
-    NEWS_EXPIRY_TIME: 8, //unit day
-    NOTIFICATION_EXPIRY_TIME: 8, //unit day
+    NEWS_EXPIRY_TIME: 15, //unit day
+    NOTIFICATION_EXPIRY_TIME: 15, //unit day
     ORDER_CANCEL_TIME_IN_PAYMENT_DELAY: 8, //unit day
     CHECK_FOR_OFFLINE_PAYMENT: 1, //unit day
     collectionTypes: {

@@ -79,7 +79,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 
 const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
-    let message = "Your order with service : " + order.service.name + "is removed due to service/parameter description change.Please try again.";
+    let message = "Some orders in your cart has became invalid. Please try adding them again!";
 
     if (!service) {
         await Order.findByIdAndRemove(order._id);
@@ -475,7 +475,7 @@ module.exports = {
                         res.status(httpStatusCodes.OK)
                             .json({ order: filteredOrder });
                     } else {
-                        res.sendStatus(httpStatusCodes.NOT_FOUND);
+                        res.sendStatus(httpStatusCodes.INTERNAL_SERVER_ERROR);
                     }
                 }
                 else if (orderInDB.status < orderStatus.placed) {
