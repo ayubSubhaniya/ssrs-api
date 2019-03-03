@@ -1164,7 +1164,7 @@ module.exports = {
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
                         await placedOrder.save();
-                        placedCartDoc.orders[i] = placedOrder._id;
+                        placedCart.orders[i] = placedOrder._id;
                     }
 
                     placedCart.status = cartUpdateAtt.status;

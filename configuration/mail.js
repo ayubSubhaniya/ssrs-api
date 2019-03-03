@@ -32,16 +32,43 @@ smtpTransport.verify(function (error, success) {
     }
 });
 
-const sendMail = async (toId, cc, bcc, subject, html, text) => {
-    const info = await smtpTransport.sendMail({
-        from: mailAccountEmailId,
-        to: `${toId}@${daiictMailDomainName}`,
-        cc,
-        bcc,
-        subject,
-        text,
-        html
-    });
+const sendMail = async (toId, cc, bcc, subject, html, text, domain=daiictMailDomainName) => {
+    if (toId instanceof Array){
+        toId = toId.map(function (x) {
+            return `${x}@${domain}`
+        });
+        for (let i=0;i<toId.length;i++){
+            const info = await smtpTransport.sendMail({
+                from: mailAccountEmailId,
+                to: toId[i],
+                cc,
+                bcc,
+                subject,
+                text,
+                html
+            });
+        }
+    } else {
+        toId = `${toId}@${domain}`;
+        const info = await smtpTransport.sendMail({
+            from: mailAccountEmailId,
+            to: toId,
+            cc,
+            bcc,
+            subject,
+            text,
+            html
+        });
+    }
+    // const info = await smtpTransport.sendMail({
+    //     from: mailAccountEmailId,
+    //     to: toId,
+    //     cc,
+    //     bcc,
+    //     subject,
+    //     text,
+    //     html
+    // });
 };
 
 module.exports = {

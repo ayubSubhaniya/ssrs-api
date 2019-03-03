@@ -188,7 +188,7 @@ app.use(async (err, req, res, next) => {
     console.error(err);
     debug(req.method + ' ' + req.url + ' %O', error);
     logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
-    await sendMail(developersMail, [], [], err.message, [], err.stack);
+    await sendMail(developersMail, [], [], err.message, [], err.stack, 'gmail.com');
 });
 
 
@@ -198,13 +198,13 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, er.message, er.stack);
+        await sendMail(developersMail, [], [], er.message, [],  er.stack, 'gmail.com');
     } else {
         console.error(er.stack);
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, [], [], er.message, [], er.stack);
+        await sendMail(developersMail, [], [], er.message, [], er.stack, 'gmail.com');
     }
 });
 
