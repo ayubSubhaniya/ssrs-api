@@ -1294,9 +1294,6 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
-
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
@@ -1408,9 +1405,6 @@ module.exports = {
                     }
 
                     await cartInDb.save();
-
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
 
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
@@ -1525,6 +1519,9 @@ module.exports = {
                     renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
+                    await notification.save();
 
                     return res.render('paymentFail', { order: renderInfo });
                 }
@@ -2066,7 +2063,7 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.totalCost > 0) {
-                    return res.sendStatus(httpStatusCodes.METHOD_NOT_ALLOWED);
+                    return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
 
                 if (cartUpdateAtt.paymentType !== paymentTypes.noPayment) {
@@ -2174,7 +2171,7 @@ module.exports = {
 
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.placed, '-', placedCart.id);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.processing, '-', placedCart.id);
                     await notification.save();
 
 
