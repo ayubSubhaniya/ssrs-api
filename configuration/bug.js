@@ -1,4 +1,4 @@
-const developersMail = ['ayub.subhaniya5959@gmail.com', '003harsh008@gmail.com'];
+const developersMail = ['ayub.subhaniya5959', '003harsh008'];
 
 module.exports = {
     developersMail,
