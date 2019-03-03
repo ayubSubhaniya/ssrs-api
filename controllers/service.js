@@ -1,11 +1,14 @@
 const HttpStatus = require('http-status-codes');
 
+const Order = require('../models/order');
+const Cart = require('../models/cart');
+const { resources, systemAdmin } = require('../configuration');
 const Service = require('../models/service');
 const News = require('../models/news');
 const Notification = require('../models/notification');
 const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources } = require('../configuration');
+const { generateCurreptedOrderRemovalNotification } = require('../helpers/notificationHelper');
 
 const generateNews = async (message, daiictId, serviceId) => {
     const news = new News({
@@ -63,6 +66,27 @@ const generateServiceChangeStatusMessage = async (service, daiictId) => {
 
 const deleteCurrServiceNews = async (currServiceId) => {
     await News.deleteMany({ serviceId: currServiceId });
+};
+
+const removeOrderWithDeletedService = async (serviceId) => {
+
+    let message = "Due to changes in service some orders in your cart has became invalid and removed from cart. Please try adding them again!";
+
+    const orders = await Order.find({ service: serviceId });
+
+    for (let i=0;i<orders.length;i++){
+
+        await Order.findByIdAndRemove(orders[i]._id);
+
+        await Cart.findByIdAndUpdate(orders[i].cartId, {
+            'pull': {
+                'orders': orders[i]._id
+            }
+        });
+
+        const notification = generateCurreptedOrderRemovalNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
+        await notification.save();
+    }
 };
 
 module.exports = {
@@ -659,6 +683,9 @@ module.exports = {
             .deleteOwn(resources.service);
 
         if (deleteAnyPermission.granted) {
+
+            await removeOrderWithDeletedService(serviceId);
+
             await deleteCurrServiceNews(serviceId);
 
             const service = await Service.findByIdAndRemove(serviceId);
@@ -671,6 +698,9 @@ module.exports = {
             }
 
         } else if (deleteOwnPermission.granted) {
+
+            await removeOrderWithDeletedService(serviceId);
+
             await deleteCurrServiceNews(serviceId);
 
             const service = await Service.findOneAndRemove({

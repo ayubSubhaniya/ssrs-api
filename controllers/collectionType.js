@@ -1,10 +1,42 @@
 const HttpStatus = require('http-status-codes');
 
+const Service = require('../models/service');
+const Cart = require('../models/cart');
+const { resources, systemAdmin } = require('../configuration');
 const CollectionType = require('../models/collectionType');
 const News = require('../models/news');
-const { resources } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
+
+const removeDeletedCollectionFromService = async (collectionId) => {
+    const services = await Service.find({ collectionTypes: collectionId });
+    for (let i=0;i<services.length;i++){
+        await Service.findByIdAndUpdate(services[i]._id,{
+            'pull':{
+                'collectionTypes':collectionId
+            }
+        })
+    }
+    /* notification for superAdmin*/
+};
+
+
+const updateCartWithDeletedCollection = async (collectionId) => {
+
+    let message = "Due to changes in parameter some orders in your cart has became invalid and removed from cart. Please try adding them again!";
+
+    const carts = await Cart.find({ collectionType: collectionId });
+
+    for (let i=0;i<carts.length;i++){
+
+        carts[i].collectionType = undefined;
+        carts[i].collectionTypeCategory = undefined;
+        carts[i].collectionTypeCost = 0;
+        await carts[i].save();
+
+        /** Generate cart update notification */
+    }
+};
 
 module.exports = {
 
@@ -45,6 +77,9 @@ module.exports = {
 
 
         if (deleteAnyPermission.granted) {
+
+            await removeDeletedCollectionFromService(requestedCollectionTypeId);
+            await updateCartWithDeletedCollection(requestedCollectionTypeId);
 
             await CollectionType.findByIdAndRemove(requestedCollectionTypeId);
             res.status(HttpStatus.OK)

@@ -24,7 +24,7 @@ const removeDeletedParameterFromService = async (parameterId) => {
 
 const removeOrderWithDeletedParameter = async (parameterId) => {
 
-    let message = "Some orders in your cart has became invalid and removed from cart. Please try adding them again!";
+    let message = "Due to changes in parameter some orders in your cart has became invalid and removed from cart. Please try adding them again!";
 
     const orders = await Order.find({ parameters: parameterId });
 
