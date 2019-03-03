@@ -88,6 +88,9 @@ module.exports = {
                 .json({});
         } else if (deleteOwnPermission.granted) {
 
+            await removeDeletedCollectionFromService(requestedCollectionTypeId);
+            await updateCartWithDeletedCollection(requestedCollectionTypeId);
+
             const deletedCollectionType = await CollectionType.findOneAndRemove({
                 _id: requestedCollectionTypeId,
                 createdBy: daiictId

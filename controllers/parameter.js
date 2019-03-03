@@ -10,8 +10,11 @@ const { filterResourceData } = require('../helpers/controllerHelpers');
 const { generateCurreptedOrderRemovalNotification } = require('../helpers/notificationHelper');
 
 const removeDeletedParameterFromService = async (parameterId) => {
+    console.log("here");
     const services = await Service.find({ availableParameters: parameterId });
+    console.log(services.length);
     for (let i=0;i<services.length;i++){
+        console.log(services[i].name);
         await Service.findByIdAndUpdate(services[i]._id,{
             'pull':{
                 'availableParameters':parameterId
@@ -82,6 +85,9 @@ module.exports = {
 
 
         if (deleteAnyPermission.granted) {
+
+            await removeOrderWithDeletedParameter(requestedParameterId);
+            await removeDeletedParameterFromService(requestedParameterId);
 
             await Parameter.findByIdAndRemove(requestedParameterId);
             res.status(HttpStatus.OK)
