@@ -15,7 +15,7 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { adminTypes, userTypes, resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification, generateCurreptedOrderRemovalNotification } = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification, generateCustomNotification } = require('../helpers/notificationHelper');
 
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
@@ -91,7 +91,7 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
-        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+        const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
         await notification.save();
         return null;
     }
@@ -114,7 +114,7 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
-        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+        const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
         await notification.save();
         return null;
     }
@@ -141,7 +141,7 @@ const recalculateOrderCost = async (order, user) => {
                 });
 
                 /* Add notification here*/
-                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+                const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
                 await notification.save();
                 return null;
             }
@@ -165,7 +165,7 @@ const recalculateOrderCost = async (order, user) => {
                 });
 
                 /* Add notification here*/
-                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+                const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
                 await notification.save();
                 return null;
             }
