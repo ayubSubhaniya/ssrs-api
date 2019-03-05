@@ -161,7 +161,8 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
-
+    
+    /* for further release
     updateNotification: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -205,4 +206,5 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+    */
 };
