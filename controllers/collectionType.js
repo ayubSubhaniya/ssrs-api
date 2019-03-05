@@ -2,11 +2,12 @@ const HttpStatus = require('http-status-codes');
 
 const Service = require('../models/service');
 const Cart = require('../models/cart');
-const { resources, systemAdmin } = require('../configuration');
+const { resources, systemAdmin, allAdmin } = require('../configuration');
 const CollectionType = require('../models/collectionType');
 const News = require('../models/news');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
+const { generateCustomNotification } = require('../helpers/notificationHelper');
 
 const removeDeletedCollectionFromService = async (collectionId) => {
     const services = await Service.find({ collectionTypes: collectionId });
@@ -17,13 +18,12 @@ const removeDeletedCollectionFromService = async (collectionId) => {
             }
         })
     }
-    /* notification for superAdmin*/
 };
 
 
 const updateCartWithDeletedCollection = async (collectionId) => {
 
-    let message = "Due to changes in parameter some orders in your cart has became invalid and removed from cart. Please try adding them again!";
+    let message = "Some orders has became invalid due to changes in available collection-types. Please try adding them again.";
 
     const carts = await Cart.find({ collectionType: collectionId });
 
@@ -37,6 +37,7 @@ const updateCartWithDeletedCollection = async (collectionId) => {
         await carts[i].save();
 
         /** Generate cart update notification */
+        await generateCustomNotification(carts[i].requestedBy, systemAdmin, message, carts.id);
     }
 };
 
@@ -83,6 +84,12 @@ module.exports = {
             await removeDeletedCollectionFromService(requestedCollectionTypeId);
             await updateCartWithDeletedCollection(requestedCollectionTypeId);
 
+            /* notification for all superAdmins */
+            const collectionType = await CollectionType.findById(requestedCollectionTypeId);
+            let message = `CollectionType: ${collectionType.name} has been deleted by ${daiictId}.`;
+            const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+            await notification.save();
+
             await CollectionType.findByIdAndRemove(requestedCollectionTypeId);
             res.status(HttpStatus.OK)
                 .json({});
@@ -91,12 +98,17 @@ module.exports = {
             await removeDeletedCollectionFromService(requestedCollectionTypeId);
             await updateCartWithDeletedCollection(requestedCollectionTypeId);
 
+            const collectionType = await CollectionType.findById(requestedCollectionTypeId);
             const deletedCollectionType = await CollectionType.findOneAndRemove({
                 _id: requestedCollectionTypeId,
                 createdBy: daiictId
             });
 
             if (deletedCollectionType) {
+                let message = `CollectionType: ${collectionType.name} has been deleted by ${daiictId}.`;
+                const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+                await notification.save();
+
                 res.status(HttpStatus.OK)
                     .json({});
             } else {
