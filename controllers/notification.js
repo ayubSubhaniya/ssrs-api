@@ -2,7 +2,7 @@ const HttpStatus = require('http-status-codes');
 const Notification = require('../models/notification');
 
 const { filterResourceData } = require('../helpers/controllerHelpers');
-const { NOTIFICATION_EXPIRY_TIME, resources } = require('../configuration');
+const { NOTIFICATION_EXPIRY_TIME, resources, allAdmin } = require('../configuration');
 const { accessControl } = require('./access');
 const User = require('../models/user');
 
@@ -18,14 +18,26 @@ module.exports = {
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - expiresInDays);
 
-            const notification = await Notification.find({
-                userId: daiictId,
-                createdOn: {
-                    $gte: startDate,
-                    $lt: new Date()
-                }
-            })
-                .sort({ createdOn: -1 });
+            let notification = null;
+            if (user.userType.toLowerCase() === "superadmin") {
+                notification = await Notification.find({
+                    $or: [{ userId: daiictId }, { userId: allAdmin }],
+                    createdOn: {
+                        $gte: startDate,
+                        $lt: new Date()
+                    }
+                })
+                    .sort({ createdOn: -1 });
+            } else {
+                notification = await Notification.find({
+                    userId: daiictId,
+                    createdOn: {
+                        $gte: startDate,
+                        $lt: new Date()
+                    }
+                })
+                    .sort({ createdOn: -1 });
+            }
 
             if (notification) {
                 const filteredNotification = filterResourceData(notification, readOwnPermission.attributes);
