@@ -2,13 +2,13 @@ const HttpStatus = require('http-status-codes');
 
 const Order = require('../models/order');
 const Cart = require('../models/cart');
-const { resources, systemAdmin } = require('../configuration');
+const { resources, systemAdmin, allAdmin } = require('../configuration');
 const Service = require('../models/service');
 const News = require('../models/news');
 const Notification = require('../models/notification');
 const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { generateCurreptedOrderRemovalNotification } = require('../helpers/notificationHelper');
+const { generateCustomNotification } = require('../helpers/notificationHelper');
 
 const generateNews = async (message, daiictId, serviceId) => {
     const news = new News({
@@ -70,10 +70,9 @@ const deleteCurrServiceNews = async (currServiceId) => {
 
 const removeOrderWithDeletedService = async (serviceId) => {
 
-    let message = "Due to changes in service some orders in your cart has became invalid and removed from cart. Please try adding them again!";
+    let message = "Some order(s) has became invalid due to removal of some services. Please try adding them again.";
 
     const orders = await Order.find({ service: serviceId });
-
     for (let i=0;i<orders.length;i++){
 
         await Order.findByIdAndRemove(orders[i]._id);
@@ -84,7 +83,7 @@ const removeOrderWithDeletedService = async (serviceId) => {
             }
         });
 
-        const notification = generateCurreptedOrderRemovalNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
+        const notification = generateCustomNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
         await notification.save();
     }
 };
@@ -685,12 +684,16 @@ module.exports = {
         if (deleteAnyPermission.granted) {
 
             await removeOrderWithDeletedService(serviceId);
-
             await deleteCurrServiceNews(serviceId);
 
-            const service = await Service.findByIdAndRemove(serviceId);
+            const service = await Service.findById(serviceId);
+            const deletedService = await Service.findByIdAndRemove(serviceId);
+            
+            if (deletedService) {
+                let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
+                const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+                await notification.save();
 
-            if (service) {
                 res.status(HttpStatus.OK)
                     .json({});
             } else {
@@ -700,15 +703,19 @@ module.exports = {
         } else if (deleteOwnPermission.granted) {
 
             await removeOrderWithDeletedService(serviceId);
-
             await deleteCurrServiceNews(serviceId);
 
-            const service = await Service.findOneAndRemove({
+            const service = await Service.findById(serviceId);
+            const deletedService = await Service.findOneAndRemove({
                 _id: serviceId,
                 createdBy: daiictId
             });
 
-            if (service) {
+            if (deletedService) {
+                let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
+                const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+                await notification.save();
+
                 res.status(HttpStatus.OK)
                     .json({});
             } else {

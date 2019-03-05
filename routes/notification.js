@@ -24,12 +24,13 @@ router.route('/:notificationId')
         validateParam(schemas.idSchema, 'notificationId'),
         notificationController.getNotification
     )
+    /* for further release 
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'notificationId'),
         validateBody(schemas.notificationUpdateSchema),
         notificationController.updateNotification
-    )
+    ) */
     .delete(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'notificationId'),
