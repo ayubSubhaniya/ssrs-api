@@ -365,7 +365,7 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             let cart = await PlacedCart.findById(cartId)
-                .populate(['orders', 'delivery', 'pickup']);
+                .populate(['orders']);
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
@@ -406,7 +406,7 @@ module.exports = {
                 _id: cartId,
                 requestedBy: daiictId
             })
-                .populate(['orders', 'delivery', 'pickup']);
+                .populate(['orders']);
 
             if (!cart) {
                 cart = await Cart.findOne({
@@ -592,7 +592,7 @@ module.exports = {
 
         cart = cart.concat(await PlacedCart.find(query)
             .sort(sortQuery)
-            .populate(['orders', 'delivery', 'pickup']));
+            .populate(['orders']));
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
@@ -2137,7 +2137,8 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);

@@ -71,28 +71,22 @@ const placedCartSchema = new Schema({
     delivery: {
         name: {
             type: String,
-            required: true,
         },
         contactNo: {
             type: String,
-            required: true,
         },
         email: {
             type: String,
-            required: true,
         },
         createdOn: {
             type: Date,
-            required: true
         },
         createdBy: {
             type: String,
-            required: true
         },
         address: {
             line1: {
                 type: String,
-                required: true,
             },
             line2: {
                 type: String,
@@ -103,54 +97,39 @@ const placedCartSchema = new Schema({
         },
         city: {
             type: String,
-            required: true,
         },
         state: {
             type: String,
-            required: true,
         },
         country: {
             type: String,
-            default: 'India',
         },
         pinCode: {
             type: String,
-            required: true,
         }
     },
     pickup: {
         name: {
             type: String,
-            required: true,
         },
         daiictId: {
             type: String,
         },
         contactNo: {
             type: String,
-            required: true,
         },
         email: {
             type: String,
-            required: true,
         },
         collectionCode: {
             type: String,
-            required: true,
             unique: true,
         },
         createdOn: {
             type: Date,
-            required: true
         },
         createdBy: {
             type: String,
-            required: true
-        },
-        cartId: {
-            type: Schema.Types.ObjectId,
-            ref: 'placedCart',
-            required: true,
         }
     },
     requestedBy: {
