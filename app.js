@@ -30,19 +30,11 @@ const { sessionSecret } = require('./configuration');
 const { sendMail } = require('./configuration/mail');
 const { developersMail } = require('./configuration/bug');
 
-let isInternetAvaliable = false;
-internetAvailable()
-    .then(function () {
-        isInternetAvaliable = true;
-        console.log('Internet available');
-    })
-    .catch(function () {
-        isInternetAvaliable = false;
-        console.log('No internet');
-    });
-
-if (isInternetAvaliable) {
+try{
     Sentry.init({ dsn: sentryUrl });
+    console.log("sentry initialized")
+} catch (e) {
+    console.log("Not able to initialize sentry");
 }
 
 const app = express();
@@ -104,11 +96,12 @@ const template = require('./routes/template');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-
-//Middlewares
-if (isInternetAvaliable) {
+try{
     app.use(Sentry.Handlers.requestHandler());
+} catch (e) {
+    console.log("Not able to initialize sentry request handle");
 }
+
 
 if (app.get('env') === 'development') {
     app.use(morgan('dev'));
@@ -165,15 +158,16 @@ app.use('/userInfo', userInfo);
 app.use('/dashboard', dashBoard);
 app.use('/template', template);
 
-
-if (isInternetAvaliable) {
-    app.use(Sentry.Handlers.errorHandler());
-}
-
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
     res.sendStatus(HttpStatus.NOT_FOUND);
 });
+
+try{
+    app.use(Sentry.Handlers.errorHandler());
+} catch (e) {
+    console.log("Not able to initialize sentry error handle");
+}
 
 // Error handler function
 app.use(async (err, req, res, next) => {
