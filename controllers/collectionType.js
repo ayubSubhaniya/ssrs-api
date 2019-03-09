@@ -11,23 +11,23 @@ const { generateCustomNotification } = require('../helpers/notificationHelper');
 
 const removeDeletedCollectionFromService = async (collectionId) => {
     const services = await Service.find({ collectionTypes: collectionId });
-    for (let i=0;i<services.length;i++){
-        await Service.findByIdAndUpdate(services[i]._id,{
-            '$pull':{
-                'collectionTypes':collectionId
+    for (let i = 0; i < services.length; i++) {
+        await Service.findByIdAndUpdate(services[i]._id, {
+            '$pull': {
+                'collectionTypes': collectionId
             }
-        })
+        });
     }
 };
 
 
 const updateCartWithDeletedCollection = async (collectionId) => {
 
-    let message = "Some orders has became invalid due to changes in available collection-types. Please try adding them again.";
+    let message = 'Some orders has became invalid due to changes in available collection-types. Please try adding them again.';
 
     const carts = await Cart.find({ collectionType: collectionId });
 
-    for (let i=0;i<carts.length;i++){
+    for (let i = 0; i < carts.length; i++) {
 
         carts[i].collectionType = undefined;
         carts[i].collectionTypeCategory = undefined;
@@ -41,7 +41,36 @@ const updateCartWithDeletedCollection = async (collectionId) => {
     }
 };
 
+const getAllPopulatedCollectionType = async (user) => {
+    const { daiictId } = user;
+
+    const readPermission = accessControl.can(user.userType)
+        .readAny(resources.collectionType);
+    const readAnyInActiveResource = accessControl.can(user.userType)
+        .readAny(resources.inActiveResource);
+    const readOwnInActiveResource = accessControl.can(user.userType)
+        .readOwn(resources.inActiveResource);
+
+    let requestedCollectionTypes;
+    if (readPermission.granted) {
+
+        if (readAnyInActiveResource.granted) {
+            requestedCollectionTypes = await CollectionType.find({});
+        } else if (readOwnInActiveResource.granted) {
+            requestedCollectionTypes = await CollectionType.find({ $or: [{ createdBy: daiictId }, { isActive: true }] });
+        } else {
+            requestedCollectionTypes = await CollectionType.find({ isActive: true });
+        }
+
+        if (requestedCollectionTypes) {
+            requestedCollectionTypes = filterResourceData(requestedCollectionTypes, readPermission.attributes);
+        }
+    }
+    return requestedCollectionTypes;
+};
+
 module.exports = {
+    getAllPopulatedCollectionType,
 
     addCollectionType: async (req, res, next) => {
         const { user } = req;

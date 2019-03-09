@@ -9,6 +9,9 @@ const Notification = require('../models/notification');
 const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
+const { getAllPopulatedCollectionType } = require('./collectionType');
+const { getAllPopulatedParameters } = require('./parameter');
+const { getAllTypesDistinctValues } = require('./userInfo');
 
 const generateNews = async (message, daiictId, serviceId) => {
     const news = new News({
@@ -70,10 +73,10 @@ const deleteCurrServiceNews = async (currServiceId) => {
 
 const removeOrderWithDeletedService = async (serviceId) => {
 
-    let message = "Some order(s) has became invalid due to removal of some services. Please try adding them again.";
+    let message = 'Some order(s) has became invalid due to removal of some services. Please try adding them again.';
 
     const orders = await Order.find({ service: serviceId });
-    for (let i=0;i<orders.length;i++){
+    for (let i = 0; i < orders.length; i++) {
 
         await Order.findByIdAndRemove(orders[i]._id);
 
@@ -86,6 +89,17 @@ const removeOrderWithDeletedService = async (serviceId) => {
         const notification = generateCustomNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
         await notification.save();
     }
+};
+
+const getRequiredInfoForService = async (user) => {
+    const collectionTypes = await getAllPopulatedCollectionType(user);
+    const parameters = await getAllPopulatedParameters(user);
+    const distinctValues = await getAllTypesDistinctValues();
+    return {
+        collectionType: collectionTypes,
+        parameter: parameters,
+        distinctValues
+    };
 };
 
 module.exports = {
@@ -396,6 +410,106 @@ module.exports = {
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
+    },
+
+    getServiceWithExtraDetails: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { serviceId } = req.params;
+
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readAnyInActiveService = accessControl.can(user.userType)
+            .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
+
+        if (readPermission.granted) {
+            let service;
+
+            if (readAnyInActiveService.granted) {
+                service = await Service.findById(serviceId)
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+            } else if (readOwnInActiveService.granted) {
+                service = await Service.find({
+                    _id: serviceId,
+                    $or: [{ createdBy: daiictId }, { isActive: true }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+            } else {
+                service = await Service.findOne({
+                    _id: serviceId,
+                    isActive: true,
+                    $or: [{
+                        isSpecialService: false,
+                        allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
+                        allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] },
+                        allowedUserStatus: { $in: [user.userInfo.user_status, '*'] }
+                    }, {
+                        isSpecialService: true,
+                        specialServiceUsers: daiictId
+                    }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+
+                if (!service) {
+                    return res.sendStatus(HttpStatus.NOT_FOUND);
+                }
+                // Allowing only those parameters which are active
+                service.availableParameters = filterActiveData(service.availableParameters);
+            }
+
+            if (service) {
+                const filteredService = filterResourceData(service, readPermission.attributes);
+                const extraInfo = await getRequiredInfoForService(user);
+                res.status(HttpStatus.OK)
+                    .json({
+                        service: filteredService,
+                        extraInfo
+                    });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    getExtraInfoForService: async (req, res, next) => {
+        const { user } = req;
+
+        const extraInfo = await getRequiredInfoForService(user);
+        res.status(HttpStatus.OK)
+            .json({
+                extraInfo
+            });
     },
 
     /* Further improvement

@@ -6,7 +6,25 @@ const { resources } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 
+const getAllTypesDistinctValues = async () => {
+    const batches = await UserInfo.find()
+        .distinct('user_batch');
+    const programmes = await UserInfo.find()
+        .distinct('user_programme');
+    const userTypes = await UserInfo.find()
+        .distinct('user_type');
+    const userStatus = await UserInfo.find()
+        .distinct('user_status');
+    return {
+        batches,
+        programmes,
+        userTypes,
+        userStatus
+    };
+};
+
 module.exports = {
+    getAllTypesDistinctValues,
 
     getAllUserInfo: async (req, res, next) => {
         const { user } = req;
@@ -58,20 +76,8 @@ module.exports = {
     },
 
     getDistinctValues: async (req, res, next) => {
-        const batches = await UserInfo.find()
-            .distinct('user_batch');
-        const programmes = await UserInfo.find()
-            .distinct('user_programme');
-        const userTypes = await UserInfo.find()
-            .distinct('user_type');
-        const userStatus = await UserInfo.find()
-            .distinct('user_status');
+        const values = getAllTypesDistinctValues()
         res.status(HttpStatus.OK)
-            .json({
-                batches,
-                programmes,
-                userTypes,
-                userStatus
-            });
+            .json(values);
     },
 };

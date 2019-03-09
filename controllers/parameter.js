@@ -42,7 +42,36 @@ const removeOrderWithDeletedParameter = async (parameterId) => {
     }
 };
 
+const getAllPopulatedParameters = async (user)=>{
+    const { daiictId } = user;
+
+    const readPermission = accessControl.can(user.userType)
+        .readAny(resources.parameter);
+    const readAnyInActiveResource = accessControl.can(user.userType)
+        .readAny(resources.inActiveResource);
+    const readOwnInActiveResource = accessControl.can(user.userType)
+        .readOwn(resources.inActiveResource);
+
+    let requestedParameters;
+    if (readPermission.granted) {
+
+        if (readAnyInActiveResource.granted) {
+            requestedParameters = await Parameter.find({});
+        } else if (readOwnInActiveResource.granted) {
+            requestedParameters = await Parameter.find({ $or: [{ createdBy: daiictId }, { isActive: true }] });
+        } else {
+            requestedParameters = await Parameter.find({ isActive: true });
+        }
+
+        if (requestedParameters) {
+            requestedParameters = filterResourceData(requestedParameters, readPermission.attributes);
+        }
+    }
+    return requestedParameters
+}
+
 module.exports = {
+    getAllPopulatedParameters,
 
     addParameter: async (req, res, next) => {
         const { user } = req;
