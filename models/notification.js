@@ -21,7 +21,7 @@ const notificationSchema = new Schema({
     },
     cartId: {
         type: String,
-        default: 'None',
+        default: undefined,
     }
 });
 
