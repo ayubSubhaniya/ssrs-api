@@ -16,12 +16,25 @@ router.route('/')
         serviceController.addService
     );
 
+router.route('/extraInfo')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        serviceController.getExtraInfoForService
+    );
+
 router.route('/changeStatus/:serviceId')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateParam(schemas.idSchema, 'serviceId'),
         validateBody(schemas.changeStatusSchema),
         serviceController.changeStatus
+    );
+
+router.route('/extraInfo/:serviceId')
+    .get(
+        passport.authenticate('jwt', { session: false }),
+        validateParam(schemas.idSchema, 'serviceId'),
+        serviceController.getServiceWithExtraDetails
     );
 
 router.route('/:serviceId')
