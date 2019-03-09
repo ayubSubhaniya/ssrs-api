@@ -13,7 +13,7 @@ const removeDeletedCollectionFromService = async (collectionId) => {
     const services = await Service.find({ collectionTypes: collectionId });
     for (let i=0;i<services.length;i++){
         await Service.findByIdAndUpdate(services[i]._id,{
-            'pull':{
+            '$pull':{
                 'collectionTypes':collectionId
             }
         })
