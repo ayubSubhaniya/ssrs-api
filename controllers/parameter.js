@@ -10,13 +10,13 @@ const { filterResourceData } = require('../helpers/controllerHelpers');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
 
 const removeDeletedParameterFromService = async (parameterId) => {
-    const services = await Service.find({ availableParameters: parameterId });
+    const services = await Service.find({ 'availableParameters': parameterId });
     for (let i=0;i<services.length;i++){
-        await Service.findByIdAndUpdate(services[i]._id,{
-            'pull':{
+        const updatedService = await Service.findByIdAndUpdate(services[i]._id,{
+            '$pull':{
                 'availableParameters':parameterId
             }
-        })
+        });
     }
 };
 
@@ -32,7 +32,7 @@ const removeOrderWithDeletedParameter = async (parameterId) => {
         await Order.findByIdAndRemove(orders[i]._id);
 
         await Cart.findByIdAndUpdate(orders[i].cartId, {
-            'pull': {
+            '$pull': {
                 'orders': orders[i]._id
             }
         });
@@ -87,11 +87,11 @@ module.exports = {
 
             /* notification for all superAdmins */
             const parameter = await Parameter.findById(requestedParameterId);
-            let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`; 
+            let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`;
             const notification = await generateCustomNotification(allAdmin, systemAdmin, message);
             await notification.save();
 
-            await Parameter.findByIdAndRemove(requestedParameterId);            
+            await Parameter.findByIdAndRemove(requestedParameterId);
             res.status(HttpStatus.OK)
                 .json({});
         } else if (deleteOwnPermission.granted) {
@@ -106,7 +106,7 @@ module.exports = {
             });
 
             if (deletedParameter) {
-                let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`; 
+                let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`;
                 const notification = generateCustomNotification(allAdmin, systemAdmin, message);
                 await notification.save();
 
