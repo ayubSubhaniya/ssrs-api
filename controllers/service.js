@@ -78,7 +78,7 @@ const removeOrderWithDeletedService = async (serviceId) => {
         await Order.findByIdAndRemove(orders[i]._id);
 
         await Cart.findByIdAndUpdate(orders[i].cartId, {
-            'pull': {
+            '$pull': {
                 'orders': orders[i]._id
             }
         });
@@ -688,7 +688,7 @@ module.exports = {
 
             const service = await Service.findById(serviceId);
             const deletedService = await Service.findByIdAndRemove(serviceId);
-            
+
             if (deletedService) {
                 let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
                 const notification = generateCustomNotification(allAdmin, systemAdmin, message);
