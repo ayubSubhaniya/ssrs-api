@@ -2019,7 +2019,7 @@ module.exports = {
             // res.sendStatus(httpStatusCodes.OK);
 
             let options = {
-                root: './data/invoice_pdf/',
+                root: process.env.INVOICE_ROOT_PATH,
                 dotfiles: 'deny',
                 headers: {
                     'x-timestamp': Date.now(),
