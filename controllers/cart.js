@@ -976,7 +976,8 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);
@@ -1141,7 +1142,8 @@ module.exports = {
                     }
 
                     await cartInDb.save();
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);
@@ -1569,7 +1571,8 @@ module.exports = {
                     }
 
 
-                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);

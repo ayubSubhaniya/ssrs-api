@@ -37,7 +37,21 @@ const placedCartSchema = new Schema({
         },
     }],
     collectionType: {
-        type: String,
+        name: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String
+        },
+        baseCharge: {
+            type: Number,
+            default: 0,
+        },
+        category: {
+            type: String,
+            required: true
+        }
     },
     collectionTypeCategory: {
         type: String,
@@ -55,12 +69,93 @@ const placedCartSchema = new Schema({
         default: 0,
     },
     delivery: {
-        type: Schema.Types.ObjectId,
-        ref: 'delivery'
+        name: {
+            type: String,
+            required: true,
+        },
+        contactNo: {
+            type: String,
+            required: true,
+        },
+        email: {
+            type: String,
+            required: true,
+        },
+        createdOn: {
+            type: Date,
+            required: true
+        },
+        createdBy: {
+            type: String,
+            required: true
+        },
+        address: {
+            line1: {
+                type: String,
+                required: true,
+            },
+            line2: {
+                type: String,
+            },
+            line3: {
+                type: String,
+            },
+        },
+        city: {
+            type: String,
+            required: true,
+        },
+        state: {
+            type: String,
+            required: true,
+        },
+        country: {
+            type: String,
+            default: 'India',
+        },
+        pinCode: {
+            type: String,
+            required: true,
+        }
     },
     pickup: {
-        type: Schema.Types.ObjectId,
-        ref: 'collector'
+        name: {
+            type: String,
+            required: true,
+        },
+        daiictId: {
+            type: String,
+        },
+        contactNo: {
+            type: String,
+            required: true,
+        },
+        email: {
+            type: String,
+            required: true,
+        },
+        collectionCode: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+        createdOn: {
+            type: Date,
+            required: true
+        },
+        createdBy: {
+            type: String,
+            required: true
+        },
+        cartId: {
+            type: Schema.Types.ObjectId,
+            ref: 'placedCart',
+            required: true,
+        },
+        status: {
+            type: Number,
+            default: collectionStatus.pendingPayment,
+        }
     },
     requestedBy: {
         type: String,
