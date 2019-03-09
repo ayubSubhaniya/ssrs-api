@@ -151,10 +151,6 @@ const placedCartSchema = new Schema({
             type: Schema.Types.ObjectId,
             ref: 'placedCart',
             required: true,
-        },
-        status: {
-            type: Number,
-            default: collectionStatus.pendingPayment,
         }
     },
     requestedBy: {
