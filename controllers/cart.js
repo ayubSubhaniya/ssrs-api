@@ -2,7 +2,7 @@ const httpStatusCodes = require('http-status-codes');
 const nodeSchedule = require('node-cron');
 const mustache = require('mustache');
 
-const { orderNoGeneratorSecret } = require('../configuration');
+const { orderNoGeneratorSecret} = require('../configuration');
 const orderid = require('order-id')(orderNoGeneratorSecret);
 
 const { logger } = require('../configuration/logger');
@@ -27,6 +27,7 @@ const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const {
+    PAYMENT_JOB_SCHEDULE_EXPRESSION,
     adminTypes,
     userTypes,
     homePage,
@@ -75,7 +76,9 @@ const checkForOfflinePayment = async () => {
     });
 
     for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.placed <= failedOrderTime) {
+        if (carts[i].statusChangeTime.placed.time <= failedOrderTime) {
+            console.log("excedd off paymentFailed");
+            console.log(carts[i]);
             await Cart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
@@ -103,24 +106,25 @@ const checkForOfflinePayment = async () => {
             await notification.save();
 
         } else {
-
-            const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+            console.log("off paymentFailed");
+            console.log(carts[i]);
+            const cancelledInDays = carts[i].statusChangeTime.placed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let cc = mailTemplates['paymentPendingOffline'].cc;
-            let bcc = mailTemplates['paymentPendingOffline'].bcc;
-            let mailSubject = mailTemplates['paymentPendingOffline'].subject;
+            let cc = mailTemplates['pendingPaymentOffline'].cc;
+            let bcc = mailTemplates['pendingPaymentOffline'].bcc;
+            let mailSubject = mailTemplates['pendingPaymentOffline'].subject;
             let options = {
                 orderId: carts[i].orderId,
                 cartLength: carts[i].orders.length,
                 cancelledInDays,
                 paymentCode: carts[i].paymentCode
             };
-            let mailBody = mustache.render(mailTemplates['paymentPendingOffline'].body, options);
+            let mailBody = mustache.render(mailTemplates['pendingPaymentOffline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'offline', carts[i].id);
+            const notification = generatePendingPaymentNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, paymentTypes.offline, carts[i].id);
             await notification.save();
         }
     }
@@ -132,11 +136,13 @@ const checkForFailedOnlinePayment = async () => {
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
     const carts = await Cart.find({
-        status: cartStatus.processingPayment,
+        status: cartStatus.paymentFailed,
     });
 
     for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.processingPayment <= failedOrderTime) {
+        if (carts[i].statusChangeTime.paymentFailed.time <= failedOrderTime) {
+            console.log("exced paymentFailed");
+            console.log(carts[i]);
             await Cart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
@@ -163,35 +169,35 @@ const checkForFailedOnlinePayment = async () => {
             const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason, carts[i].id);
             await notification.save();
         } else {
-            const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+            console.log("paymentFailed");
+            console.log(carts[i]);
+            const cancelledInDays = carts[i].statusChangeTime.paymentFailed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let cc = mailTemplates['paymentPendingOnline'].cc;
-            let bcc = mailTemplates['paymentPendingOnline'].bcc;
-            let mailSubject = mailTemplates['paymentPendingOnline'].subject;
+            let cc = mailTemplates['pendingPaymentOnline'].cc;
+            let bcc = mailTemplates['pendingPaymentOnline'].bcc;
+            let mailSubject = mailTemplates['pendingPaymentOnline'].subject;
             let options = {
                 orderId: carts[i].orderId,
                 cartLength: carts[i].orders.length,
                 cancelledInDays,
                 paymentCode: carts[i].paymentCode
             };
-            let mailBody = mustache.render(mailTemplates['paymentPendingOnline'].body, options);
+            let mailBody = mustache.render(mailTemplates['pendingPaymentOnline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online', carts[i].id);
+            const notification = generatePendingPaymentNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, paymentTypes.online, carts[i].id);
             await notification.save();
         }
     }
 };
 
-nodeSchedule.schedule('0 3 * * *', async () => {
-    await checkForFailedOnlinePayment();
+nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
+    console.log("scheduled");
     await checkForOfflinePayment();
+    await checkForFailedOnlinePayment();
 });
-
-// setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
-// setInterval(checkForFailedOnlinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
 
 const getMandatoryEasyPayFields = (cart) => {
     return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
@@ -1245,6 +1251,12 @@ module.exports = {
                 if (cartInDb.status === cartStatus.unplaced) {
                     const cartUpdateAtt = req.value.body;
                     cartUpdateAtt.status = cartStatus.paymentFailed;
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.paymentFailed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
                     cartUpdateAtt.paymentCode = orderid.generate();
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
