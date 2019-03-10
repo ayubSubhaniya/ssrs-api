@@ -77,9 +77,7 @@ const checkForOfflinePayment = async () => {
 
     for (let i = 0; i < carts.length; i++) {
         if (carts[i].statusChangeTime.placed.time <= failedOrderTime) {
-            console.log('excedd off paymentFailed');
-            console.log(carts[i]);
-            const updatedCart = await Cart.findByIdAndUpdate(carts[i]._id, {
+            const updatedCart = await PlacedCart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
                 '$set': {
@@ -89,7 +87,6 @@ const checkForOfflinePayment = async () => {
                     }
                 }
             }, { new: true });
-
             let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
             let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
             let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
@@ -106,8 +103,6 @@ const checkForOfflinePayment = async () => {
             await notification.save();
 
         } else {
-            console.log('off paymentFailed');
-            console.log(carts[i]);
             const cancelledInDays = carts[i].statusChangeTime.placed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
@@ -141,8 +136,6 @@ const checkForFailedOnlinePayment = async () => {
 
     for (let i = 0; i < carts.length; i++) {
         if (carts[i].statusChangeTime.paymentFailed.time <= failedOrderTime) {
-            console.log('exced paymentFailed');
-            console.log(carts[i]);
             const updatedCart = await Cart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
@@ -154,7 +147,7 @@ const checkForFailedOnlinePayment = async () => {
                 }
             }, {new:true});
 
-            let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCartrequestedBy })).user_email_id;
+            let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
             let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
             let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
             let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
@@ -169,8 +162,6 @@ const checkForFailedOnlinePayment = async () => {
             const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, systemAdmin, updatedCart.orders.length, cartStatus.cancelled, updatedCart.cancelReason, updatedCart.id);
             await notification.save();
         } else {
-            console.log('paymentFailed');
-            console.log(carts[i]);
             const cancelledInDays = carts[i].statusChangeTime.paymentFailed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
@@ -194,7 +185,6 @@ const checkForFailedOnlinePayment = async () => {
 };
 
 nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
-    console.log('scheduled');
     await checkForOfflinePayment();
     await checkForFailedOnlinePayment();
 });
