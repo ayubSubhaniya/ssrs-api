@@ -27,6 +27,7 @@ const { generateInvoice } = require('../helpers/invoiceMaker');
 const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const {
+    PAYMENT_JOB_SCHEDULE_EXPRESSION,
     adminTypes,
     userTypes,
     homePage,
@@ -51,13 +52,12 @@ const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
-const updateCartIdInNotification = async(oldCartId, newCartId) => {
+const updateCartIdInNotification = async (oldCartId, newCartId) => {
 
     const notifications = await Notification.find({
         cartId: oldCartId,
     });
-    for(let i=0;i < notifications.length; i++)
-    {
+    for (let i = 0; i < notifications.length; i++) {
         await Notification.findByIdAndUpdate(notifications[i]._id, {
             cartId: newCartId
         });
@@ -76,8 +76,8 @@ const checkForOfflinePayment = async () => {
     });
 
     for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.placed <= failedOrderTime) {
-            await Cart.findByIdAndUpdate(carts[i]._id, {
+        if (carts[i].statusChangeTime.placed.time <= failedOrderTime) {
+            const updatedCart = await PlacedCart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
                 '$set': {
@@ -86,42 +86,40 @@ const checkForOfflinePayment = async () => {
                         by: systemAdmin
                     }
                 }
-            });
-
-            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
+            }, { new: true });
+            let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
             let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
             let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
             let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
             let options = {
-                orderId: carts[i].orderId,
-                cartLength: carts[i].orders.length
+                orderId: updatedCart.orderId,
+                cartLength: updatedCart.orders.length
             };
             let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for cancel*/
-            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason, carts[i].id);
+            const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, systemAdmin, updatedCart.orders.length, cartStatus.cancelled, updatedCart.cancelReason, updatedCart.id);
             await notification.save();
 
         } else {
-
-            const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+            const cancelledInDays = carts[i].statusChangeTime.placed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let cc = mailTemplates['paymentPendingOffline'].cc;
-            let bcc = mailTemplates['paymentPendingOffline'].bcc;
-            let mailSubject = mailTemplates['paymentPendingOffline'].subject;
+            let cc = mailTemplates['pendingPaymentOffline'].cc;
+            let bcc = mailTemplates['pendingPaymentOffline'].bcc;
+            let mailSubject = mailTemplates['pendingPaymentOffline'].subject;
             let options = {
                 orderId: carts[i].orderId,
                 cartLength: carts[i].orders.length,
                 cancelledInDays,
                 paymentCode: carts[i].paymentCode
             };
-            let mailBody = mustache.render(mailTemplates['paymentPendingOffline'].body, options);
+            let mailBody = mustache.render(mailTemplates['pendingPaymentOffline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'offline', carts[i].id);
+            const notification = generatePendingPaymentNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, paymentTypes.offline, carts[i].id);
             await notification.save();
         }
     }
@@ -133,12 +131,12 @@ const checkForFailedOnlinePayment = async () => {
     failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
 
     const carts = await Cart.find({
-        status: cartStatus.processingPayment,
+        status: cartStatus.paymentFailed,
     });
 
     for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.processingPayment <= failedOrderTime) {
-            await Cart.findByIdAndUpdate(carts[i]._id, {
+        if (carts[i].statusChangeTime.paymentFailed.time <= failedOrderTime) {
+            const updatedCart = await Cart.findByIdAndUpdate(carts[i]._id, {
                 status: cartStatus.cancelled,
                 cancelReason: 'Payment delay',
                 '$set': {
@@ -147,52 +145,49 @@ const checkForFailedOnlinePayment = async () => {
                         by: systemAdmin
                     }
                 }
-            });
+            }, {new:true});
 
-            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
+            let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
             let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
             let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
             let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
             let options = {
-                orderId: carts[i].orderId,
-                cartLength: carts[i].orders.length
+                orderId: updatedCart.orderId,
+                cartLength: updatedCart.orders.length
             };
             let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for cancel*/
-            const notification = generateCartStatusChangeNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, cartStatus.cancelled, carts[i].cancelReason, carts[i].id);
+            const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, systemAdmin, updatedCart.orders.length, cartStatus.cancelled, updatedCart.cancelReason, updatedCart.id);
             await notification.save();
         } else {
-            const cancelledInDays = carts[i].statusChangeTime.processingPayment.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+            const cancelledInDays = carts[i].statusChangeTime.paymentFailed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let cc = mailTemplates['paymentPendingOnline'].cc;
-            let bcc = mailTemplates['paymentPendingOnline'].bcc;
-            let mailSubject = mailTemplates['paymentPendingOnline'].subject;
+            let cc = mailTemplates['pendingPaymentOnline'].cc;
+            let bcc = mailTemplates['pendingPaymentOnline'].bcc;
+            let mailSubject = mailTemplates['pendingPaymentOnline'].subject;
             let options = {
                 orderId: carts[i].orderId,
                 cartLength: carts[i].orders.length,
                 cancelledInDays,
                 paymentCode: carts[i].paymentCode
             };
-            let mailBody = mustache.render(mailTemplates['paymentPendingOnline'].body, options);
+            let mailBody = mustache.render(mailTemplates['pendingPaymentOnline'].body, options);
             await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
             /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts.requestedBy, systemAdmin, carts.orders.length, 'online', carts[i].id);
+            const notification = generatePendingPaymentNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, paymentTypes.online, carts[i].id);
             await notification.save();
         }
     }
 };
 
-nodeSchedule.schedule('0 3 * * *', async () => {
-    await checkForFailedOnlinePayment();
+nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
     await checkForOfflinePayment();
+    await checkForFailedOnlinePayment();
 });
-
-// setInterval(checkForOfflinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
-// setInterval(checkForFailedOnlinePayment, CHECK_FOR_OFFLINE_PAYMENT * dayToMilliSec);
 
 const getMandatoryEasyPayFields = (cart) => {
     return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
@@ -366,7 +361,7 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             let cart = await PlacedCart.findById(cartId)
-                .populate(['orders', 'delivery', 'pickup']);
+                .populate(['orders']);
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
@@ -407,7 +402,7 @@ module.exports = {
                 _id: cartId,
                 requestedBy: daiictId
             })
-                .populate(['orders', 'delivery', 'pickup']);
+                .populate(['orders']);
 
             if (!cart) {
                 cart = await Cart.findOne({
@@ -593,7 +588,7 @@ module.exports = {
 
         cart = cart.concat(await PlacedCart.find(query)
             .sort(sortQuery)
-            .populate(['orders', 'delivery', 'pickup']));
+            .populate(['orders']));
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
         res.status(httpStatusCodes.OK)
@@ -977,7 +972,8 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);
@@ -1051,8 +1047,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1143,7 +1138,8 @@ module.exports = {
                     }
 
                     await cartInDb.save();
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);
@@ -1166,7 +1162,7 @@ module.exports = {
 
                         const placedOrder = new PlacedOrder(placedOrderDoc);
                         await placedOrder.save();
-                        placedCartDoc.orders[i] = placedOrder._id;
+                        placedCart.orders[i] = placedOrder._id;
                     }
 
                     placedCart.status = cartUpdateAtt.status;
@@ -1211,8 +1207,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1246,6 +1241,12 @@ module.exports = {
                 if (cartInDb.status === cartStatus.unplaced) {
                     const cartUpdateAtt = req.value.body;
                     cartUpdateAtt.status = cartStatus.paymentFailed;
+                    cartUpdateAtt['$set'] = {
+                        'statusChangeTime.paymentFailed': {
+                            time: new Date(),
+                            by: systemAdmin
+                        }
+                    };
                     cartUpdateAtt.paymentCode = orderid.generate();
 
                     cartUpdateAtt.lastModifiedBy = daiictId;
@@ -1297,9 +1298,6 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
-
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
@@ -1320,8 +1318,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1413,9 +1410,6 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
-
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     const filteredCart = filterResourceData(updatedCart, readOwnCartPermission.attributes);
@@ -1436,8 +1430,7 @@ module.exports = {
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
-                }
-                else {
+                } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
             } else {
@@ -1531,6 +1524,9 @@ module.exports = {
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
 
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
+                    await notification.save();
+
                     return res.render('paymentFail', { order: renderInfo });
                 }
 
@@ -1577,7 +1573,8 @@ module.exports = {
                     }
 
 
-                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findOneAndUpdate({ paymentCode: referenceNo }, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);
@@ -1939,7 +1936,7 @@ module.exports = {
                     let mailBody = mustache.render(mailTemplates['cancelCart'].body, options);
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartInDb.cancelReason, cartInDb.id);
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, daiictId, cartInDb.orders.length, cartStatus.cancelled, cartUpdateAtt.cancelReason, cartInDb.id);
                     await notification.save();
 
                     res.status(httpStatusCodes.OK)
@@ -2024,7 +2021,7 @@ module.exports = {
             // res.sendStatus(httpStatusCodes.OK);
 
             let options = {
-                root: './data/invoice_pdf/',
+                root: process.env.INVOICE_ROOT_PATH,
                 dotfiles: 'deny',
                 headers: {
                     'x-timestamp': Date.now(),
@@ -2071,7 +2068,7 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.totalCost > 0) {
-                    return res.sendStatus(httpStatusCodes.METHOD_NOT_ALLOWED);
+                    return res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
 
                 if (cartUpdateAtt.paymentType !== paymentTypes.noPayment) {
@@ -2080,7 +2077,7 @@ module.exports = {
                 }
 
                 if (cartInDb.status === cartStatus.unplaced) {
-                    
+
                     cartUpdateAtt.status = cartStatus.processing;
                     cartUpdateAtt.paymentStatus = true;
                     cartUpdateAtt['$set'] = {
@@ -2142,7 +2139,8 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
+                    const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
+                        .populate(['collectionType', 'delivery', 'pickup']);
 
                     const placedCartDoc = filterResourceData(updatedCart, placedCartAttributes);
                     const placedCart = new PlacedCart(placedCartDoc);
@@ -2179,7 +2177,7 @@ module.exports = {
 
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.placed, '-', placedCart.id);
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.processing, '-', placedCart.id);
                     await notification.save();
 
 

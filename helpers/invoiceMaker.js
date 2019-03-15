@@ -9,15 +9,14 @@ const UserInfo = require('../models/userInfo');
 
 const indexFilePath = __dirname + '/templates/index.html';
 const rowFilePath = __dirname + '/templates/row.html';
-const invoiceHtmlDir = './data/invoice_html';
-const invoicePdfDir = './data/invoice_pdf';
+const invoiceHtmlDir = './data/invoice_html/';
 
 const generateInvoice = async (cartId) => {
 
     const cart = await PlacedCart.findById(cartId)
         .populate('orders')
         .populate('pickup')
-        .populate('delivery'); 
+        .populate('delivery');
 
     const user = await UserInfo.findOne({ user_inst_id: cart.requestedBy });
 
@@ -64,7 +63,7 @@ const generateInvoice = async (cartId) => {
     myInvoice.options.data.invoice.number = cart.orderId;
     const currdate = new Date();
     myInvoice.options.data.invoice.date = currdate.getDate()
-        .toString() + '/' + (currdate.getMonth()+1)
+        .toString() + '/' + (currdate.getMonth() + 1)
         .toString() + '/' + currdate.getFullYear()
         .toString();
     myInvoice.options.data.invoice.collectionType = cart.collectionTypeCategory;
@@ -105,8 +104,8 @@ const generateInvoice = async (cartId) => {
         myInvoice.options.data.tasks.push(subTask);
     }
 
-    const htmlFile = invoiceHtmlDir + '/' + cart.orderId.toString() + '.html';
-    const pdfFile = invoicePdfDir + '/' + cart.orderId.toString() + '.pdf';
+    const htmlFile = invoiceHtmlDir + cart.orderId.toString() + '_' + Date.now() + '.html';
+    const pdfFile = process.env.INVOICE_ROOT_PATH + '/' + cart.orderId.toString() + '.pdf';
 
     // Render invoice as HTML and PDF
     await myInvoice.toHtml(htmlFile, (err, data) => {
@@ -125,9 +124,27 @@ const generateInvoice = async (cartId) => {
                     console.log(res);
                 });
         }
-    })
+    });
+};
+
+const clearHtmlFiles = async () => {
+    let files = fs.readdirSync(invoiceHtmlDir);
+    let now = Date.now();
+    files.forEach( (filename) => {
+        let timeStampStr = filename.split('_')[1].split('.')[0];
+        if (parseInt(timeStampStr) < now) {
+            fs.unlink(invoiceHtmlDir+filename, (err) => {
+                if (err) {
+                    console.log(err);
+                } else {
+	                console.log("Deleted: " + filename);
+	            }
+            });
+        }
+    });
 };
 
 module.exports = {
     generateInvoice,
+    clearHtmlFiles,
 };

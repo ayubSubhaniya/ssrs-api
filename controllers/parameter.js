@@ -1,11 +1,77 @@
 const HttpStatus = require('http-status-codes');
 
+const Service = require('../models/service');
+const Order = require('../models/order');
 const Parameter = require('../models/parameter');
-const { resources } = require('../configuration');
+const Cart = require('../models/cart');
+const { resources, systemAdmin, allAdmin } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
+const { generateCustomNotification } = require('../helpers/notificationHelper');
+
+const removeDeletedParameterFromService = async (parameterId) => {
+    const services = await Service.find({ 'availableParameters': parameterId });
+    for (let i=0;i<services.length;i++){
+        const updatedService = await Service.findByIdAndUpdate(services[i]._id,{
+            '$pull':{
+                'availableParameters':parameterId
+            }
+        });
+    }
+};
+
+
+const removeOrderWithDeletedParameter = async (parameterId) => {
+
+    let message = "Some orders has became invalid due to changes in available parameters. Please try adding them again.";
+
+    const orders = await Order.find({ parameters: parameterId });
+
+    for (let i=0;i<orders.length;i++){
+
+        await Order.findByIdAndRemove(orders[i]._id);
+
+        await Cart.findByIdAndUpdate(orders[i].cartId, {
+            '$pull': {
+                'orders': orders[i]._id
+            }
+        });
+
+        const notification = generateCustomNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
+        await notification.save();
+    }
+};
+
+const getAllPopulatedParameters = async (user)=>{
+    const { daiictId } = user;
+
+    const readPermission = accessControl.can(user.userType)
+        .readAny(resources.parameter);
+    const readAnyInActiveResource = accessControl.can(user.userType)
+        .readAny(resources.inActiveResource);
+    const readOwnInActiveResource = accessControl.can(user.userType)
+        .readOwn(resources.inActiveResource);
+
+    let requestedParameters;
+    if (readPermission.granted) {
+
+        if (readAnyInActiveResource.granted) {
+            requestedParameters = await Parameter.find({});
+        } else if (readOwnInActiveResource.granted) {
+            requestedParameters = await Parameter.find({ $or: [{ createdBy: daiictId }, { isActive: true }] });
+        } else {
+            requestedParameters = await Parameter.find({ isActive: true });
+        }
+
+        if (requestedParameters) {
+            requestedParameters = filterResourceData(requestedParameters, readPermission.attributes);
+        }
+    }
+    return requestedParameters
+}
 
 module.exports = {
+    getAllPopulatedParameters,
 
     addParameter: async (req, res, next) => {
         const { user } = req;
@@ -45,17 +111,34 @@ module.exports = {
 
         if (deleteAnyPermission.granted) {
 
+            await removeOrderWithDeletedParameter(requestedParameterId);
+            await removeDeletedParameterFromService(requestedParameterId);
+
+            /* notification for all superAdmins */
+            const parameter = await Parameter.findById(requestedParameterId);
+            let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`;
+            const notification = await generateCustomNotification(allAdmin, systemAdmin, message);
+            await notification.save();
+
             await Parameter.findByIdAndRemove(requestedParameterId);
             res.status(HttpStatus.OK)
                 .json({});
         } else if (deleteOwnPermission.granted) {
 
+            await removeOrderWithDeletedParameter(requestedParameterId);
+            await removeDeletedParameterFromService(requestedParameterId);
+
+            const parameter = await Parameter.findById(requestedParameterId);
             const deletedParameter = await Parameter.findOneAndRemove({
                 _id: requestedParameterId,
                 createdBy: daiictId
             });
 
             if (deletedParameter) {
+                let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`;
+                const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+                await notification.save();
+
                 res.status(HttpStatus.OK)
                     .json({});
             } else {

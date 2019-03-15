@@ -2,9 +2,10 @@ module.exports = {
     userBlockageTimeForTooManySignUpRequests: 1, // unit hour
     maximumSignUpRequestBeforeBlocking: 5,
     easyPaySuccessResponse: 'E000',
-    sessionSecret:'SSRS-DAIICT-SESSION',
+    sessionSecret: 'SSRS-DAIICT-SESSION',
     systemAdmin: 'system',
     homePage: 'https://ssrs.daiict.ac.in:8080/',
+    allAdmin: 'allAdmin',
     sortQueryName: 'sort',
     httpProtocol: 'https',
     daiictMailDomainName: 'daiict.ac.in',
@@ -13,10 +14,12 @@ module.exports = {
     JWT_ISSUER: 'ssrs-daiict',
     JWT_EXPIRY_TIME: 1, //unit day
     RESET_PASSWORD_EXPIRY_TIME: 1, //unit day
-    NEWS_EXPIRY_TIME: 8, //unit day
-    NOTIFICATION_EXPIRY_TIME: 8, //unit day
+    NEWS_EXPIRY_TIME: 15, //unit day
+    NOTIFICATION_EXPIRY_TIME: 15, //unit day
     ORDER_CANCEL_TIME_IN_PAYMENT_DELAY: 8, //unit day
     CHECK_FOR_OFFLINE_PAYMENT: 1, //unit day
+    PAYMENT_JOB_SCHEDULE_EXPRESSION: '0 3 * * *',
+
     collectionTypes: {
         delivery: 'Delivery',
         pickup: 'Pickup',

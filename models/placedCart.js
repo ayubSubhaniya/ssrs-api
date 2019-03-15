@@ -22,22 +22,36 @@ const placedCartSchema = new Schema({
         type: String,
     },
     paymentStatus: {
-        type:Boolean,
-        default:false
+        type: Boolean,
+        default: false
     },
-    paymentFailHistory:[{
-        paymentId:{
-            type:String,
+    paymentFailHistory: [{
+        paymentId: {
+            type: String,
         },
-        paymentDate:{
-            type:String,
+        paymentDate: {
+            type: String,
         },
-        paymentType:{
-            type:String,
+        paymentType: {
+            type: String,
         },
     }],
     collectionType: {
-        type: String,
+        name: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String
+        },
+        baseCharge: {
+            type: Number,
+            default: 0,
+        },
+        category: {
+            type: String,
+            required: true
+        }
     },
     collectionTypeCategory: {
         type: String,
@@ -55,12 +69,68 @@ const placedCartSchema = new Schema({
         default: 0,
     },
     delivery: {
-        type: Schema.Types.ObjectId,
-        ref: 'delivery'
+        name: {
+            type: String,
+        },
+        contactNo: {
+            type: String,
+        },
+        email: {
+            type: String,
+        },
+        createdOn: {
+            type: Date,
+        },
+        createdBy: {
+            type: String,
+        },
+        address: {
+            line1: {
+                type: String,
+            },
+            line2: {
+                type: String,
+            },
+            line3: {
+                type: String,
+            },
+        },
+        city: {
+            type: String,
+        },
+        state: {
+            type: String,
+        },
+        country: {
+            type: String,
+        },
+        pinCode: {
+            type: String,
+        }
     },
     pickup: {
-        type: Schema.Types.ObjectId,
-        ref: 'collector'
+        name: {
+            type: String,
+        },
+        daiictId: {
+            type: String,
+        },
+        contactNo: {
+            type: String,
+        },
+        email: {
+            type: String,
+        },
+        collectionCode: {
+            type: String,
+            unique: true,
+        },
+        createdOn: {
+            type: Date,
+        },
+        createdBy: {
+            type: String,
+        }
     },
     requestedBy: {
         type: String,
@@ -133,31 +203,31 @@ const placedCartSchema = new Schema({
     comment: {
         processing: {
             type: String,
-            default: ""
+            default: ''
         },
         readyToDeliver: {
             type: String,
-            default: ""
+            default: ''
         },
         readyToPickup: {
             type: String,
-            default: ""
+            default: ''
         },
         completed: {
             type: String,
-            default: ""
+            default: ''
         },
         onHold: {
             type: String,
-            default: ""
+            default: ''
         },
         cancelled: {
             type: String,
-            default: ""
+            default: ''
         },
         refunded: {
             type: String,
-            default: ""
+            default: ''
         }
     },
     lastModified: {

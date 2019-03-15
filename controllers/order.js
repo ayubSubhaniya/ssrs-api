@@ -15,7 +15,7 @@ const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArr
 const { accessControl } = require('./access');
 const { adminTypes, userTypes, resources, sortQueryName, orderStatus, cartStatus, collectionTypes, systemAdmin, collectionStatus } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification, generateCurreptedOrderRemovalNotification} = require('../helpers/notificationHelper');
+const { generateOrderStatusChangeNotification, generateCartStatusChangeNotification, generateCustomNotification } = require('../helpers/notificationHelper');
 
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
@@ -79,7 +79,7 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 
 const recalculateOrderCost = async (order, user) => {
     const service = await Service.findById(order.service);
-    let message = "Your order with service : " + order.service.name + "is removed due to service/parameter description change.Please try again.";
+    let message = "Some orders in your cart has became invalid. Please try adding them again!";
 
     if (!service) {
         await Order.findByIdAndRemove(order._id);
@@ -91,7 +91,7 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
-        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+        const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
         await notification.save();
         return null;
     }
@@ -114,7 +114,7 @@ const recalculateOrderCost = async (order, user) => {
         });
 
         /* Add notification here*/
-        const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+        const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
         await notification.save();
         return null;
     }
@@ -141,7 +141,7 @@ const recalculateOrderCost = async (order, user) => {
                 });
 
                 /* Add notification here*/
-                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+                const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
                 await notification.save();
                 return null;
             }
@@ -165,13 +165,13 @@ const recalculateOrderCost = async (order, user) => {
                 });
 
                 /* Add notification here*/
-                const notification = generateCurreptedOrderRemovalNotification(order.requestedBy, systemAdmin, message, order.cartId);
+                const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
                 await notification.save();
                 return null;
-            }    
+            }
         }
     }
-    
+
     order.parameterCost = await calculateParameterCost(order.parameters, order.unitsRequested);
     order.serviceCost = await calculateServiceCost(service, order.unitsRequested, user);
     order.totalCost = 0;
@@ -410,7 +410,7 @@ module.exports = {
                 requestedBy: daiictId
             });
 
-            if (order && (order.status === orderStatus.unplaced || order.status === orderStatus.invalidOrder) && order.requestedBy === daiictId) {
+            if (order && (order.status < orderStatus.placed) && order.requestedBy === daiictId) {
                 await Order.findByIdAndRemove(orderId);
 
                 await Cart.findByIdAndUpdate(cartId, {
@@ -475,10 +475,9 @@ module.exports = {
                         res.status(httpStatusCodes.OK)
                             .json({ order: filteredOrder });
                     } else {
-                        res.sendStatus(httpStatusCodes.NOT_FOUND);
+                        res.sendStatus(httpStatusCodes.INTERNAL_SERVER_ERROR);
                     }
-                }
-                else if (orderInDB.status < orderStatus.placed) {
+                } else if (orderInDB.status < orderStatus.placed) {
 
                     if (updatedOrder.unitsRequested !== undefined) {
                         const service = await Service.findById(orderInDB.service);

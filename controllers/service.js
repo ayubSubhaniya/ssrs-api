@@ -1,11 +1,17 @@
 const HttpStatus = require('http-status-codes');
 
+const Order = require('../models/order');
+const Cart = require('../models/cart');
+const { resources, systemAdmin, allAdmin } = require('../configuration');
 const Service = require('../models/service');
 const News = require('../models/news');
 const Notification = require('../models/notification');
 const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
-const { resources } = require('../configuration');
+const { generateCustomNotification } = require('../helpers/notificationHelper');
+const { getAllPopulatedCollectionType } = require('./collectionType');
+const { getAllPopulatedParameters } = require('./parameter');
+const { getAllTypesDistinctValues } = require('./userInfo');
 
 const generateNews = async (message, daiictId, serviceId) => {
     const news = new News({
@@ -63,6 +69,37 @@ const generateServiceChangeStatusMessage = async (service, daiictId) => {
 
 const deleteCurrServiceNews = async (currServiceId) => {
     await News.deleteMany({ serviceId: currServiceId });
+};
+
+const removeOrderWithDeletedService = async (serviceId) => {
+
+    let message = 'Some order(s) has became invalid due to removal of some services. Please try adding them again.';
+
+    const orders = await Order.find({ service: serviceId });
+    for (let i = 0; i < orders.length; i++) {
+
+        await Order.findByIdAndRemove(orders[i]._id);
+
+        await Cart.findByIdAndUpdate(orders[i].cartId, {
+            '$pull': {
+                'orders': orders[i]._id
+            }
+        });
+
+        const notification = generateCustomNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
+        await notification.save();
+    }
+};
+
+const getRequiredInfoForService = async (user) => {
+    const collectionTypes = await getAllPopulatedCollectionType(user);
+    const parameters = await getAllPopulatedParameters(user);
+    const distinctValues = await getAllTypesDistinctValues();
+    return {
+        collectionType: collectionTypes,
+        parameter: parameters,
+        distinctValues
+    };
 };
 
 module.exports = {
@@ -147,6 +184,7 @@ module.exports = {
         }
     },
 
+    /* Further improvement
     getAllSpecialServices: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -286,6 +324,7 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+    */
 
     getService: async (req, res, next) => {
         const { user } = req;
@@ -373,6 +412,107 @@ module.exports = {
         }
     },
 
+    getServiceWithExtraDetails: async (req, res, next) => {
+        const { user } = req;
+        const { daiictId } = user;
+        const { serviceId } = req.params;
+
+        const readPermission = accessControl.can(user.userType)
+            .readAny(resources.service);
+        const readAnyInActiveService = accessControl.can(user.userType)
+            .readAny(resources.inActiveResource);
+        const readOwnInActiveService = accessControl.can(user.userType)
+            .readOwn(resources.inActiveResource);
+        const readParameterPermission = accessControl.can(user.userType)
+            .readAny(resources.parameter);
+        const readCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
+
+        if (readPermission.granted) {
+            let service;
+
+            if (readAnyInActiveService.granted) {
+                service = await Service.findById(serviceId)
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+            } else if (readOwnInActiveService.granted) {
+                service = await Service.find({
+                    _id: serviceId,
+                    $or: [{ createdBy: daiictId }, { isActive: true }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+            } else {
+                service = await Service.findOne({
+                    _id: serviceId,
+                    isActive: true,
+                    $or: [{
+                        isSpecialService: false,
+                        allowedProgrammes: { $in: [user.userInfo.user_programme, '*'] },
+                        allowedBatches: { $in: [user.userInfo.user_batch, '*'] },
+                        allowedUserTypes: { $in: [user.userInfo.user_type, '*'] },
+                        allowedUserStatus: { $in: [user.userInfo.user_status, '*'] }
+                    }, {
+                        isSpecialService: true,
+                        specialServiceUsers: daiictId
+                    }]
+                })
+                    .populate({
+                        path: 'collectionTypes',
+                        select: readCollectionTypePermission.attributes
+                    })
+                    .populate({
+                        path: 'availableParameters',
+                        select: readParameterPermission.attributes
+                    });
+
+                if (!service) {
+                    return res.sendStatus(HttpStatus.NOT_FOUND);
+                }
+                // Allowing only those parameters which are active
+                service.availableParameters = filterActiveData(service.availableParameters);
+            }
+
+            if (service) {
+                const filteredService = filterResourceData(service, readPermission.attributes);
+                const extraInfo = await getRequiredInfoForService(user);
+                res.status(HttpStatus.OK)
+                    .json({
+                        service: filteredService,
+                        extraInfo
+                    });
+            } else {
+                res.sendStatus(HttpStatus.NOT_FOUND);
+            }
+
+        } else {
+            res.sendStatus(HttpStatus.FORBIDDEN);
+        }
+    },
+
+    getExtraInfoForService: async (req, res, next) => {
+        const { user } = req;
+
+        const extraInfo = await getRequiredInfoForService(user);
+        res.status(HttpStatus.OK)
+            .json({
+                extraInfo
+            });
+    },
+
+    /* Further improvement
     getSpecialService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -510,6 +650,7 @@ module.exports = {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }
     },
+    */
 
     addService: async (req, res, next) => {
         const { user } = req;
@@ -545,7 +686,6 @@ module.exports = {
         }
     },
 
-    //should add special service and inActive access control for update?
     updateService: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
@@ -656,11 +796,18 @@ module.exports = {
             .deleteOwn(resources.service);
 
         if (deleteAnyPermission.granted) {
+
+            await removeOrderWithDeletedService(serviceId);
             await deleteCurrServiceNews(serviceId);
 
-            const service = await Service.findByIdAndRemove(serviceId);
+            const service = await Service.findById(serviceId);
+            const deletedService = await Service.findByIdAndRemove(serviceId);
 
-            if (service) {
+            if (deletedService) {
+                let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
+                const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+                await notification.save();
+
                 res.status(HttpStatus.OK)
                     .json({});
             } else {
@@ -668,14 +815,21 @@ module.exports = {
             }
 
         } else if (deleteOwnPermission.granted) {
+
+            await removeOrderWithDeletedService(serviceId);
             await deleteCurrServiceNews(serviceId);
 
-            const service = await Service.findOneAndRemove({
+            const service = await Service.findById(serviceId);
+            const deletedService = await Service.findOneAndRemove({
                 _id: serviceId,
                 createdBy: daiictId
             });
 
-            if (service) {
+            if (deletedService) {
+                let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
+                const notification = generateCustomNotification(allAdmin, systemAdmin, message);
+                await notification.save();
+
                 res.status(HttpStatus.OK)
                     .json({});
             } else {

@@ -22,7 +22,7 @@ const compression = require('compression');
 const { logger } = require('./configuration/logger');
 const {} = require('./configuration/dotenv');
 
-const sentryUrl = 'https://7d739cca183145e6b0c99c3413daf8ec@sentry.io/1291244';
+const sentryUrl = process.env.sentry_url;
 const name = 'SSRS-DAIICT';
 debug('booting %o', name);
 
@@ -30,19 +30,11 @@ const { sessionSecret } = require('./configuration');
 const { sendMail } = require('./configuration/mail');
 const { developersMail } = require('./configuration/bug');
 
-let isInternetAvaliable = false;
-internetAvailable()
-    .then(function () {
-        isInternetAvaliable = true;
-        console.log('Internet available');
-    })
-    .catch(function () {
-        isInternetAvaliable = false;
-        console.log('No internet');
-    });
-
-if (isInternetAvaliable) {
+try{
     Sentry.init({ dsn: sentryUrl });
+    console.log("sentry initialized")
+} catch (e) {
+    console.log("Not able to initialize sentry");
 }
 
 const app = express();
@@ -104,11 +96,12 @@ const template = require('./routes/template');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-
-//Middlewares
-if (isInternetAvaliable) {
+try{
     app.use(Sentry.Handlers.requestHandler());
+} catch (e) {
+    console.log("Not able to initialize sentry request handle");
 }
+
 
 if (app.get('env') === 'development') {
     app.use(morgan('dev'));
@@ -142,7 +135,10 @@ app.get('/SSRS/user/payment_response', function (req, res, next) {
 });
 
 app.get('/', function (req, res) {
-    res.render('error',{status:404,message:'Not Found'});
+    res.render('error', {
+        status: 404,
+        message: 'Not Found'
+    });
 });
 
 // Routes
@@ -162,15 +158,16 @@ app.use('/userInfo', userInfo);
 app.use('/dashboard', dashBoard);
 app.use('/template', template);
 
-
-if (isInternetAvaliable) {
-    app.use(Sentry.Handlers.errorHandler());
-}
-
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
     res.sendStatus(HttpStatus.NOT_FOUND);
 });
+
+try{
+    app.use(Sentry.Handlers.errorHandler());
+} catch (e) {
+    console.log("Not able to initialize sentry error handle");
+}
 
 // Error handler function
 app.use(async (err, req, res, next) => {
@@ -185,7 +182,7 @@ app.use(async (err, req, res, next) => {
     console.error(err);
     debug(req.method + ' ' + req.url + ' %O', error);
     logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip} - ${err.stack}`);
-    await sendMail(developersMail, [], [], err.message,[], err.stack);
+    await sendMail(developersMail, [], [], err.message, [], err.stack, 'gmail.com');
 });
 
 
@@ -195,13 +192,13 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, er.message, er.stack);
+        await sendMail(developersMail, [], [], er.message, [],  er.stack, 'gmail.com');
     } else {
         console.error(er.stack);
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, [], [], er.message,[], er.stack);
+        await sendMail(developersMail, [], [], er.message, [], er.stack, 'gmail.com');
     }
 });
 

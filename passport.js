@@ -16,10 +16,10 @@ passport.use(new JwtStrategy({
         const user = await User.findOne({ daiictId: payload.sub })
             .populate('userInfo');
 
-        if (user.userType!=="superAdmin"){
-            if (user.userInfo.user_type === "STUDENT"){
+        if (user.userType !== 'superAdmin') {
+            if (user.userInfo.user_type === 'STUDENT') {
                 user.userType = userTypes.student;
-            } else{
+            } else {
                 user.userType = adminTypes.admin;
             }
         }
