@@ -1,8 +1,9 @@
+const nodeSchedule = require('node-cron');
 const Invoice = require('nodeice');
 const fs = require('fs');
 const PdfMaker = require('html-pdf');
 
-const { collectionTypes } = require('../configuration/index');
+const { collectionTypes, PAYMENT_JOB_SCHEDULE_EXPRESSION } = require('../configuration/index');
 const Cart = require('../models/cart');
 const PlacedCart = require('../models/placedCart');
 const UserInfo = require('../models/userInfo');
@@ -143,6 +144,10 @@ const clearHtmlFiles = async () => {
         }
     });
 };
+
+nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
+    await clearHtmlFiles();
+});
 
 module.exports = {
     generateInvoice,
