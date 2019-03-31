@@ -145,7 +145,7 @@ const checkForFailedOnlinePayment = async () => {
                         by: systemAdmin
                     }
                 }
-            }, {new:true});
+            }, { new: true });
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
             let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
@@ -207,11 +207,16 @@ const getEasyPayUrl = (cart) => {
 };
 
 
-const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory) => {
+const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory, id = true) => {
     if (collectionType === undefined) {
         return -1;
     }
-    const collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
+
+    let collectionTypeDoc = collectionType;
+    if (id) {
+        collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
+    }
+
 
     if (!collectionTypeDoc) {
         return -1;
@@ -279,11 +284,13 @@ module.exports = {
             .readOwn(resources.delivery);
         const readOwnPickupPermission = accessControl.can(user.userType)
             .readOwn(resources.collector);
+        const readAnyCollectionType = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
+                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -299,6 +306,9 @@ module.exports = {
                         },
                         'orders.parameters': {
                             select: readAnyParameterPermission.attributes
+                        },
+                        'collectionType': {
+                            select: readAnyCollectionType.attributes
                         }
                     }
                 });
@@ -313,7 +323,7 @@ module.exports = {
                 cart.ordersCost = ordersCost;
             }
 
-            const collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders);
+            const collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders, cart.collectionTypeCategory, false);
 
             if (collectionTypeCost === -1) {
                 cart.status = cartStatus.invalid;
@@ -358,6 +368,8 @@ module.exports = {
             .readAny(resources.delivery);
         const readAnyPickupPermission = accessControl.can(user.userType)
             .readAny(resources.collector);
+        const readAnyCollectionType = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         if (readAnyCartPermission.granted) {
             let cart = await PlacedCart.findById(cartId)
@@ -365,7 +377,7 @@ module.exports = {
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
-                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
+                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                         populate: {
                             'orders': {
                                 select: readAnyOrderPermission.attributes
@@ -381,6 +393,9 @@ module.exports = {
                             },
                             'orders.parameters': {
                                 select: readAnyParameterPermission.attributes
+                            },
+                            'collectionType': {
+                                select: readAnyCollectionType.attributes
                             }
                         }
                     });
@@ -409,7 +424,7 @@ module.exports = {
                     _id: cartId,
                     requestedBy: daiictId
                 })
-                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
+                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                         populate: {
                             'orders': {
                                 select: readOwnOrderPermission.attributes
@@ -425,6 +440,9 @@ module.exports = {
                             },
                             'orders.parameters': {
                                 select: readAnyParameterPermission.attributes
+                            },
+                            'collectionType': {
+                                select: readAnyCollectionType.attributes
                             }
                         }
                     });
@@ -448,7 +466,7 @@ module.exports = {
                         cart.ordersCost = ordersCost;
                     }
 
-                    const collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders);
+                    const collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders, cart.collectionTypeCategory, false);
 
                     if (collectionTypeCost === -1) {
                         cart.status = cartStatus.invalid;
@@ -485,6 +503,8 @@ module.exports = {
             .readAny(resources.service);
         const readAnyParameterPermission = accessControl.can(user.userType)
             .readAny(resources.parameter);
+        const readAnyCollectionTypePermission = accessControl.can(user.userType)
+            .readAny(resources.collectionType);
 
         let query = {};
         let sortQuery = {};
@@ -543,7 +563,7 @@ module.exports = {
 
         let cart = await Cart.find(query)
             .sort(sortQuery)
-            .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup'], {
+            .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                 populate: {
                     'orders': {
                         select: orderAttributesPermission
@@ -559,6 +579,9 @@ module.exports = {
                     },
                     'orders.parameters': {
                         select: readAnyParameterPermission.attributes
+                    },
+                    'collectionType': {
+                        select: readAnyCollectionTypePermission.attributes
                     }
                 }
             });
@@ -574,7 +597,7 @@ module.exports = {
                 cart[i].ordersCost = ordersCost;
             }
 
-            const collectionTypeCost = await calculateCollectionTypeCost(cart[i].collectionType, cart[i].orders);
+            const collectionTypeCost = await calculateCollectionTypeCost(cart[i].collectionType, cart[i].orders, cart[i].collectionTypeCategory, false);
 
             if (collectionTypeCost === -1) {
                 cart[i].status = cartStatus.invalid;
