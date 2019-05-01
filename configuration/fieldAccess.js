@@ -959,7 +959,8 @@ module.exports = {
                 'name',
                 'description',
                 'baseCharge',
-                'category'
+                'category',
+                'isActive'
             ],
             canCreate: [],
             canUpdate: []
