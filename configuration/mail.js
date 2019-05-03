@@ -32,15 +32,28 @@ smtpTransport.verify(function (error, success) {
     }
 });
 
-const sendMail = async (toId, cc, bcc, subject, html, text, domain=daiictMailDomainName) => {
-    if (toId instanceof Array){
-        toId = toId.map(function (x) {
-            return `${x}@${domain}`
-        });
-        for (let i=0;i<toId.length;i++){
+const sendMail = async (toId, cc, bcc, subject, html, text, domain = daiictMailDomainName) => {
+    try {
+        if (toId instanceof Array) {
+            toId = toId.map(function (x) {
+                return `${x}@${domain}`;
+            });
+            for (let i = 0; i < toId.length; i++) {
+                const info = await smtpTransport.sendMail({
+                    from: mailAccountEmailId,
+                    to: toId[i],
+                    cc,
+                    bcc,
+                    subject,
+                    text,
+                    html
+                });
+            }
+        } else {
+            toId = `${toId}@${domain}`;
             const info = await smtpTransport.sendMail({
                 from: mailAccountEmailId,
-                to: toId[i],
+                to: toId,
                 cc,
                 bcc,
                 subject,
@@ -48,17 +61,8 @@ const sendMail = async (toId, cc, bcc, subject, html, text, domain=daiictMailDom
                 html
             });
         }
-    } else {
-        toId = `${toId}@${domain}`;
-        const info = await smtpTransport.sendMail({
-            from: mailAccountEmailId,
-            to: toId,
-            cc,
-            bcc,
-            subject,
-            text,
-            html
-        });
+    } catch (e) {
+        console.error(e);
     }
     // const info = await smtpTransport.sendMail({
     //     from: mailAccountEmailId,
