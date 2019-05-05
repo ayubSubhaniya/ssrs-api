@@ -139,11 +139,7 @@ const checkForFailedOnlinePayment = async () => {
 };
 
 nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
-    console.log("Starting Cron Jobs");
     await checkForOfflinePayment();
     await checkForFailedOnlinePayment();
-});
-
-nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
     await clearHtmlFiles();
 });
