@@ -7,8 +7,7 @@
     "dev": "nodemon",
     "start": "node app.js",
     "deploy": "./bin/startServer.sh",
-    "test": "mocha --timeout 60000",
-    "test-mock": "mocha --timeout 15000 --require test/mongoMock.js"
+    "test": "./node_modules/.bin/mocha --timeout 15000"
   },
   "engines": {
     "node": "11.0.0"
@@ -28,8 +27,6 @@
     "accesscontrol": "^2.2.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.2",
-    "chai": "^4.2.0",
-    "chai-http": "^4.3.0",
     "compression": "^1.7.3",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
@@ -51,9 +48,6 @@
     "jade": "^1.11.0",
     "joi": "^13.7.0",
     "jsonwebtoken": "^8.2.0",
-    "mocha": "^6.1.4",
-    "mocha-prepare": "^0.1.0",
-    "mongo-unit": "^1.4.4",
     "mongoose": "^5.3.8",
     "mongoose-deep-populate": "^3.1.1",
     "morgan": "^1.9.1",
