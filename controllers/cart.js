@@ -1,12 +1,10 @@
 const httpStatusCodes = require('http-status-codes');
-const nodeSchedule = require('node-cron');
 const mustache = require('mustache');
 const querystring = require('querystring');
 const { orderNoGeneratorSecret } = require('../configuration');
 const orderid = require('order-id')(orderNoGeneratorSecret);
 
 const { logger } = require('../configuration/logger');
-const Service = require('../models/service');
 const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
@@ -14,21 +12,30 @@ const PlacedOrder = require('../models/placedOrder');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
 const UserInfo = require('../models/userInfo');
-const CollectionType = require('../models/collectionType');
 const EasyPayPaymentInfo = require('../models/easyPayPaymentInfo');
-const Notification = require('../models/notification');
 
 const paymentCodeGenerator = require('shortid');
 paymentCodeGenerator.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&$');
 
-const { generateCartStatusChangeNotification, generatePendingPaymentNotification } = require('../helpers/notificationHelper');
-const { encryptUrl, decryptUrl, createSHASig } = require('../helpers/crypto');
+const {
+    generateCartStatusChangeNotification,
+    updateCartIdInNotification
+} = require('../helpers/notificationHelper');
+
+const {
+    calculateCollectionTypeCost,
+    calculateOrdersCost,
+    checkPaymentMode
+} = require('../helpers/cartHelper');
+
+const { validateOrder } = require('../helpers/orderHelper');
+
+const { getEasyPayUrl } = require('../helpers/easyPay');
+const { createSHASig } = require('../helpers/crypto');
 const { generateInvoice } = require('../helpers/invoiceMaker');
-const { filterResourceData, parseSortQuery, parseFilterQuery, convertToStringArray } = require('../helpers/controllerHelpers');
+const { filterResourceData, parseSortQuery, parseFilterQuery } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const {
-    PAYMENT_JOB_SCHEDULE_EXPRESSION,
-    adminTypes,
     userTypes,
     homePage,
     easyPaySuccessResponse,
@@ -44,228 +51,11 @@ const {
     placedOrderServiceAttributes,
     placedOrderParameterAttributes,
     placedCartAttributes,
-    ORDER_CANCEL_TIME_IN_PAYMENT_DELAY,
-    CHECK_FOR_OFFLINE_PAYMENT,
     PAGINATION_SIZE
 } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { validateOrder } = require('./order');
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
-
-const updateCartIdInNotification = async (oldCartId, newCartId) => {
-
-    const notifications = await Notification.find({
-        cartId: oldCartId,
-    });
-    for (let i = 0; i < notifications.length; i++) {
-        await Notification.findByIdAndUpdate(notifications[i]._id, {
-            cartId: newCartId
-        });
-    }
-};
-
-
-//const dayToMilliSec = 86400000;
-const checkForOfflinePayment = async () => {
-
-    const failedOrderTime = new Date();
-    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
-
-    const carts = await PlacedCart.find({
-        status: cartStatus.placed,
-    });
-
-    for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.placed.time <= failedOrderTime) {
-            const updatedCart = await PlacedCart.findByIdAndUpdate(carts[i]._id, {
-                status: cartStatus.cancelled,
-                cancelReason: 'Payment delay',
-                '$set': {
-                    'statusChangeTime.cancelled': {
-                        time: new Date(),
-                        by: systemAdmin
-                    }
-                }
-            }, { new: true });
-            let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
-            let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
-            let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
-            let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
-            let options = {
-                orderId: updatedCart.orderId,
-                cartLength: updatedCart.orders.length
-            };
-            let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
-            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-
-            /*Generate notification for cancel*/
-            const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, systemAdmin, updatedCart.orders.length, cartStatus.cancelled, updatedCart.cancelReason, updatedCart.id);
-            await notification.save();
-
-        } else {
-            const cancelledInDays = carts[i].statusChangeTime.placed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
-
-            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let cc = mailTemplates['pendingPaymentOffline'].cc;
-            let bcc = mailTemplates['pendingPaymentOffline'].bcc;
-            let mailSubject = mailTemplates['pendingPaymentOffline'].subject;
-            let options = {
-                orderId: carts[i].orderId,
-                cartLength: carts[i].orders.length,
-                cancelledInDays,
-                paymentCode: carts[i].paymentCode
-            };
-            let mailBody = mustache.render(mailTemplates['pendingPaymentOffline'].body, options);
-            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-
-            /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, paymentTypes.offline, carts[i].id);
-            await notification.save();
-        }
-    }
-};
-
-const checkForFailedOnlinePayment = async () => {
-
-    const failedOrderTime = new Date();
-    failedOrderTime.setDate(failedOrderTime.getDate() - ORDER_CANCEL_TIME_IN_PAYMENT_DELAY);
-
-    const carts = await Cart.find({
-        status: cartStatus.paymentFailed,
-    });
-
-    for (let i = 0; i < carts.length; i++) {
-        if (carts[i].statusChangeTime.paymentFailed.time <= failedOrderTime) {
-            const updatedCart = await Cart.findByIdAndUpdate(carts[i]._id, {
-                status: cartStatus.cancelled,
-                cancelReason: 'Payment delay',
-                '$set': {
-                    'statusChangeTime.cancelled': {
-                        time: new Date(),
-                        by: systemAdmin
-                    }
-                }
-            }, { new: true });
-
-            let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
-            let cc = mailTemplates['orderCancel-PaymentDelay'].cc;
-            let bcc = mailTemplates['orderCancel-PaymentDelay'].bcc;
-            let mailSubject = mailTemplates['orderCancel-PaymentDelay'].subject;
-            let options = {
-                orderId: updatedCart.orderId,
-                cartLength: updatedCart.orders.length
-            };
-            let mailBody = mustache.render(mailTemplates['orderCancel-PaymentDelay'].body, options);
-            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-
-            /*Generate notification for cancel*/
-            const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, systemAdmin, updatedCart.orders.length, cartStatus.cancelled, updatedCart.cancelReason, updatedCart.id);
-            await notification.save();
-        } else {
-            const cancelledInDays = carts[i].statusChangeTime.paymentFailed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
-
-            let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
-            let cc = mailTemplates['pendingPaymentOnline'].cc;
-            let bcc = mailTemplates['pendingPaymentOnline'].bcc;
-            let mailSubject = mailTemplates['pendingPaymentOnline'].subject;
-            let options = {
-                orderId: carts[i].orderId,
-                cartLength: carts[i].orders.length,
-                cancelledInDays,
-                paymentCode: carts[i].paymentCode
-            };
-            let mailBody = mustache.render(mailTemplates['pendingPaymentOnline'].body, options);
-            await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-
-            /*Generate notification for payment*/
-            const notification = generatePendingPaymentNotification(carts[i].requestedBy, systemAdmin, carts[i].orders.length, paymentTypes.online, carts[i].id);
-            await notification.save();
-        }
-    }
-};
-
-nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
-    await checkForOfflinePayment();
-    await checkForFailedOnlinePayment();
-});
-
-const getMandatoryEasyPayFields = (cart) => {
-    return `${cart.paymentCode}|${process.env.submerchantid}|${cart.totalCost}`;
-};
-
-const getEasyPayUrl = (cart) => {
-    let url = process.env.url + '?';
-    url += 'merchantid=' + process.env.merchantid;
-    url += '&mandatory fields=' + getMandatoryEasyPayFields(cart);
-    url += '&optional fields=';
-    url += '&returnurl=' + process.env.returnurl;
-    url += '&Reference No=' + cart.paymentCode;
-    url += '&submerchantid=' + process.env.submerchantid;
-    url += '&transaction amount=' + cart.totalCost;
-    url += '&paymode=' + process.env.paymode;
-    return encryptUrl(url);
-};
-
-
-const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory, id = true) => {
-    if (collectionType === undefined) {
-        return -1;
-    }
-
-    let collectionTypeDoc = collectionType;
-    if (id) {
-        collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
-    }
-
-
-    if (!collectionTypeDoc) {
-        return -1;
-    }
-    if (!collectionTypeDoc.isActive) {
-        return -1;
-    }
-
-    if (collectionTypeCategory !== undefined && collectionTypeDoc.category !== collectionTypeCategory) {
-        return -1;
-    }
-
-    for (let i = 0; i < orders.length; i++) {
-        const service = await Service.findById(orders[i].service);
-        const collectionTypes = convertToStringArray(service.collectionTypes);
-
-        if (!collectionTypes.includes(collectionTypeDoc._id.toString())) {
-            return -1;
-        }
-    }
-
-    return collectionTypeDoc.baseCharge;
-};
-
-const calculateOrdersCost = async (cart) => {
-    let cost = 0;
-    const { orders } = cart;
-    for (let i = 0; i < orders.length; i++) {
-        if (orders[i].status < orderStatus.unplaced) {
-            return -1;
-        } else {
-            cost += orders[i].totalCost;
-        }
-    }
-    return cost;
-};
-
-const checkPaymentMode = async (cart, paymentMode) => {
-    //paymentMode = paymentMode.toLowerCase();
-    const { orders } = cart;
-    for (let i = 0; i < orders.length; i++) {
-        const service = await Service.findById(orders[i].service);
-        if (!service.availablePaymentModes.includes(paymentMode)) {
-            return false;
-        }
-    }
-    return true;
-};
 
 module.exports = {
     getMyCart: async (req, res, next) => {
