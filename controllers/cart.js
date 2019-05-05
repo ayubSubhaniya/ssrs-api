@@ -529,6 +529,7 @@ module.exports = {
             }
 
             sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
+            sortQuery['statusChangeTime.placed.time'] = -1;
 
             cartAttributesPermission = readAnyCartPermission.attributes;
             orderAttributesPermission = accessControl.can(user.userType)
