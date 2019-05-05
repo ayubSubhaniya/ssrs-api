@@ -546,7 +546,7 @@ module.exports = {
                 }
             } else {
                 query.status = {
-                    $gt: cartStatus.unplaced
+                    $gte: cartStatus.placed
                 };
             }
             sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
