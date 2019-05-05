@@ -206,4 +206,3 @@ process.on('uncaughtException', async (er) => {
 const port = process.env.PORT || 8443;
 
 app.listen(port, () => console.log(`Server is listnening on port ${port}`));
-module.exports = app;

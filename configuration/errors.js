@@ -29,5 +29,4 @@ module.exports = {
     paymentFailed: 'Payment Failed',
     blockUser: `Too many request you are blocked for ${userBlockageTimeForTooManySignUpRequests} hours`,
     signUpRequestExpired: 'Your verification link has expired. Sign up again',
-    invalidPageRequest: "invalid page number"
 };

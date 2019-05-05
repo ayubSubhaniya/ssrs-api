@@ -1,7 +1,7 @@
 const httpStatusCodes = require('http-status-codes');
 const nodeSchedule = require('node-cron');
 const mustache = require('mustache');
-const querystring = require('querystring');
+
 const { orderNoGeneratorSecret } = require('../configuration');
 const orderid = require('order-id')(orderNoGeneratorSecret);
 
@@ -46,7 +46,6 @@ const {
     placedCartAttributes,
     ORDER_CANCEL_TIME_IN_PAYMENT_DELAY,
     CHECK_FOR_OFFLINE_PAYMENT,
-    PAGINATION_SIZE
 } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { validateOrder } = require('./order');
@@ -495,8 +494,6 @@ module.exports = {
 
         const { user } = req;
         const { daiictId } = user;
-        const pageNo = parseInt(req.query.pageNo || 1);
-        const size = parseInt(req.query.size || PAGINATION_SIZE);
 
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
@@ -563,20 +560,8 @@ module.exports = {
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
-        const totalCount = (await Cart.countDocuments(query)) + (await PlacedCart.countDocuments(query));
-        const totalPages = Math.ceil(totalCount / size);
-
-        if (pageNo < 0 || pageNo === 0) {
-            return res.status(httpStatusCodes.BAD_REQUEST)
-                .send(errorMessages.invalidPageRequest);
-        }
-
-        const skip = size * (pageNo - 1);
-        const limit = size;
 
         let cart = await Cart.find(query)
-            .skip(skip)
-            .limit(limit)
             .sort(sortQuery)
             .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                 populate: {
@@ -625,26 +610,12 @@ module.exports = {
         }
 
         cart = cart.concat(await PlacedCart.find(query)
-            .skip(skip)
-            .limit(limit)
             .sort(sortQuery)
             .populate(['orders']));
 
         const filteredCart = await filterResourceData(cart, cartAttributesPermission);
-        const prevUrl = pageNo > 1 ? querystring.stringify({
-            pageNo: pageNo - 1,
-            size: size
-        }) : undefined;
-        const nextUrl = pageNo < totalPages ? querystring.stringify({
-            pageNo: pageNo + 1,
-            size: size
-        }) : undefined;
         res.status(httpStatusCodes.OK)
-            .json({
-                cart: filteredCart,
-                prev: prevUrl,
-                next: nextUrl
-            });
+            .json({ cart: filteredCart });
     },
 
     addDelivery: async (req, res, next) => {
