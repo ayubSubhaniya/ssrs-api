@@ -814,13 +814,6 @@ module.exports = {
                             .send(errorMessages.invalidPaymentType);
                     }
 
-                    /* save final cart and orders*/
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await cartInDb.orders[i].save();
-                    }
-
-                    await cartInDb.save();
-
                     const updatedCart = await Cart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true })
                         .populate(['collectionType', 'delivery', 'pickup']);
 
