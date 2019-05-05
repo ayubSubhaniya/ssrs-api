@@ -123,7 +123,6 @@ const placedCartSchema = new Schema({
         },
         collectionCode: {
             type: String,
-            unique: true,
         },
         createdOn: {
             type: Date,
