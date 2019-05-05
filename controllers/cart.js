@@ -1058,13 +1058,6 @@ module.exports = {
 
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
-                    await notification.save();
-
-
-                    /* Update all notification with old cartID */
-                    await updateCartIdInNotification(cartId, placedCart.id);
-
                     const cart = new Cart({
                         requestedBy: daiictId,
                         createdOn: user.createdOn,
@@ -1072,6 +1065,18 @@ module.exports = {
                     await cart.save();
                     user.cartId = cart._id;
                     await user.save();
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
+                    }
+                    await Cart.findByIdAndRemove(cartId);
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
+                    await notification.save();
+
+
+                    /* Update all notification with old cartID */
+                    await updateCartIdInNotification(cartId, placedCart.id);
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
                     let cc = mailTemplates['orderPlaced'].cc;
@@ -1084,11 +1089,6 @@ module.exports = {
                         paymentCode: updatedCart.paymentCode
                     };
                     let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
-
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndRemove(cartInDb.orders[i]);
-                    }
-                    await Cart.findByIdAndRemove(cartId);
 
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
@@ -1220,12 +1220,6 @@ module.exports = {
                     placedCart.status = cartUpdateAtt.status;
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
-                    await notification.save();
-
-                    /* Update all notification with old cartID */
-                    await updateCartIdInNotification(cartId, placedCart.id);
-
                     const cart = new Cart({
                         requestedBy: daiictId,
                         createdOn: user.createdOn,
@@ -1233,6 +1227,17 @@ module.exports = {
                     await cart.save();
                     user.cartId = cart._id;
                     await user.save();
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
+                    }
+                    await Cart.findByIdAndRemove(cartId);
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
+                    await notification.save();
+
+                    /* Update all notification with old cartID */
+                    await updateCartIdInNotification(cartId, placedCart.id);
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
                     let cc = mailTemplates['orderPlaced'].cc;
@@ -1248,11 +1253,6 @@ module.exports = {
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
                     const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
-
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndRemove(cartInDb.orders[i]);
-                    }
-                    await Cart.findByIdAndRemove(cartId);
 
                     res.status(httpStatusCodes.OK)
                         .json({ cart: filteredCart });
@@ -1558,6 +1558,9 @@ module.exports = {
                     };
                     await Cart.findByIdAndUpdate(cartInDb._id, cartUpdateAtt, { new: true });
 
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
+                    await notification.save();
+
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['failedEasyPayPayment'].cc;
                     let bcc = mailTemplates['failedEasyPayPayment'].bcc;
@@ -1575,9 +1578,6 @@ module.exports = {
                     renderInfo.transactionId = uniqueRefNo;
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
-
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', cartInDb.id);
-                    await notification.save();
 
                     return res.render('paymentFail', { order: renderInfo });
                 }
@@ -1660,6 +1660,18 @@ module.exports = {
 
                     await placedCart.save();
 
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
+                    }
+                    await Cart.findByIdAndRemove(cartId);
+
+                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
+
+                    await notification.save();
+
+                    /* Update all notification with old cartId */
+                    await updateCartIdInNotification(cartId, placedCart.id);
+
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['successfulEasyPayPayment'].cc;
                     let bcc = mailTemplates['successfulEasyPayPayment'].bcc;
@@ -1671,19 +1683,7 @@ module.exports = {
                     };
                     let mailBody = mustache.render(mailTemplates['successfulEasyPayPayment'].body, options);
 
-                    const notification = generateCartStatusChangeNotification(cartInDb.requestedBy, systemAdmin, cartInDb.orders.length, cartUpdateAtt.status, '-', placedCart.id);
-
-                    await notification.save();
-
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
-
-                    /* Update all notification with old cartId */
-                    await updateCartIdInNotification(cartId, placedCart.id);
-
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndRemove(cartInDb.orders[i]);
-                    }
-                    await Cart.findByIdAndRemove(cartId);
 
                     const renderInfo = {};
                     renderInfo.orderId = cartInDb.orderId;
@@ -2229,13 +2229,6 @@ module.exports = {
 
                     await placedCart.save();
 
-                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.processing, '-', placedCart.id);
-                    await notification.save();
-
-
-                    /* Update all notification with old cartID */
-                    await updateCartIdInNotification(cartId, placedCart.id);
-
                     const cart = new Cart({
                         requestedBy: daiictId,
                         createdOn: user.createdOn,
@@ -2243,6 +2236,18 @@ module.exports = {
                     await cart.save();
                     user.cartId = cart._id;
                     await user.save();
+
+                    for (let i = 0; i < cartInDb.orders.length; i++) {
+                        await Order.findByIdAndRemove(cartInDb.orders[i]);
+                    }
+                    await Cart.findByIdAndRemove(cartId);
+
+                    const notification = generateCartStatusChangeNotification(daiictId, systemAdmin, cartInDb.orders.length, cartStatus.processing, '-', placedCart.id);
+                    await notification.save();
+
+
+                    /* Update all notification with old cartID */
+                    await updateCartIdInNotification(cartId, placedCart.id);
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: updatedCart.requestedBy })).user_email_id;
                     let cc = mailTemplates['orderPlaced'].cc;
@@ -2255,11 +2260,6 @@ module.exports = {
                         paymentCode: updatedCart.paymentCode
                     };
                     let mailBody = mustache.render(mailTemplates['orderPlaced'].body, options);
-
-                    for (let i = 0; i < cartInDb.orders.length; i++) {
-                        await Order.findByIdAndRemove(cartInDb.orders[i]);
-                    }
-                    await Cart.findByIdAndRemove(cartId);
 
                     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 
