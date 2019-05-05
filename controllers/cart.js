@@ -518,6 +518,7 @@ module.exports = {
 
         if (readAnyCartPermission.granted) {
             query = parseFilterQuery(req.query, readAnyCartPermission.attributes);
+            sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
             if (query.status !== undefined) {
                 if (query.status < cartStatus.placed) {
                     query.status = -1;
@@ -527,8 +528,7 @@ module.exports = {
                     $gte: cartStatus.placed
                 };
             }
-
-            sortQuery = parseSortQuery(req.query[sortQueryName], readAnyCartPermission.attributes);
+            sortQuery['statusChangeTime.placed.time'] = -1;
 
             cartAttributesPermission = readAnyCartPermission.attributes;
             orderAttributesPermission = accessControl.can(user.userType)
@@ -540,16 +540,20 @@ module.exports = {
 
         } else if (readOwnCartPermission.granted) {
             query = parseFilterQuery(req.query, readOwnCartPermission.attributes);
+            sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
             if (query.status !== undefined) {
-                if (query.status < cartStatus.unplaced) {
+                if (query.status <= cartStatus.unplaced) {
                     query.status = -1;
+                }
+                if (query.status === cartStatus.paymentFailed){
+                    sortQuery['statusChangeTime.paymentFailed.time'] = 1;
                 }
             } else {
                 query.status = {
                     $gte: cartStatus.placed
                 };
+                sortQuery['statusChangeTime.placed.time'] = -1;
             }
-            sortQuery = parseSortQuery(req.query[sortQueryName], readOwnCartPermission.attributes);
             query.requestedBy = daiictId;
 
             cartAttributesPermission = readOwnCartPermission.attributes;
