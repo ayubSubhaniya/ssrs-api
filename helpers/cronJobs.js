@@ -4,6 +4,7 @@ const mustache = require('mustache');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
 const UserInfo = require('../models/userInfo');
+const { clearHtmlFiles } = require('./invoiceMaker')
 
 const {
     generateCartStatusChangeNotification,
@@ -141,4 +142,8 @@ nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
     console.log("Starting Cron Jobs");
     await checkForOfflinePayment();
     await checkForFailedOnlinePayment();
+});
+
+nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
+    await clearHtmlFiles();
 });

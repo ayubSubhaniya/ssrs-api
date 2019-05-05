@@ -143,9 +143,6 @@ const clearHtmlFiles = async () => {
     });
 };
 
-nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
-    await clearHtmlFiles();
-});
 
 module.exports = {
     generateInvoice,
