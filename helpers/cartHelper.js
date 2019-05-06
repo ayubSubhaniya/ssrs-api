@@ -10,6 +10,7 @@ const PlacedOrder = require('../models/placedOrder');
 const { validateOrder } = require('../helpers/orderHelper');
 const {
     orderStatus,
+    cartStatus,
     systemAdmin,
     placedCartAttributes,
     placedOrderAttributes,
