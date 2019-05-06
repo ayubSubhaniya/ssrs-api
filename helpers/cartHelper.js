@@ -14,7 +14,8 @@ const {
     placedCartAttributes,
     placedOrderAttributes,
     placedOrderServiceAttributes,
-    placedOrderParameterAttributes
+    placedOrderParameterAttributes,
+    cartStatus
 } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { convertToStringArray } = require('../helpers/controllerHelpers');
