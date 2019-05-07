@@ -1857,12 +1857,12 @@ module.exports = {
                                     .send(errorMessages.courierInformationRequired);
                             }
 
-                            await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.completed });
+                            cartInDb.delivery['status'] = collectionStatus.completed;
+                            cartInDb.delivery['courierServiceName'] = cartUpdateAtt.courierServiceName;
+                            cartInDb.delivery['trackingId'] = cartUpdateAtt.trackingId;
 
-                            const updatedDelivery = await Delivery.findByIdAndUpdate(cartInDb.delivery, {
-                                courierServiceName: cartUpdateAtt.courierServiceName,
-                                trackingId: cartUpdateAtt.trackingId
-                            });
+                            await cartInDb.save();
+                            const updatedDelivery = cartInDb.delivery;
 
                             const options = {
                                 orderId: cartInDb.orderId,
