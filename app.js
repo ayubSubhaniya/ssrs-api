@@ -65,10 +65,11 @@ const accessLogStream = rfs('access.log', {
 
 /* Online Database */
 const dbURI = process.env.DB_URI;
-
+let isDbConnected = false;
 db.connect(dbURI, { useNewUrlParser: true })
     .then(
         () => {
+            isDbConnected = true;
             console.log('MongoDB connection established');
         },
         (err) => {
@@ -157,6 +158,27 @@ app.use('/cart', cart);
 app.use('/userInfo', userInfo);
 app.use('/dashboard', dashBoard);
 app.use('/template', template);
+
+// Server-test routes
+app.use('/ping', (req, res) => {
+    res.status(HttpStatus.OK).send({
+        "statusCode": "2XX",
+        "msg": "pong"
+    });
+});
+app.use('/db-ping', (err, res) => {
+    if (isDbConnected) {
+        res.status(HttpStatus.OK).send({
+            "statusCode": "2XX",
+            "msg": "Connection OK"
+        });
+    } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            "statusCode": "5XX",
+            "msg": "DB not connected"
+        });
+    }
+});
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
