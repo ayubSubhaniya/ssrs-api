@@ -106,7 +106,7 @@ const generateInvoice = async (cartId) => {
     }
 
     const htmlFile = invoiceHtmlDir + cart.orderId.toString() + '_' + Date.now() + '.html';
-    const pdfFile = process.env.INVOICE_ROOT_PATH + '/' + cart.orderId.toString() + '.pdf';
+    const pdfFile = (process.env.INVOICE_ROOT_PATH || './data/invoice_pdf') + '/' + cart.orderId.toString() + '.pdf';
 
     // Render invoice as HTML and PDF
     await myInvoice.toHtml(htmlFile, (err, data) => {
