@@ -1819,8 +1819,9 @@ module.exports = {
                 });
 
             if (cartInDb) {
-
-                if (cartUpdateAtt.status !== cartStatus.refunded && cartInDb.status !== cartStatus.readyToDeliver && cartInDb.status !== cartStatus.readyToPickup) {
+                const refundCondition = cartInDb.status === cartStatus.cancelled && cartUpdateAtt.status === cartStatus.refunded;
+                const completeCondition = cartInDb.status === cartStatus.readyToDeliver || cartInDb.status === cartStatus.readyToPickup;
+                if (!refundCondition && !completeCondition) {
                     return res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.invalidStatusChange);
                 }
