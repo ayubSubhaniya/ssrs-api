@@ -1,6 +1,7 @@
 const db = require('mongoose');
 
 const { Schema } = db;
+const { collectionStatus } = require('../configuration');
 
 const placedCartSchema = new Schema({
     orderId: {
@@ -106,6 +107,16 @@ const placedCartSchema = new Schema({
         },
         pinCode: {
             type: String,
+        },
+        trackingId: {
+            type: String,
+        },
+        courierServiceName: {
+            type: String,
+        },
+        status: {
+            type: Number,
+            default: collectionStatus.pendingPayment,
         }
     },
     pickup: {
