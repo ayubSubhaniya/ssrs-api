@@ -125,7 +125,7 @@
     "subject": "Order cancelled",
     "cc": [],
     "bcc": [],
-    "body": "Your order {{orderId}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
+    "body": "Your order {{orderId}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}.<br><br> Refund process for the same has been initiated. Please collect your refund amount from admin desk."
   },
   "cancelOrder": {
     "templateId": "sshvbisdbvsduv5dvvsuvs55sdvsduuvbs5vsd",

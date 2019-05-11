@@ -2012,7 +2012,7 @@ module.exports = {
                 }
             };
 
-            const cartInDb = await PlacedCart.findById(cartId);
+            let cartInDb = await PlacedCart.findById(cartId);
 
             if (cartInDb) {
                 if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
@@ -2038,7 +2038,7 @@ module.exports = {
                         });
                     }
 
-                    await PlacedCart.findByIdAndUpdate(cartId, cartUpdateAtt);
+                    cartInDb = await PlacedCart.findByIdAndUpdate(cartId, cartUpdateAtt);
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['cancelCart'].cc;
