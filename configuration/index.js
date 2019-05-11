@@ -87,8 +87,8 @@ module.exports = {
         readyToDeliver: 80,
         readyToPickup: 90,
         onHold: 100,
-        refunded: 110,
         completed: 120,
+        refunded: 125,
         cancelled: 130,
     },
     orderStatus: {
@@ -99,8 +99,8 @@ module.exports = {
         processing: 40,
         ready: 50,
         onHold: 60,
-        refunded: 70,
         completed: 80,
+        refunded: 85,
         cancelled: 90,
     },
     collectionStatus: {
