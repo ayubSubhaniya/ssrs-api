@@ -15,9 +15,7 @@ const invoiceHtmlDir = './data/invoice_html/';
 const generateInvoice = async (cartId) => {
 
     const cart = await PlacedCart.findById(cartId)
-        .populate('orders')
-        .populate('pickup')
-        .populate('delivery');
+        .populate('orders');
 
     const user = await UserInfo.findOne({ user_inst_id: cart.requestedBy });
 
