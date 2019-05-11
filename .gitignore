@@ -141,5 +141,3 @@ fabric.properties
 .idea/httpRequests
 .DS_Store
 
-# Data folder
-data
