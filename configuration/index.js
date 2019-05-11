@@ -109,6 +109,7 @@ module.exports = {
         processing: 20,
         ready: 30,
         completed: 40,
+        refunded:45,
         cancel: 50
     },
 

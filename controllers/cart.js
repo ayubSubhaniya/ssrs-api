@@ -545,7 +545,7 @@ module.exports = {
                 if (query.status <= cartStatus.unplaced) {
                     query.status = -1;
                 }
-                if (query.status === cartStatus.paymentFailed){
+                if (query.status === cartStatus.paymentFailed) {
                     sortQuery['statusChangeTime.paymentFailed.time'] = 1;
                 }
             } else {
@@ -1819,7 +1819,8 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                if (cartInDb.status !== cartStatus.readyToDeliver && cartInDb.status !== cartStatus.readyToPickup) {
+
+                if (cartUpdateAtt.status !== cartStatus.refunded && cartInDb.status !== cartStatus.readyToDeliver && cartInDb.status !== cartStatus.readyToPickup) {
                     return res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.invalidStatusChange);
                 }
@@ -1830,12 +1831,61 @@ module.exports = {
                 };
 
                 let mailTo = await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy }).user_email_id;
-                let cc = mailTemplates['orderCompleted-Delivery'].cc;
-                let bcc = mailTemplates['orderCompleted-Delivery'].bcc;
-                let mailSubject = mailTemplates['orderCompleted-Delivery'].subject;
+                let cc;
+                let bcc;
+                let mailSubject;
                 let mailBody;
 
                 switch (cartUpdateAtt.status) {
+                    case cartStatus.refunded:
+                        cc = mailTemplates['orderRefunded'].cc;
+                        bcc = mailTemplates['orderRefunded'].bcc;
+                        mailSubject = mailTemplates['orderRefunded'].subject;
+
+                        updateAtt.status = cartStatus.refunded;
+                        updateAtt['$set'] = {
+                            'statusChangeTime.refunded': {
+                                time: new Date(),
+                                by: daiictId
+                            }
+                        };
+
+                        if (cartUpdateAtt.comment) {
+                            updateAtt['$set'] = {
+                                'comment.refunded': cartUpdateAtt.comment
+                            };
+                        }
+
+                        if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                            cartInDb.delivery.status = collectionStatus.refunded;
+                        } else {
+                            cartInDb.pickup.status = collectionStatus.refunded;
+                        }
+
+                        const options = {
+                            orderId: cartInDb.orderId,
+                            cartLength: cartInDb.orders.length,
+                            totalCost: cartInDb.totalCost
+                        };
+                        mailBody = mustache.render(mailTemplates['orderRefunded'].body, options);
+                        await cartInDb.save();
+
+                        for (let i = 0; i < cartInDb.orders.length; i++) {
+                            if (cartInDb.orders[i].status !== orderStatus.cancelled) {
+                                await PlacedOrder.findByIdAndUpdate(cartInDb.orders[i], {
+                                    status: orderStatus.refunded,
+                                    '$set': {
+                                        'statusChangeTime.refunded': {
+                                            time: new Date(),
+                                            by: systemAdmin
+                                        },
+                                    }
+                                });
+                            }
+
+                        }
+                        break;
+
                     case cartStatus.completed:
                         updateAtt.status = cartStatus.completed;
                         updateAtt['$set'] = {
@@ -1852,6 +1902,10 @@ module.exports = {
                         }
 
                         if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                            cc = mailTemplates['orderCompleted-Delivery'].cc;
+                            bcc = mailTemplates['orderCompleted-Delivery'].bcc;
+                            mailSubject = mailTemplates['orderCompleted-Delivery'].subject;
+
                             if (cartUpdateAtt.courierServiceName === undefined || cartUpdateAtt.trackingId === undefined) {
                                 return res.status(httpStatusCodes.PRECONDITION_FAILED)
                                     .send(errorMessages.courierInformationRequired);
@@ -1878,6 +1932,10 @@ module.exports = {
 
 
                         } else {
+                            cc = mailTemplates['orderCompleted-Pickup'].cc;
+                            bcc = mailTemplates['orderCompleted-Pickup'].bcc;
+                            mailSubject = mailTemplates['orderCompleted-Pickup'].subject;
+
                             const options = {
                                 orderId: cartInDb.orderId,
                                 cartLength: cartInDb.orders.length,
