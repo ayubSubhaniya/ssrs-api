@@ -19,7 +19,7 @@ module.exports = {
     ORDER_CANCEL_TIME_IN_PAYMENT_DELAY: 8, //unit day
     CHECK_FOR_OFFLINE_PAYMENT: 1, //unit day
     PAYMENT_JOB_SCHEDULE_EXPRESSION: '0 3 * * *',
-    PAGINATION_SIZE: 3,
+    PAGINATION_SIZE: 8,
     collectionTypes: {
         delivery: 'Delivery',
         pickup: 'Pickup',
