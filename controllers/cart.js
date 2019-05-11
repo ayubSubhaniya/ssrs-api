@@ -2077,7 +2077,7 @@ module.exports = {
             // res.sendStatus(httpStatusCodes.OK);
 
             let options = {
-                root: process.env.INVOICE_ROOT_PATH,
+                root: (process.env.INVOICE_ROOT_PATH || './data/invoice_pdf'),
                 dotfiles: 'deny',
                 headers: {
                     'x-timestamp': Date.now(),
