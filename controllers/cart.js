@@ -1819,7 +1819,7 @@ module.exports = {
                 });
 
             if (cartInDb) {
-                const refundCondition = cartInDb.status === cartStatus.cancelled && cartUpdateAtt.status === cartStatus.refunded;
+                const refundCondition = cartInDb.paymentStatus && cartInDb.status === cartStatus.cancelled && cartUpdateAtt.status === cartStatus.refunded;
                 const completeCondition = cartInDb.status === cartStatus.readyToDeliver || cartInDb.status === cartStatus.readyToPickup;
                 if (!refundCondition && !completeCondition) {
                     return res.status(httpStatusCodes.BAD_REQUEST)
@@ -1831,7 +1831,7 @@ module.exports = {
                     lastModified: new Date()
                 };
 
-                let mailTo = await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy }).user_email_id;
+                const mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                 let cc;
                 let bcc;
                 let mailSubject;
