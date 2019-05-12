@@ -807,7 +807,7 @@ module.exports = {
                         notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDB.cartId);
                         await notification.save();
 
-                        let templateName = 'cancelCart';
+                        let templateName = 'cancelOrder';
                         let mailTo = (await UserInfo.findOne({ user_inst_id: orderInDB.requestedBy })).user_email_id;
                         let { cc, bcc, subject, body } = mailTemplates[templateName];
                         let options = {
