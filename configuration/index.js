@@ -20,6 +20,7 @@ module.exports = {
     CHECK_FOR_OFFLINE_PAYMENT: 1, //unit day
     PAYMENT_JOB_SCHEDULE_EXPRESSION: '0 3 * * *',
     PAGINATION_SIZE: 8,
+    USER_PAGINATION_SIZE: 50,
     collectionTypes: {
         delivery: 'Delivery',
         pickup: 'Pickup',
