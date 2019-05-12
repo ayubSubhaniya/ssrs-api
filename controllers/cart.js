@@ -523,12 +523,15 @@ module.exports = {
                 if (query.status < cartStatus.placed) {
                     query.status = -1;
                 }
+                if (query.status === cartStatus.processing) {
+                    sortQuery['statusChangeTime.processing.time'] = +1;
+                }
             } else {
                 query.status = {
                     $gte: cartStatus.placed
                 };
+                sortQuery['statusChangeTime.placed.time'] = -1;
             }
-            sortQuery['statusChangeTime.placed.time'] = -1;
 
             cartAttributesPermission = readAnyCartPermission.attributes;
             orderAttributesPermission = accessControl.can(user.userType)
