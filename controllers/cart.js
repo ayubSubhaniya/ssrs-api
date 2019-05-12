@@ -155,7 +155,7 @@ module.exports = {
         if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                .deepPopulate(['orders','orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
