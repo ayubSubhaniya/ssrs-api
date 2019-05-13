@@ -1,11 +1,11 @@
-const { defaultPermissionObject } = require('../configuration');
+const { defaultPermissionObject } = require('../helpers/permission');
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
 const aggregations = ['gte', 'gt', 'lte', 'lt'];
 
 const constructPermissionObject = (permissions, role) => {
-    let permissionData = defaultPermissionObject;
+    let permissionData = JSON.parse(JSON.stringify(defaultPermissionObject));
 
     Object.keys(permissions[role])
         .forEach(resource => {
