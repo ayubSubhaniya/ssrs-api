@@ -810,10 +810,7 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
-                .populate({
-                    path: 'orders',
-                    select: readOwnOrderPermission.attributes
-                });
+                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.paymentFailed) {
