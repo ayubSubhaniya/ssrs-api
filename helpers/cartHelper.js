@@ -4,6 +4,8 @@ const Service = require('../models/service');
 const CollectionType = require('../models/collectionType');
 const UserInfo = require('../models/userInfo');
 const Order = require('../models/order');
+const Collector = require('../models/collector');
+const CourierInfo = require('../models/courierInfo');
 const PlacedCart = require('../models/placedCart');
 const Cart = require('../models/cart');
 const PlacedOrder = require('../models/placedOrder');
@@ -23,11 +25,27 @@ const { convertToStringArray, filterResourceData } = require('../helpers/control
 
 const {
     generateCartStatusChangeNotification,
-    updateCartIdInNotification
+    updateCartIdInNotification,
+    generateCustomNotification
 } = require('../helpers/notificationHelper');
 
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
+
+const removeCart = async (cart, populated) => {
+    let message = 'Your cart has became invalid. Please try placing new order!';
+    await Cart.findByIdAndRemove(cart._id);
+
+    if (cart.pickup) {
+        await Collector.findByIdAndRemove(populated ? cart.pickup.id : cart.pickup);
+    } else if (cart.delivery) {
+        await CourierInfo.findByIdAndRemove(populated ? cart.delivery.id : cart.delivery);
+    }
+
+    /* Add notification here*/
+    const notification = generateCustomNotification(cart.requestedBy, systemAdmin, message, cart.id);
+    await notification.save();
+};
 
 const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory, populatedCart = false, populatedOrder = false, allowNoCollectionType = false) => {
     if (collectionType === undefined) {
@@ -97,6 +115,11 @@ const checkPaymentMode = async (cart, paymentMode) => {
 
 const validateCart = async (cart, user, populatedCart = false, populatedOrder = false, allowNoCollectionType = false) => {
     cart.orders = await validateOrder(cart.orders, user, populatedOrder);
+
+    if (cart.orders.length === 0 && cart.status > cartStatus.unplaced) {
+        await removeCart(cart, populatedCart);
+        return null
+    }
     cart.ordersCost = await calculateOrdersCost(cart);
     cart.collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders, cart.collectionTypeCategory, populatedCart, populatedOrder, allowNoCollectionType);
 

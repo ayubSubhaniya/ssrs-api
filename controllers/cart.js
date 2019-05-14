@@ -70,6 +70,9 @@ const processOfflinePayment = async (user, cartInDb, req, res, next) => {
     cartInDb.lastModified = new Date();
 
     cartInDb = await validateCart(cartInDb, user, true, true);
+    if (!cartInDb){
+        return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+    }
 
     const errorMessage = await getValidCartPaymentError(cartInDb, paymentType);
     if (errorMessage) {
@@ -102,6 +105,9 @@ const processEasyPayPayment = async (user, cartInDb, req, res, next) => {
     cartInDb.lastModified = new Date();
 
     cartInDb = await validateCart(cartInDb, user, true, true);
+    if (!cartInDb){
+        return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+    }
 
     const errorMessage = await getValidCartPaymentError(cartInDb, paymentType);
     if (errorMessage) {
@@ -174,6 +180,9 @@ module.exports = {
                 });
 
             cart = await validateCart(cart, user, true, true, true);
+            if (!cart){
+                return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+            }
 
             const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
             res.status(httpStatusCodes.OK)
@@ -297,6 +306,9 @@ module.exports = {
 
                 if (cart.status < cartStatus.placed) {
                     cart = await validateCart(cart, user, true, true);
+                    if (!cart){
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+                    }
                 }
 
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
@@ -428,17 +440,21 @@ module.exports = {
                 }
             });
 
+        let validatedCarts = [];
         for (let i = 0; i < cart.length; i++) {
-            cart[i] = await validateCart(cart[i], user, true, true);
+            const validatedCart = await validateCart(cart[i], user, true, true);
+            if (!validatedCart){
+                validatedCarts.push(validatedCart);
+            }
         }
 
-        cart = cart.concat(await PlacedCart.find(query)
+        validatedCarts = validatedCarts.concat(await PlacedCart.find(query)
             .skip(skip)
             .limit(limit)
             .sort(sortQuery)
             .populate(['orders']));
 
-        const filteredCart = await filterResourceData(cart, cartAttributesPermission);
+        const filteredCart = await filterResourceData(validatedCarts, cartAttributesPermission);
 
         const prevUrl = pageNo > 1 ? querystring.stringify({
             pageNo: pageNo - 1,
@@ -498,6 +514,10 @@ module.exports = {
 
                 cart = await validateCart(cart, user, false, true);
 
+                if (!cart){
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+                }
+
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
@@ -554,6 +574,9 @@ module.exports = {
             } else if (cart.status === cartStatus.unplaced) {
                 cart.collectionType = collectionType;
                 cart = await validateCart(cart, user, false, true);
+                if (!cart){
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+                }
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -624,6 +647,9 @@ module.exports = {
                 cart.pickup = pickup._id;
 
                 cart = await validateCart(cart, user, false, true);
+                if (!cart){
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+                }
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -683,6 +709,9 @@ module.exports = {
             } else if (cart.status === cartStatus.unplaced) {
                 cart.collectionType = collectionType;
                 cart = await validateCart(cart, user, false, true);
+                if (!cart){
+                    return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+                }
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -1481,6 +1510,9 @@ module.exports = {
                     cartInDb.lastModified = new Date();
 
                     cartInDb = await validateCart(cartInDb, user, true, true);
+                    if (!cartInDb){
+                        return res.status(httpStatusCodes.PRECONDITION_FAILED).send(errorMessages.invalidCart);
+                    }
 
                     const errorMessage = await getValidCartPaymentError(cartInDb, paymentType);
                     if (errorMessage) {
