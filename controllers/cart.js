@@ -389,7 +389,11 @@ module.exports = {
                 };
                 sortQuery['statusChangeTime.placed.time'] = -1;
             }
-            query.requestedBy = daiictId;
+            if (query.requestedBy && query.requestedBy !==daiictId){
+                query.requestedBy = -1;
+            } else{
+                query.requestedBy = daiictId;
+            }
 
             cartAttributesPermission = readOwnCartPermission.attributes;
             orderAttributesPermission = accessControl.can(user.userType)
