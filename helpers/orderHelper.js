@@ -23,6 +23,7 @@ const removeOrder = async (order) => {
     const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
     await notification.save();
 };
+
 const calculateServiceCost = async (service, requiredUnits, user) => {
 
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);

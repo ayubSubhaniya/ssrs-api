@@ -18,7 +18,7 @@ const {
     placedOrderParameterAttributes,
 } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { convertToStringArray } = require('../helpers/controllerHelpers');
+const { convertToStringArray, filterResourceData } = require('../helpers/controllerHelpers');
 
 const {
     generateCartStatusChangeNotification,
