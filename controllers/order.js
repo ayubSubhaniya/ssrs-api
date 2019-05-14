@@ -562,7 +562,7 @@ module.exports = {
                     await sendMail(mailTo, cc, bcc, subject, mailBody);
 
                     if (allReady) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDb.cartId);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDB.cartId);
                         await notification.save();
 
                         if (cart.collectionTypeCategory === collectionTypes.delivery) {
