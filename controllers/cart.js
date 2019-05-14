@@ -483,13 +483,10 @@ module.exports = {
             delivery.createdBy = daiictId;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
-                        },
-                        'delivery': {
-                            select: readOwnCourierPermission.attributes
                         }
                     }
                 });
@@ -504,13 +501,12 @@ module.exports = {
                 cart.collectionTypeCategory = collectionTypes.delivery;
                 cart.delivery = delivery._id;
 
-                cart = await validateCart(cart, user, true, true);
+                cart = await validateCart(cart, user, false, true);
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
                         .send(errorMessages.invalidCollectionType);
                 }
-
                 delivery.cartId = cart._id;
                 const newDelivery = await delivery.save();
                 const newCart = await cart.save();
@@ -550,13 +546,10 @@ module.exports = {
             const delivery = req.value.body;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
-                        },
-                        'delivery': {
-                            select: readOwnCourierPermission.attributes
                         }
                     }
                 });
@@ -565,7 +558,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
                 cart.collectionType = collectionType;
-                cart = await validateCart(cart, user, true, true);
+                cart = await validateCart(cart, user, false, true);
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -617,13 +610,10 @@ module.exports = {
             pickup.createdBy = daiictId;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
-                        },
-                        'pickup': {
-                            select: readOwnPickupPermission.attributes
                         }
                     }
                 });
@@ -638,7 +628,7 @@ module.exports = {
                 cart.collectionTypeCategory = collectionTypes.pickup;
                 cart.pickup = pickup._id;
 
-                cart = await validateCart(cart, user, true, true);
+                cart = await validateCart(cart, user, false, true);
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
@@ -684,13 +674,10 @@ module.exports = {
             const pickup = req.value.body;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
-                        },
-                        'pickup': {
-                            select: readOwnPickupPermission.attributes
                         }
                     }
                 });
@@ -700,7 +687,7 @@ module.exports = {
                 return res.sendStatus(httpStatusCodes.NOT_FOUND);
             } else if (cart.status === cartStatus.unplaced) {
                 cart.collectionType = collectionType;
-                cart = await validateCart(cart, user, true, true);
+                cart = await validateCart(cart, user, false, true);
 
                 if (cart.collectionTypeCost === -1) {
                     return res.status(httpStatusCodes.PRECONDITION_FAILED)
