@@ -5,6 +5,7 @@ const CollectionType = require('../models/collectionType');
 const UserInfo = require('../models/userInfo');
 const Order = require('../models/order');
 const PlacedCart = require('../models/placedCart');
+const Cart = require('../models/cart');
 const PlacedOrder = require('../models/placedOrder');
 
 const { validateOrder } = require('../helpers/orderHelper');
@@ -181,7 +182,7 @@ const removeCartAndOrders = async (cart, populated = false) => {
         }
 
     }
-    await Cart.findByIdAndRemove(cartId);
+    await Cart.findByIdAndRemove(cart.id);
 };
 
 const convertToPlacedCart = async (cart, isStatusProcessing = false) => {
