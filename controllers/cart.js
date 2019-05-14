@@ -85,7 +85,6 @@ const processOfflinePayment = async (user, cartInDb, req, res, next) => {
 
     await generateOrderPlacedMailAndNotification(user, cartInDb, placedCart);
 
-    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
     const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
 
     res.status(httpStatusCodes.OK)
