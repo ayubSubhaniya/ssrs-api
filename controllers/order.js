@@ -587,7 +587,7 @@ module.exports = {
                     }
 
                     if (allCancel) {
-                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, '-', orderInDB.cartId);
+                        notification = generateCartStatusChangeNotification(cart.requestedBy, daiictId, cart.orders.length, cart.status, 'all order cancellation', orderInDB.cartId);
                         await notification.save();
 
                         let templateName = 'cancelOrder';
