@@ -136,11 +136,9 @@ const parseSortQuery = (query, allowedAttributes) => {
                     .trim();
             }
 
-            if (!allowedAttributes.includes(attributeName)) {
-                throw new Error('Invalid permission');
+            if (allowedAttributes.includes(attributeName)) {
+                sortQuery[attributeName] = sortingOrder;
             }
-
-            sortQuery[attributeName] = sortingOrder;
         });
     }
     return sortQuery;
