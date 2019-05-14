@@ -565,6 +565,7 @@ module.exports = {
                 'description',
                 'maxUnits',
                 'baseCharge',
+                'isActive',
                 'availableParameters',
                 'availablePaymentModes',
                 'collectionTypes',

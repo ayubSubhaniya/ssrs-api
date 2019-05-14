@@ -124,9 +124,22 @@ const generateCustomNotification = (userId, adminId, message, cartId) => {
     return notification;
 };
 
+const updateCartIdInNotification = async (oldCartId, newCartId) => {
+
+    const notifications = await Notification.find({
+        cartId: oldCartId,
+    });
+    for (let i = 0; i < notifications.length; i++) {
+        await Notification.findByIdAndUpdate(notifications[i]._id, {
+            cartId: newCartId
+        });
+    }
+};
+
 module.exports = {
     generateOrderStatusChangeNotification,
     generateCartStatusChangeNotification,
     generatePendingPaymentNotification,
-    generateCustomNotification
+    generateCustomNotification,
+    updateCartIdInNotification
 };

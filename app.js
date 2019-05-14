@@ -30,11 +30,11 @@ const { sessionSecret } = require('./configuration');
 const { sendMail } = require('./configuration/mail');
 const { developersMail } = require('./configuration/bug');
 
-try{
+try {
     Sentry.init({ dsn: sentryUrl });
-    console.log("sentry initialized")
+    console.log('sentry initialized');
 } catch (e) {
-    console.log("Not able to initialize sentry");
+    console.log('Not able to initialize sentry');
 }
 
 const app = express();
@@ -77,6 +77,9 @@ db.connect(dbURI, { useNewUrlParser: true })
         }
     );
 
+//Cron Jobs
+require('./helpers/cronJobs');
+
 // Routes
 const order = require('./routes/order');
 const cart = require('./routes/cart');
@@ -97,10 +100,10 @@ const template = require('./routes/template');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-try{
+try {
     app.use(Sentry.Handlers.requestHandler());
 } catch (e) {
-    console.log("Not able to initialize sentry request handle");
+    console.log('Not able to initialize sentry request handle');
 }
 
 
@@ -185,10 +188,10 @@ app.use((req, res, next) => {
     res.sendStatus(HttpStatus.NOT_FOUND);
 });
 
-try{
+try {
     app.use(Sentry.Handlers.errorHandler());
 } catch (e) {
-    console.log("Not able to initialize sentry error handle");
+    console.log('Not able to initialize sentry error handle');
 }
 
 // Error handler function
@@ -214,7 +217,7 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, [], [], er.message, [],  er.stack, 'gmail.com');
+        await sendMail(developersMail, [], [], er.message, [], er.stack, 'gmail.com');
     } else {
         console.error(er.stack);
         logger.error(er);
