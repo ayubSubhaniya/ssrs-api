@@ -28,9 +28,9 @@ const {
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
-const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory, populatedCart = false, populatedOrder = false) => {
+const calculateCollectionTypeCost = async (collectionType, orders, collectionTypeCategory, populatedCart = false, populatedOrder = false, allowNoCollectionType = false) => {
     if (collectionType === undefined) {
-        return -1;
+        return allowNoCollectionType ? 0 : -1;
     }
 
     let collectionTypeDoc;
@@ -94,10 +94,10 @@ const checkPaymentMode = async (cart, paymentMode) => {
     return true;
 };
 
-const validateCart = async (cart, user, populatedCart = false, populatedOrder = false) => {
+const validateCart = async (cart, user, populatedCart = false, populatedOrder = false, allowNoCollectionType = false) => {
     cart.orders = await validateOrder(cart.orders, user, populatedOrder);
     cart.ordersCost = await calculateOrdersCost(cart);
-    cart.collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders, cart.collectionTypeCategory, populatedCart, populatedOrder);
+    cart.collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders, cart.collectionTypeCategory, populatedCart, populatedOrder, allowNoCollectionType);
 
     if (cart.ordersCost === -1) {
         cart.status = cartStatus.invalid;

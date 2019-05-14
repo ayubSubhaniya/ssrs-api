@@ -178,7 +178,7 @@ module.exports = {
                     }
                 });
 
-            cart = await validateCart(cart, user, true, true);
+            cart = await validateCart(cart, user, true, true, true);
 
             const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
             res.status(httpStatusCodes.OK)
