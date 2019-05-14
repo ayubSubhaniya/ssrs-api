@@ -100,10 +100,6 @@ const processEasyPayPayment = async (user, cartInDb, req, res, next) => {
     cartInDb.paymentCode = orderid.generate();
     cartInDb.lastModifiedBy = user.daiictId;
     cartInDb.lastModified = new Date();
-    cartInDb.statusChangeTime.placed = {
-        time: new Date(),
-        by: systemAdmin
-    };
 
     cartInDb = await validateCart(cartInDb, user, true, true);
 
