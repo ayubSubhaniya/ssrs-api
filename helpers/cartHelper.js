@@ -43,7 +43,7 @@ const removeCart = async (cart, populated) => {
     }
 
     /* Add notification here*/
-    const notification = generateCustomNotification(cart.requestedBy, systemAdmin, message, cart.id);
+    const notification = generateCustomNotification(cart.requestedBy, systemAdmin, message);
     await notification.save();
 };
 
