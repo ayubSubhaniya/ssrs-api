@@ -443,7 +443,7 @@ module.exports = {
         let validatedCarts = [];
         for (let i = 0; i < cart.length; i++) {
             const validatedCart = await validateCart(cart[i], user, true, true);
-            if (!validatedCart){
+            if (validatedCart){
                 validatedCarts.push(validatedCart);
             }
         }
