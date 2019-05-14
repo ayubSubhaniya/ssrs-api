@@ -1749,9 +1749,9 @@ module.exports = {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
 
                     if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
-                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.processing });
+                        cartUpdateAtt['$set'] = { 'pickup.status': collectionStatus.processing };
                     } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
-                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.processing });
+                        cartUpdateAtt['$set'] = { 'delivery.status': collectionStatus.processing };
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -2020,10 +2020,10 @@ module.exports = {
             if (cartInDb) {
                 if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
 
-                    if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
-                        await Delivery.findByIdAndUpdate(cartInDb.delivery, { status: collectionStatus.cancel });
-                    } else if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
-                        await Collector.findByIdAndUpdate(cartInDb.pickup, { status: collectionStatus.cancel });
+                    if (cartInDb.collectionTypeCategory === collectionTypes.pickup) {
+                        cartUpdateAtt['$set'] = { 'pickup.status': collectionStatus.processing };
+                    } else if (cartInDb.collectionTypeCategory === collectionTypes.delivery) {
+                        cartUpdateAtt['$set'] = { 'delivery.status': collectionStatus.processing };
                     }
 
                     for (let i = 0; i < cartInDb.orders.length; i++) {
@@ -2041,7 +2041,7 @@ module.exports = {
                         });
                     }
 
-                    cartInDb = await PlacedCart.findByIdAndUpdate(cartId, cartUpdateAtt);
+                    cartInDb = await PlacedCart.findByIdAndUpdate(cartId, cartUpdateAtt, { new: true });
 
                     let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
                     let cc = mailTemplates['cancelCart'].cc;
