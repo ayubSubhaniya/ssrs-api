@@ -114,12 +114,13 @@ const checkPaymentMode = async (cart, paymentMode) => {
 };
 
 const validateCart = async (cart, user, populatedCart = false, populatedOrder = false, allowNoCollectionType = false) => {
-    cart.orders = await validateOrder(cart.orders, user, populatedOrder);
+    const oldStatus = cart.status;
 
-    if (cart.orders.length === 0 && cart.status > cartStatus.unplaced) {
-        await removeCart(cart, populatedCart);
-        return null
+    cart.orders = await validateOrder(cart.orders, user, populatedOrder);
+    if (cart.orders.length === 0 && oldStatus > cartStatus.unplaced) {
+        cart.status = cartStatus.invalid;
     }
+
     cart.ordersCost = await calculateOrdersCost(cart);
     cart.collectionTypeCost = await calculateCollectionTypeCost(cart.collectionType, cart.orders, cart.collectionTypeCategory, populatedCart, populatedOrder, allowNoCollectionType);
 
@@ -134,6 +135,12 @@ const validateCart = async (cart, user, populatedCart = false, populatedOrder = 
     }
 
     if (cart.status === cartStatus.invalid) {
+
+        if (oldStatus > cartStatus.unplaced) {
+            await removeCart(cart, populatedCart);
+            return null
+        }
+
         cart.totalCost = -1;
     } else {
         cart.totalCost = cart.collectionTypeCost + cart.ordersCost;
