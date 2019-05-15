@@ -15,9 +15,7 @@ const invoiceHtmlDir = './data/invoice_html/';
 const generateInvoice = async (cartId) => {
 
     const cart = await PlacedCart.findById(cartId)
-        .populate('orders')
-        .populate('pickup')
-        .populate('delivery');
+        .populate('orders');
 
     const user = await UserInfo.findOne({ user_inst_id: cart.requestedBy });
 
@@ -106,7 +104,7 @@ const generateInvoice = async (cartId) => {
     }
 
     const htmlFile = invoiceHtmlDir + cart.orderId.toString() + '_' + Date.now() + '.html';
-    const pdfFile = process.env.INVOICE_ROOT_PATH + '/' + cart.orderId.toString() + '.pdf';
+    const pdfFile = (process.env.INVOICE_ROOT_PATH || './data/invoice_pdf') + '/' + cart.orderId.toString() + '.pdf';
 
     // Render invoice as HTML and PDF
     await myInvoice.toHtml(htmlFile, (err, data) => {
@@ -145,9 +143,6 @@ const clearHtmlFiles = async () => {
     });
 };
 
-nodeSchedule.schedule(PAYMENT_JOB_SCHEDULE_EXPRESSION, async () => {
-    await clearHtmlFiles();
-});
 
 module.exports = {
     generateInvoice,

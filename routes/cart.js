@@ -26,7 +26,7 @@ router.route('/delivery/:collectionType')
     .patch(
         passport.authenticate('jwt', { session: false }),
         validateBody(schemas.updateCourierSchema),
-        cartController.updateCourier
+        cartController.updateDelivery
     );
 
 router.route('/pickup/:collectionType')

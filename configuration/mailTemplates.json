@@ -95,6 +95,14 @@
     "bcc": [],
     "body": "Your order {{orderId}} with {{cartLength}} order(s) has been picked up successfully."
   },
+  "orderRefunded": {
+    "templateId": "cmd0codl984jd6crf7cnfhsjwgvwgamcdd",
+    "templateName": "Order Refunded",
+    "subject": "Order Refunded",
+    "cc": [],
+    "bcc": [],
+    "body": "Your refund of {{totalCost}} for order {{orderId}} with {{cartLength}} order(s) has been successfully processed."
+  },
   "orderReady-Delivery": {
     "templateId": "ljcjacoaca6capkcna6cac",
     "templateName": "Order Ready - Delivery",
@@ -117,7 +125,7 @@
     "subject": "Order cancelled",
     "cc": [],
     "bcc": [],
-    "body": "Your order {{orderId}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}."
+    "body": "Your order {{orderId}} has been cancelled.<br>Reason for cancellation: {{cancelReason}}.<br><br> Refund process for the same has been initiated. Please collect your refund amount from admin desk."
   },
   "cancelOrder": {
     "templateId": "sshvbisdbvsduv5dvvsuvs55sdvsduuvbs5vsd",

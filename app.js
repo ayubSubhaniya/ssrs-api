@@ -30,11 +30,11 @@ const { sessionSecret } = require('./configuration');
 const { sendMail } = require('./configuration/mail');
 const { developersMail } = require('./configuration/bug');
 
-try{
+try {
     Sentry.init({ dsn: sentryUrl });
-    console.log("sentry initialized")
+    console.log('sentry initialized');
 } catch (e) {
-    console.log("Not able to initialize sentry");
+    console.log('Not able to initialize sentry');
 }
 
 const app = express();
@@ -66,15 +66,20 @@ const dbURI = `mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_COLLEC
 /* Online Database */
 // const dbURI = process.env.DB_URI;
 
+let isDbConnected = false;
 db.connect(dbURI, { useNewUrlParser: true })
     .then(
         () => {
+            isDbConnected = true;
             console.log('MongoDB connection established');
         },
         (err) => {
             console.log(`Cannot connect to mongoDB\n${err}`);
         }
     );
+
+//Cron Jobs
+require('./helpers/cronJobs');
 
 // Routes
 const order = require('./routes/order');
@@ -96,10 +101,10 @@ const template = require('./routes/template');
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-try{
+try {
     app.use(Sentry.Handlers.requestHandler());
 } catch (e) {
-    console.log("Not able to initialize sentry request handle");
+    console.log('Not able to initialize sentry request handle');
 }
 
 
@@ -158,15 +163,36 @@ app.use('/userInfo', userInfo);
 app.use('/dashboard', dashBoard);
 app.use('/template', template);
 
+// Server-test routes
+app.use('/ping', (req, res) => {
+    res.status(HttpStatus.OK).send({
+        "statusCode": "2XX",
+        "msg": "pong"
+    });
+});
+app.use('/db-ping', (err, res) => {
+    if (isDbConnected) {
+        res.status(HttpStatus.OK).send({
+            "statusCode": "2XX",
+            "msg": "Connection OK"
+        });
+    } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            "statusCode": "5XX",
+            "msg": "DB not connected"
+        });
+    }
+});
+
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
     res.sendStatus(HttpStatus.NOT_FOUND);
 });
 
-try{
+try {
     app.use(Sentry.Handlers.errorHandler());
 } catch (e) {
-    console.log("Not able to initialize sentry error handle");
+    console.log('Not able to initialize sentry error handle');
 }
 
 // Error handler function
@@ -192,7 +218,7 @@ process.on('uncaughtException', async (er) => {
         logger.error(er);
         logger.error(er.stack);
 
-        await sendMail(developersMail, [], [], er.message, [],  er.stack, 'gmail.com');
+        await sendMail(developersMail, [], [], er.message, [], er.stack, 'gmail.com');
     } else {
         console.error(er.stack);
         logger.error(er);

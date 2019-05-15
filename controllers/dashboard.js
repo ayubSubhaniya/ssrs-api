@@ -5,7 +5,7 @@ const Service = require('../models/service');
 const PlacedCart = require('../models/placedCart');
 const CollectionType = require('../models/collectionType');
 
-const { orderStatus, cartStatus, userTypes, adminTypes } = require('../configuration');
+const { orderStatus, cartStatus, adminTypes } = require('../configuration');
 const { parseFilterQuery } = require('../helpers/controllerHelpers');
 
 module.exports = {
@@ -34,7 +34,7 @@ module.exports = {
                     $match: {
                         status: {
                             $gt: cartStatus.placed,
-                            $lte: cartStatus.onHold
+                            $lte: cartStatus.completed
                         },
                         'statusChangeTime.paymentComplete.time': {
                             $gte: startDate,
@@ -55,12 +55,12 @@ module.exports = {
                 }
             ]);
 
-            const collectionTypeStats = await PlacedCart.aggregate([
+            const collectionTypesStat = await PlacedCart.aggregate([
                 {
                     $match: {
                         status: {
                             $gt: cartStatus.placed,
-                            $lte: cartStatus.onHold
+                            $lte: cartStatus.completed
                         },
                         'statusChangeTime.paymentComplete.time': {
                             $gte: startDate,
@@ -89,17 +89,12 @@ module.exports = {
                 }
             ]);
 
-            const populatedCollectionTypeStats = await CollectionType.populate(collectionTypeStats, {
-                path: 'collectionType',
-                select: ['name']
-            });
-
             const paymentStats = await PlacedCart.aggregate([
                 {
                     $match: {
                         status: {
                             $gt: cartStatus.placed,
-                            $lte: cartStatus.onHold
+                            $lte: cartStatus.completed
                         },
                         'statusChangeTime.paymentComplete.time': {
                             $gte: startDate,
@@ -133,7 +128,7 @@ module.exports = {
                     $match: {
                         status: {
                             $gt: orderStatus.placed,
-                            $lte: orderStatus.onHold
+                            $lte: orderStatus.completed
                         },
                         'statusChangeTime.processing.time': {
                             $gte: startDate,
@@ -162,11 +157,6 @@ module.exports = {
                 }
             ]);
 
-            const populatedOrderStats = await Service.populate(orderStats, {
-                path: 'service',
-                select: ['name']
-            });
-
 
             const statistics = {};
 
@@ -176,11 +166,11 @@ module.exports = {
                 statistics.order.revenue = totalStats[0].revenue;
             }
 
-            statistics.collectionType = populatedCollectionTypeStats;
+            statistics.collectionType = collectionTypesStat;
 
             statistics.paymentType = paymentStats;
 
-            statistics.service = populatedOrderStats;
+            statistics.service = orderStats;
 
 
             res.status(HttpStatus.OK)

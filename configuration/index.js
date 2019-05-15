@@ -19,7 +19,8 @@ module.exports = {
     ORDER_CANCEL_TIME_IN_PAYMENT_DELAY: 8, //unit day
     CHECK_FOR_OFFLINE_PAYMENT: 1, //unit day
     PAYMENT_JOB_SCHEDULE_EXPRESSION: '0 3 * * *',
-
+    PAGINATION_SIZE: 8,
+    USER_PAGINATION_SIZE: 50,
     collectionTypes: {
         delivery: 'Delivery',
         pickup: 'Pickup',
@@ -86,8 +87,8 @@ module.exports = {
         readyToDeliver: 80,
         readyToPickup: 90,
         onHold: 100,
-        refunded: 110,
         completed: 120,
+        refunded: 125,
         cancelled: 130,
     },
     orderStatus: {
@@ -98,8 +99,8 @@ module.exports = {
         processing: 40,
         ready: 50,
         onHold: 60,
-        refunded: 70,
         completed: 80,
+        refunded: 85,
         cancelled: 90,
     },
     collectionStatus: {
@@ -108,6 +109,7 @@ module.exports = {
         processing: 20,
         ready: 30,
         completed: 40,
+        refunded:45,
         cancel: 50
     },
 
