@@ -1,10 +1,10 @@
 const httpStatusCodes = require('http-status-codes');
 const mustache = require('mustache');
 const querystring = require('querystring');
-const { orderNoGeneratorSecret } = require('../configuration');
+const {orderNoGeneratorSecret} = require('../configuration');
 const orderid = require('order-id')(orderNoGeneratorSecret);
 
-const { logger } = require('../configuration/logger');
+const {logger} = require('../configuration/logger');
 const Delivery = require('../models/delivery');
 const Collector = require('../models/collector');
 const Order = require('../models/order');
@@ -31,11 +31,11 @@ const {
     convertToPlacedCart
 } = require('../helpers/cartHelper');
 
-const { getEasyPayUrl } = require('../helpers/easyPay');
-const { createSHASig } = require('../helpers/crypto');
-const { generateInvoice } = require('../helpers/invoiceMaker');
-const { filterResourceData, parseSortQuery, parseFilterQuery } = require('../helpers/controllerHelpers');
-const { accessControl } = require('./access');
+const {getEasyPayUrl} = require('../helpers/easyPay');
+const {createSHASig} = require('../helpers/crypto');
+const {generateInvoice} = require('../helpers/invoiceMaker');
+const {filterResourceData, parseSortQuery, parseFilterQuery} = require('../helpers/controllerHelpers');
+const {accessControl} = require('./access');
 const {
     userTypes,
     homePage,
@@ -51,14 +51,14 @@ const {
     PAGINATION_SIZE
 } = require('../configuration');
 const errorMessages = require('../configuration/errors');
-const { sendMail } = require('../configuration/mail'),
+const {sendMail} = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
 const processOfflinePayment = async (user, cartInDb, req, res, next) => {
     const readOwnCartPermission = accessControl.can(user.userType)
         .readOwn(resources.cart);
 
-    const { paymentType } = req.value.body;
+    const {paymentType} = req.value.body;
     cartInDb.paymentType = paymentType;
     cartInDb.status = cartStatus.placed;
     cartInDb.paymentCode = paymentCodeGenerator.generate();
@@ -93,18 +93,19 @@ const processOfflinePayment = async (user, cartInDb, req, res, next) => {
     const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
 
     res.status(httpStatusCodes.OK)
-        .json({ cart: filteredCart });
+        .json({cart: filteredCart});
 };
 
 const processEasyPayPayment = async (user, cartInDb, req, res, next) => {
     const readOwnCartPermission = accessControl.can(user.userType)
         .readOwn(resources.cart);
 
-    const { paymentType } = req.value.body;
+    const {paymentType} = req.value.body;
     cartInDb.status = cartStatus.paymentFailed;
     cartInDb.paymentCode = orderid.generate();
     cartInDb.lastModifiedBy = user.daiictId;
     cartInDb.lastModified = new Date();
+    cartInDb.paymentType = paymentType;
 
     cartInDb = await validateCart(cartInDb, user, true, true);
     if (!cartInDb) {
@@ -138,8 +139,8 @@ const processEasyPayPayment = async (user, cartInDb, req, res, next) => {
 module.exports = {
     getMyCart: async (req, res, next) => {
 
-        const { user } = req;
-        const { cartId } = user;
+        const {user} = req;
+        const {cartId} = user;
 
         const readOwnOrderPermission = accessControl.can(user.userType)
             .readOwn(resources.order);
@@ -190,7 +191,7 @@ module.exports = {
 
             const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
             res.status(httpStatusCodes.OK)
-                .json({ cart: filteredCart });
+                .json({cart: filteredCart});
         } else {
             return res.sendStatus(httpStatusCodes.FORBIDDEN);
         }
@@ -198,9 +199,9 @@ module.exports = {
 
     getCart: async (req, res, next) => {
 
-        const { user } = req;
-        const { daiictId } = user;
-        const { cartId } = req.params;
+        const {user} = req;
+        const {daiictId} = user;
+        const {cartId} = req.params;
 
         const readAnyOrderPermission = accessControl.can(user.userType)
             .readAny(resources.order);
@@ -262,7 +263,7 @@ module.exports = {
             if (cart.status >= cartStatus.placed) {
                 const filteredCart = await filterResourceData(cart, readAnyCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
-                    .json({ cart: filteredCart });
+                    .json({cart: filteredCart});
             } else {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
@@ -319,7 +320,7 @@ module.exports = {
                 const filteredCart = await filterResourceData(cart, readOwnCartPermission.attributes);
 
                 res.status(httpStatusCodes.OK)
-                    .json({ cart: filteredCart });
+                    .json({cart: filteredCart});
             } else {
                 res.sendStatus(httpStatusCodes.FORBIDDEN);
             }
@@ -330,8 +331,8 @@ module.exports = {
 
     getAllCart: async (req, res, next) => {
 
-        const { user } = req;
-        const { daiictId } = user;
+        const {user} = req;
+        const {daiictId} = user;
         const pageNo = parseInt(req.query.pageNo || 1);
         const size = parseInt(req.query.size || PAGINATION_SIZE);
 
@@ -483,9 +484,9 @@ module.exports = {
     },
 
     addDelivery: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId, cartId } = user;
-        const { collectionType } = req.params;
+        const {user} = req;
+        const {daiictId, cartId} = user;
+        const {collectionType} = req.params;
         const timeStamp = new Date();
 
         const readOwnCartPermission = accessControl.can(user.userType)
@@ -554,9 +555,9 @@ module.exports = {
     },
 
     updateDelivery: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId, cartId } = user;
-        const { collectionType } = req.params;
+        const {user} = req;
+        const {daiictId, cartId} = user;
+        const {collectionType} = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
@@ -595,7 +596,7 @@ module.exports = {
                 }
 
 
-                const newDelivery = await Delivery.findByIdAndUpdate(cart.delivery, delivery, { new: true });
+                const newDelivery = await Delivery.findByIdAndUpdate(cart.delivery, delivery, {new: true});
                 /* check if delivery is present*/
                 const newCart = await cart.save();
 
@@ -618,9 +619,9 @@ module.exports = {
     },
 
     addPickup: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId, cartId } = user;
-        const { collectionType } = req.params;
+        const {user} = req;
+        const {daiictId, cartId} = user;
+        const {collectionType} = req.params;
 
         const timeStamp = new Date();
 
@@ -690,9 +691,9 @@ module.exports = {
     },
 
     updatePickup: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId, cartId } = user;
-        const { collectionType } = req.params;
+        const {user} = req;
+        const {daiictId, cartId} = user;
+        const {collectionType} = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
@@ -731,7 +732,7 @@ module.exports = {
                         .send(errorMessages.invalidCollectionType);
                 }
 
-                const newPickup = await Collector.findByIdAndUpdate(cart.pickup, pickup, { new: true });
+                const newPickup = await Collector.findByIdAndUpdate(cart.pickup, pickup, {new: true});
                 const newCart = await cart.save();
 
                 const filteredPickup = filterResourceData(newPickup, readOwnPickupPermission.attributes);
@@ -751,8 +752,8 @@ module.exports = {
     },
 
     addOfflinePayment: async (req, res, next) => {
-        const { user } = req;
-        const { cartId } = user;
+        const {user} = req;
+        const {cartId} = user;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
@@ -780,8 +781,8 @@ module.exports = {
     },
 
     retryOfflinePayment: async (req, res, next) => {
-        const { user } = req;
-        const { cartId } = req.params;
+        const {user} = req;
+        const {cartId} = req.params;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
@@ -809,8 +810,8 @@ module.exports = {
     },
 
     addEasyPayPayment: async (req, res, next) => {
-        const { user } = req;
-        const { cartId } = user;
+        const {user} = req;
+        const {cartId} = user;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
@@ -838,9 +839,9 @@ module.exports = {
     },
 
     retryEasyPayPayment: async (req, res, next) => {
-        const { user } = req;
-        const { cartId } = req.params;
-        const { daiictId } = user;
+        const {user} = req;
+        const {cartId} = req.params;
+        const {daiictId} = user;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
             .updateOwn(resources.cart);
@@ -913,7 +914,7 @@ module.exports = {
 
         if (SHA512Sig === rs) {
 
-            const cartInDb = await Cart.findOne({ paymentCode: referenceNo })
+            const cartInDb = await Cart.findOne({paymentCode: referenceNo})
                 .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
 
             if (cartInDb) {
@@ -940,7 +941,7 @@ module.exports = {
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
 
-                    return res.render('paymentFail', { order: renderInfo });
+                    return res.render('paymentFail', {order: renderInfo});
                 }
 
                 const fieldsValidity = subMerchantId === process.env.submerchantid && id === process.env.merchantid;
@@ -980,7 +981,6 @@ module.exports = {
                     }
 
                     const placedCart = await convertToPlacedCart(cartInDb, true);
-                    await generateNewCartForUser(user);
                     await removeCartAndOrders(cartInDb, true);
                     await generateEasyPayPaymentMailAndNotification(true, cartInDb, placedCart);
 
@@ -991,7 +991,7 @@ module.exports = {
                     renderInfo.date = new Date().toDateString();
                     renderInfo.amount = totalAmount;
 
-                    return res.render('paymentSuccess', { order: renderInfo });
+                    return res.render('paymentSuccess', {order: renderInfo});
 
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
@@ -1005,9 +1005,9 @@ module.exports = {
     },
 
     acceptPayment: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { paymentCode } = req.params;
+        const {user} = req;
+        const {daiictId} = user;
+        const {paymentCode} = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
             .updateAny(resources.changeOrderStatus);
@@ -1016,7 +1016,7 @@ module.exports = {
 
         if (changeStatusPermission.granted) {
 
-            const cartInDb = await PlacedCart.findOne({ paymentCode });
+            const cartInDb = await PlacedCart.findOne({paymentCode});
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.placed && cartInDb.paymentType === paymentTypes.offline) {
@@ -1057,7 +1057,7 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let mailTo = (await UserInfo.findOne({user_inst_id: cartInDb.requestedBy})).user_email_id;
                     let cc = mailTemplates['offlinePaymentAccepted'].cc;
                     let bcc = mailTemplates['offlinePaymentAccepted'].bcc;
                     let mailSubject = mailTemplates['offlinePaymentAccepted'].subject;
@@ -1074,7 +1074,7 @@ module.exports = {
                     const filteredCart = filterResourceData(cartInDb, readAnyCartPermission.attributes);
 
                     res.status(httpStatusCodes.OK)
-                        .json({ cart: filteredCart });
+                        .json({cart: filteredCart});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }
@@ -1087,9 +1087,9 @@ module.exports = {
     },
 
     changeStatus: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { cartId } = req.params;
+        const {user} = req;
+        const {daiictId} = user;
+        const {cartId} = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
             .updateAny(resources.changeOrderStatus);
@@ -1117,9 +1117,9 @@ module.exports = {
                 }
 
                 cartInDb.lastModifiedBy = daiictId;
-                cartInDb.lastModified = new  Date();
+                cartInDb.lastModified = new Date();
 
-                const mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                const mailTo = (await UserInfo.findOne({user_inst_id: cartInDb.requestedBy})).user_email_id;
                 let cc;
                 let bcc;
                 let mailSubject;
@@ -1248,7 +1248,7 @@ module.exports = {
 
                 const filteredCart = filterResourceData(cartInDb, readAnyCartPermission.attributes);
                 res.status(httpStatusCodes.OK)
-                    .json({ cart: filteredCart });
+                    .json({cart: filteredCart});
             } else {
                 res.sendStatus(httpStatusCodes.NOT_FOUND);
             }
@@ -1258,9 +1258,9 @@ module.exports = {
     },
 
     cancelCart: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { cartId } = req.params;
+        const {user} = req;
+        const {daiictId} = user;
+        const {cartId} = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
             .updateAny(resources.changeOrderStatus);
@@ -1274,7 +1274,7 @@ module.exports = {
                 if (cartInDb.status >= cartStatus.placed && cartInDb.status < cartStatus.completed) {
 
                     cartInDb.lastModified = new Date();
-                    cartInDb.lastModifiedBy =daiictId;
+                    cartInDb.lastModifiedBy = daiictId;
                     cartInDb.status = cartStatus.cancelled;
                     cartInDb.cancelReason = cartUpdateAtt.cancelReason;
                     cartInDb.statusChangeTime.cancelled = {
@@ -1305,7 +1305,7 @@ module.exports = {
 
                     await cartInDb.save();
 
-                    let mailTo = (await UserInfo.findOne({ user_inst_id: cartInDb.requestedBy })).user_email_id;
+                    let mailTo = (await UserInfo.findOne({user_inst_id: cartInDb.requestedBy})).user_email_id;
                     let cc = mailTemplates['cancelCart'].cc;
                     let bcc = mailTemplates['cancelCart'].bcc;
                     let mailSubject = mailTemplates['cancelCart'].subject;
@@ -1334,9 +1334,9 @@ module.exports = {
     },
 
     addComment: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId } = user;
-        const { cartId } = req.params;
+        const {user} = req;
+        const {daiictId} = user;
+        const {cartId} = req.params;
 
         const readAnyCartPermission = accessControl.can(user.userType)
             .readAny(resources.cart);
@@ -1346,7 +1346,7 @@ module.exports = {
             const cartInDb = await PlacedCart.findById(cartId);
 
             if (cartInDb.status >= cartStatus.processing) {
-                const { comment } = req.body;
+                const {comment} = req.body;
                 switch (cartInDb.status) {
                     case cartStatus.processing:
                         cartInDb.comment.processing = comment;
@@ -1388,8 +1388,8 @@ module.exports = {
 
     getInvoice: async (req, res, next) => {
 
-        const { user } = req;
-        const { cartId } = req.params;
+        const {user} = req;
+        const {cartId} = req.params;
 
         const readOwnCartPermission = accessControl.can(user.userType)
             .readOwn(resources.cart);
@@ -1427,8 +1427,8 @@ module.exports = {
     },
 
     addZeroCostPayment: async (req, res, next) => {
-        const { user } = req;
-        const { daiictId, cartId } = user;
+        const {user} = req;
+        const {daiictId, cartId} = user;
         const cartUpdateAtt = req.value.body;
 
         const updateOwnCartPermission = accessControl.can(user.userType)
@@ -1493,7 +1493,7 @@ module.exports = {
                     const filteredCart = filterResourceData(placedCart, readOwnCartPermission.attributes);
 
                     res.status(httpStatusCodes.OK)
-                        .json({ cart: filteredCart });
+                        .json({cart: filteredCart});
                 } else {
                     res.sendStatus(httpStatusCodes.BAD_REQUEST);
                 }

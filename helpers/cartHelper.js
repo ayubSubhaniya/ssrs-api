@@ -3,6 +3,7 @@ const mustache = require('mustache');
 const Service = require('../models/service');
 const CollectionType = require('../models/collectionType');
 const UserInfo = require('../models/userInfo');
+const User = require('../models/user');
 const Order = require('../models/order');
 const Collector = require('../models/collector');
 const CourierInfo = require('../models/courierInfo');
@@ -226,6 +227,7 @@ const generateNewCartForUser = async (user) => {
         createdOn: user.createdOn,
     });
     await cart.save();
+
     user.cartId = cart._id;
     await user.save();
 };
