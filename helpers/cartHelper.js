@@ -171,6 +171,33 @@ const generateOrderPlacedMailAndNotification = async (user, oldCart, newCart) =>
     await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
 };
 
+const generateEasyPayPaymentMailAndNotification = async (success, oldCart, newCart) => {
+    let templateName = 'successfulEasyPayPayment';
+    if (!success){
+        templateName = 'failedEasyPayPayment';
+        newCart = oldCart;
+    }
+
+    const notification = generateCartStatusChangeNotification(newCart.requestedBy, systemAdmin, newCart.orders.length, newCart.status, '-', newCart.id);
+    await notification.save();
+
+    if (success){
+        /* Update all notification with old cartID */
+        await updateCartIdInNotification(oldCart.id, newCart.id);
+    }
+
+    let mailTo = (await UserInfo.findOne({ user_inst_id: newCart.requestedBy })).user_email_id;
+    const {cc, bcc, mailSubject} = mailTemplates[templateName];
+    let options = {
+        orderId: newCart.orderId,
+        cartLength: newCart.orders.length,
+        paymentId: newCart.paymentId
+    };
+    let mailBody = mustache.render(mailTemplates[templateName].body, options);
+
+    await sendMail(mailTo, cc, bcc, mailSubject, mailBody);
+};
+
 const getValidCartPaymentError = async (cart, paymentType) => {
     if (cart.collectionTypeCost === -1) {
         return errorMessages.invalidCollectionType;
@@ -256,6 +283,7 @@ module.exports = {
     checkPaymentMode,
     validateCart,
     generateOrderPlacedMailAndNotification,
+    generateEasyPayPaymentMailAndNotification,
     getValidCartPaymentError,
     generateNewCartForUser,
     removeCartAndOrders,
