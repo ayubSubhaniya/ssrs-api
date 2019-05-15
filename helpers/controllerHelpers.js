@@ -1,11 +1,11 @@
-const { defaultPermissionObject } = require('../configuration');
+const { defaultPermissionObject } = require('../helpers/permission');
 const ascendingOrder = '+';
 const descendingOrder = '-';
 
 const aggregations = ['gte', 'gt', 'lte', 'lt'];
 
 const constructPermissionObject = (permissions, role) => {
-    let permissionData = defaultPermissionObject;
+    let permissionData = JSON.parse(JSON.stringify(defaultPermissionObject));
 
     Object.keys(permissions[role])
         .forEach(resource => {
@@ -124,7 +124,7 @@ const parseSortQuery = (query, allowedAttributes) => {
         const attributes = query.split(',');
         attributes.forEach(attribute => {
             let sortingOrder = 1;
-            let attributeName = attribute.trim();
+            let attributeName = attribute.split('.')[0].trim();
 
             if (attribute.charAt(0) === descendingOrder) {
                 sortingOrder = -1;
@@ -136,11 +136,9 @@ const parseSortQuery = (query, allowedAttributes) => {
                     .trim();
             }
 
-            if (!allowedAttributes.includes(attributeName)) {
-                throw new Error('Invalid permission');
+            if (allowedAttributes.includes(attributeName)) {
+                sortQuery[attributeName] = sortingOrder;
             }
-
-            sortQuery[attributeName] = sortingOrder;
         });
     }
     return sortQuery;

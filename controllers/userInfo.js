@@ -1,8 +1,9 @@
 const HttpStatus = require('http-status-codes');
+const querystring = require('querystring');
 
 const UserInfo = require('../models/userInfo');
 
-const { resources } = require('../configuration');
+const { resources, USER_PAGINATION_SIZE } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 
@@ -28,15 +29,49 @@ module.exports = {
 
     getAllUserInfo: async (req, res, next) => {
         const { user } = req;
+        const pageNo = parseInt(req.query.pageNo || 1);
+        const size = parseInt(req.query.size || USER_PAGINATION_SIZE);
 
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.userInfo);
 
         if (readPermission.granted) {
-            const userInfoData = await UserInfo.find({});
+
+            const totalCount = (await UserInfo.estimatedDocumentCount());
+            const totalPages = Math.ceil(totalCount / size);
+
+            if (pageNo < 0 || pageNo === 0) {
+                return res.status(httpStatusCodes.BAD_REQUEST)
+                    .send(errorMessages.invalidPageRequest);
+            }
+
+            const skip = size * (pageNo - 1);
+            const limit = size;
+            const sortQuery = {
+                "user_inst_id": 1
+            }
+
+            const userInfoData = await UserInfo.find({})
+                .skip(skip)
+                .limit(limit)
+                .sort(sortQuery);
+
             const filteredUserInfoData = filterResourceData(userInfoData, readPermission.attributes);
+            const prevUrl = pageNo > 1 ? querystring.stringify({
+                pageNo: pageNo - 1,
+                size: size
+            }) : undefined;
+            const nextUrl = pageNo < totalPages ? querystring.stringify({
+                pageNo: pageNo + 1,
+                size: size
+            }) : undefined;
+
             res.status(HttpStatus.OK)
-                .json({ userInfo: filteredUserInfoData });
+                .json({ 
+                    userInfo: filteredUserInfoData,
+                    prev: prevUrl,
+                    next: nextUrl
+                });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }

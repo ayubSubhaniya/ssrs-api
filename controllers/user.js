@@ -1,9 +1,10 @@
 const HttpStatus = require('http-status-codes');
+const querystring = require('querystring');
 
 const User = require('../models/user');
 const CourierInfo = require('../models/courierInfo');
 
-const { resources, userTypes, daiictMailDomainName } = require('../configuration');
+const { resources, userTypes, daiictMailDomainName, USER_PAGINATION_SIZE } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 
@@ -102,21 +103,55 @@ module.exports = {
     getAllUser: async (req, res, next) => {
         const { user } = req;
         const { daiictId } = user;
+        const pageNo = parseInt(req.query.pageNo || 1);
+        const size = parseInt(req.query.size || USER_PAGINATION_SIZE);
 
         const readPermission = accessControl.can(user.userType)
             .readAny(resources.user);
 
 
         if (readPermission.granted) {
+
+            const totalCount = (await User.estimatedDocumentCount()) - 1;   // excluding the current user
+            const totalPages = Math.ceil(totalCount / size);
+
+            if (pageNo < 0 || pageNo === 0) {
+                return res.status(httpStatusCodes.BAD_REQUEST)
+                    .send(errorMessages.invalidPageRequest);
+            }
+
+            const skip = size * (pageNo - 1);
+            const limit = size;
+            const sortQuery = {
+                "daiictId": 1
+            }
+
             const requestedUsers = await User.find({
                 daiictId: {
                     $nin: [daiictId]
                 }
             })
+                .skip(skip)
+                .limit(limit)
+                .sort(sortQuery)
                 .populate('userInfo');
+                
             const filteredUsers = filterResourceData(requestedUsers, readPermission.attributes);
+            const prevUrl = pageNo > 1 ? querystring.stringify({
+                pageNo: pageNo - 1,
+                size: size
+            }) : undefined;
+            const nextUrl = pageNo < totalPages ? querystring.stringify({
+                pageNo: pageNo + 1,
+                size: size
+            }) : undefined;
+            
             res.status(HttpStatus.OK)
-                .json({ user: filteredUsers });
+                .json({ 
+                    user: filteredUsers,
+                    prev: prevUrl,
+                    next: nextUrl
+                });
         } else {
             res.sendStatus(HttpStatus.FORBIDDEN);
         }

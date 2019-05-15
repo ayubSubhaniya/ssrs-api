@@ -565,6 +565,7 @@ module.exports = {
                 'description',
                 'maxUnits',
                 'baseCharge',
+                'isActive',
                 'availableParameters',
                 'availablePaymentModes',
                 'collectionTypes',
@@ -959,7 +960,8 @@ module.exports = {
                 'name',
                 'description',
                 'baseCharge',
-                'category'
+                'category',
+                'isActive'
             ],
             canCreate: [],
             canUpdate: []
