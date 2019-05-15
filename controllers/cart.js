@@ -1172,7 +1172,7 @@ module.exports = {
                         break;
 
                     case cartStatus.completed:
-                        cartInDb..status = cartStatus.completed;
+                        cartInDb.status = cartStatus.completed;
                         cartInDb.statusChangeTime.completed = {
                             time: new Date(),
                             by: daiictId
