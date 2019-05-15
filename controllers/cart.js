@@ -54,7 +54,7 @@ const errorMessages = require('../configuration/errors');
 const {sendMail} = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
-const processOfflinePayment = async (user, cartInDb, req, res, next) => {
+const processOfflinePayment = async (user, cartInDb, req, res, next, retry=false) => {
     const readOwnCartPermission = accessControl.can(user.userType)
         .readOwn(resources.cart);
 
@@ -84,7 +84,9 @@ const processOfflinePayment = async (user, cartInDb, req, res, next) => {
 
     const placedCart = await convertToPlacedCart(cartInDb);
 
-    await generateNewCartForUser(user);
+    if (!retry){
+        await generateNewCartForUser(user);
+    }
 
     await removeCartAndOrders(cartInDb, true);
 
@@ -96,7 +98,7 @@ const processOfflinePayment = async (user, cartInDb, req, res, next) => {
         .json({cart: filteredCart});
 };
 
-const processEasyPayPayment = async (user, cartInDb, req, res, next) => {
+const processEasyPayPayment = async (user, cartInDb, req, res, next, retry=false) => {
     const readOwnCartPermission = accessControl.can(user.userType)
         .readOwn(resources.cart);
 
@@ -127,7 +129,9 @@ const processEasyPayPayment = async (user, cartInDb, req, res, next) => {
 
     const filteredCart = filterResourceData(cartInDb, readOwnCartPermission.attributes);
 
-    await generateNewCartForUser(user);
+    if (!retry){
+        await generateNewCartForUser(user);
+    }
 
     res.status(httpStatusCodes.OK)
         .json({
@@ -794,7 +798,7 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.paymentFailed) {
-                    return processOfflinePayment(user, cartInDb, req, res, next);
+                    return processOfflinePayment(user, cartInDb, req, res, next, true);
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
@@ -857,7 +861,7 @@ module.exports = {
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.paymentFailed) {
-                    return await processEasyPayPayment(user, cartInDb, req, res, next);
+                    return await processEasyPayPayment(user, cartInDb, req, res, next, true);
                 } else if (cartInDb.status === cartStatus.processingPayment) {
                     res.status(httpStatusCodes.BAD_REQUEST)
                         .send(errorMessages.paymentInProcessing);
