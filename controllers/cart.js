@@ -365,14 +365,10 @@ module.exports = {
                 if (query.status < cartStatus.placed) {
                     query.status = -1;
                 }
-                if (query.status === cartStatus.processing) {
-                    sortQuery['statusChangeTime.processing.time'] = +1;
-                }
             } else {
                 query.status = {
                     $gte: cartStatus.placed
                 };
-                sortQuery['statusChangeTime.placed.time'] = -1;
             }
 
             cartAttributesPermission = readAnyCartPermission.attributes;
@@ -390,14 +386,10 @@ module.exports = {
                 if (query.status <= cartStatus.unplaced) {
                     query.status = -1;
                 }
-                if (query.status === cartStatus.paymentFailed) {
-                    sortQuery['statusChangeTime.paymentFailed.time'] = 1;
-                }
             } else {
                 query.status = {
                     $gte: cartStatus.placed
                 };
-                sortQuery['statusChangeTime.placed.time'] = -1;
             }
             if (query.requestedBy && query.requestedBy !== daiictId) {
                 query.requestedBy = -1;
