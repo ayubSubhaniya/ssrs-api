@@ -1449,7 +1449,7 @@ module.exports = {
                             .send(errorMessages.invalidPaymentType);
                     }
 
-                    cartInDb.paymentType = paymentType;
+                    cartInDb.paymentType = paymentTypes.offline;
                     cartInDb.status = cartStatus.processing;
                     cartInDb.statusChangeTime.placed = {
                         time: new Date(),
@@ -1472,7 +1472,7 @@ module.exports = {
                             .send(errorMessages.invalidCart);
                     }
 
-                    const errorMessage = await getValidCartPaymentError(cartInDb, paymentType);
+                    const errorMessage = await getValidCartPaymentError(cartInDb, cartInDb.paymentType);
                     if (errorMessage) {
                         return res.status(httpStatusCodes.PRECONDITION_FAILED)
                             .send(errorMessage);
