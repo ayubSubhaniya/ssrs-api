@@ -10,6 +10,9 @@ const errorMessages = require('../configuration/errors');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
 
 const removeOrder = async (order) => {
+    if (!order){
+        return;
+    }
     let message = 'Some orders in your cart has became invalid. Please try adding them again!';
     await Order.findByIdAndRemove(order._id);
 
@@ -25,7 +28,9 @@ const removeOrder = async (order) => {
 };
 
 const calculateServiceCost = async (service, requiredUnits, user) => {
-
+    if (!service || !user){
+        return -1;
+    }
     const specialServiceValidation = !service.isSpecialService || service.specialServiceUsers.includes(user.daiictId);
     const useServiceValidation = (!user.userInfo.user_batch || !service.allowedBatches || (service.allowedBatches.includes('*') || service.allowedBatches.includes(user.userInfo.user_batch))) &&
         (!user.userInfo.user_programme || !service.allowedProgrammes || (service.allowedProgrammes.includes('*') || service.allowedProgrammes.includes(user.userInfo.user_programme))) &&
@@ -39,6 +44,9 @@ const calculateServiceCost = async (service, requiredUnits, user) => {
 };
 
 const calculateParameterCost = async (parameters, requiredUnits, availableParameters, populated = false) => {
+    if (!parameters){
+        return -1;
+    }
     let totalCost = 0;
 
     availableParameters = convertToStringArray(availableParameters);
@@ -59,6 +67,9 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
 };
 
 const recalculateOrderCost = async (order, user, populated = false) => {
+    if (!order){
+        return null;
+    }
     let service;
     if (populated) {
         service = order.service;
@@ -126,6 +137,9 @@ const validateOrder = async (orders, user, populated = false) => {
 };
 
 const validateAddedOrder = async (cartId, service, unitsRequested) => {
+    if (!cartId){
+        return false;
+    }
     const cart = await Cart.findById(cartId)
         .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup']);
     const { orders } = cart;

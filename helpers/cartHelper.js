@@ -90,6 +90,9 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
 };
 
 const calculateOrdersCost = async (cart) => {
+    if (!cart){
+        return -1;
+    }
     let cost = 0;
     const { orders } = cart;
     for (let i = 0; i < orders.length; i++) {
@@ -103,6 +106,9 @@ const calculateOrdersCost = async (cart) => {
 };
 
 const checkPaymentMode = async (cart, paymentMode) => {
+    if (!cart){
+        return -1;
+    }
     //paymentMode = paymentMode.toLowerCase();
     const { orders } = cart;
     for (let i = 0; i < orders.length; i++) {
@@ -115,6 +121,9 @@ const checkPaymentMode = async (cart, paymentMode) => {
 };
 
 const validateCart = async (cart, user, populatedCart = false, populatedOrder = false, allowNoCollectionType = false) => {
+    if (!cart){
+        return null;
+    }
     const oldStatus = cart.status;
 
     cart.orders = await validateOrder(cart.orders, user, populatedOrder);
