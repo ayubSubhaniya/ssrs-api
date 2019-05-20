@@ -224,7 +224,7 @@ const getValidCartPaymentError = async (cart, paymentType) => {
         return errorMessages.noCollectionType;
     }
 
-    if (!(await checkPaymentMode(cart, paymentType))) {
+    if (!(cart.totalCost===0||(await checkPaymentMode(cart, paymentType)))) {
         return errorMessages.invalidPaymentType;
     }
     return null;
