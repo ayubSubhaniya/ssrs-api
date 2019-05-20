@@ -1449,7 +1449,7 @@ module.exports = {
                             .send(errorMessages.invalidPaymentType);
                     }
 
-                    cartInDb.paymentType = paymentType;
+                    cartInDb.paymentType = cartUpdateAtt.paymentType;
                     cartInDb.status = cartStatus.processing;
                     cartInDb.statusChangeTime.placed = {
                         time: new Date(),
