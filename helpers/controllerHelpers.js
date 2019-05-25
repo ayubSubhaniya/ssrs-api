@@ -124,7 +124,7 @@ const parseSortQuery = (query, allowedAttributes) => {
         const attributes = query.split(',');
         attributes.forEach(attribute => {
             let sortingOrder = 1;
-            let attributeName = attribute.split('.')[0].trim();
+            let attributeName = '';
 
             if (attribute.charAt(0) === descendingOrder) {
                 sortingOrder = -1;
@@ -136,7 +136,8 @@ const parseSortQuery = (query, allowedAttributes) => {
                     .trim();
             }
 
-            if (allowedAttributes.includes(attributeName)) {
+            let primaryAttributeName = attributeName.split('.')[0].trim();
+            if (allowedAttributes.includes(primaryAttributeName)) {
                 sortQuery[attributeName] = sortingOrder;
             }
         });
