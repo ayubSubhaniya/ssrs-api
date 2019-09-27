@@ -3,9 +3,9 @@
 host="localhost"
 port="3001"
 
-db_uri="mongodb://ssrsDaiict:ssrsDaiict123@ds119802.mlab.com:19802/ssrs-daiict"
+db_uri="mongodb://s***t:s****3@ds119802.mlab.com:19802/ssrs-daiict"
 
-mail_user="201501405@daiict.ac.in"
+mail_user="20150****@daiict.ac.in"
 mail_pass="********"
 node_env="development"
 
