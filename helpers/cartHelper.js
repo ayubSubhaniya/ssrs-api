@@ -265,6 +265,7 @@ const convertToPlacedCart = async (cart, isStatusProcessing = false) => {
         };
 
         if (isStatusProcessing) {
+            cart.orders[i].status = orderStatus.processing;
             cart.orders[i].statusChangeTime.processing = {
                 time: new Date(),
                 by: systemAdmin
