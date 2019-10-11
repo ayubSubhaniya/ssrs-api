@@ -19,7 +19,7 @@ const {
 } = require('../configuration');
 const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
-
+const MILLI_SECOND_IN_ONE_DAY = 1000 * 3600 * 24
 const checkForOfflinePayment = async () => {
 
     const failedOrderTime = new Date();
@@ -57,7 +57,7 @@ const checkForOfflinePayment = async () => {
             await notification.save();
 
         } else {
-            const cancelledInDays = carts[i].statusChangeTime.placed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
+            const cancelledInDays = Math.round((carts[i].statusChangeTime.placed.time.getTime() - new Date().getTime())/MILLI_SECOND_IN_ONE_DAY) + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY;
 
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
             let cc = mailTemplates['pendingPaymentOffline'].cc;
@@ -116,8 +116,8 @@ const checkForFailedOnlinePayment = async () => {
             const notification = generateCartStatusChangeNotification(updatedCart.requestedBy, systemAdmin, updatedCart.orders.length, cartStatus.cancelled, updatedCart.cancelReason, updatedCart.id);
             await notification.save();
         } else {
-            const cancelledInDays = carts[i].statusChangeTime.paymentFailed.time.getDate() + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY - new Date().getDate();
-
+            const cancelledInDays = Math.round((carts[i].statusChangeTime.paymentFailed.time.getTime() - new Date().getTime())/MILLI_SECOND_IN_ONE_DAY) + ORDER_CANCEL_TIME_IN_PAYMENT_DELAY;
+            
             let mailTo = (await UserInfo.findOne({ user_inst_id: carts[i].requestedBy })).user_email_id;
             let cc = mailTemplates['pendingPaymentOnline'].cc;
             let bcc = mailTemplates['pendingPaymentOnline'].bcc;
