@@ -9,18 +9,14 @@ const mailAccountPassword = process.env.MAIL_PASS;
 /*
     SMTP server configuration
 */
-
 const smtpTransport = nodemailer.createTransport({
-    host: 'webmail.daiict.ac.in',
-    port: 465,
+    service: "Gmail",
     secureConnection: true,
     auth: {
-        user: mailAccountEmailId,
-        pass: mailAccountPassword
+        user,
+        pass
     },
-    tls: {
-        rejectUnauthorized: false
-    },
+    tls: { rejectUnauthorized: false } 
 });
 /*------------------SMTP Over-----------------------------*/
 
