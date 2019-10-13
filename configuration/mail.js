@@ -18,6 +18,7 @@ const smtpTransport = nodemailer.createTransport({
     },
     tls: { rejectUnauthorized: false } 
 });
+
 /*------------------SMTP Over-----------------------------*/
 
 smtpTransport.verify(function (error, success) {
