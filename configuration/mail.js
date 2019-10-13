@@ -13,8 +13,8 @@ const smtpTransport = nodemailer.createTransport({
     service: "Gmail",
     secureConnection: true,
     auth: {
-        user,
-        pass
+        user: mailAccountEmailId,
+        pass: mailAccountPassword
     },
     tls: { rejectUnauthorized: false } 
 });
