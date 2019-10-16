@@ -182,6 +182,38 @@ app.use('/db-ping', (err, res) => {
         });
     }
 });
+app.use('/logs', (req, res) => {
+    const { secret, filename } = req.query;
+    const hash = process.env.LOGS_SECRET;
+
+    if (secret === hash) {
+        if (filename === 'list') {
+            fs.readdir('./logs', function (err, items) {
+                res.status(HttpStatus.OK).json({ "list": items });
+            });
+        } else if (filename) {
+            let options = {
+                root: ('./logs'),
+                dotfiles: 'deny',
+                headers: {
+                    'x-timestamp': Date.now(),
+                    'x-sent': true,
+                    'Content-type': 'text/plain'
+                }
+            };
+            res.sendFile(filename, options, function (err) {
+                if (err) {
+                    res.sendStatus(httpStatusCodes.NOT_FOUND);
+                }
+            });
+        } else {
+            res.sendStatus(HttpStatus.NOT_FOUND);
+        }
+    }
+    else {
+        res.sendStatus(HttpStatus.UNAUTHORIZED);
+    }
+});
 
 // Catch 404 Errors and forward them to error handler function
 app.use((req, res, next) => {
@@ -201,7 +233,7 @@ app.use(async (err, req, res, next) => {
 
     // response to client
     res.status(status)
-        .json({ error });
+        .json(error);
 
     // response to server
     console.error(err);
