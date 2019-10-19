@@ -4,7 +4,7 @@ const PlacedOrder = require('../models/placedOrder');
 const Cart = require('../models/cart');
 const Parameter = require('../models/parameter');
 
-const { filterResourceData, convertToStringArray } = require('../helpers/controllerHelpers');
+const { filterResourceData, convertToStringArray, filterActiveData, getIdsFromDoc } = require('../helpers/controllerHelpers');
 const { orderStatus, systemAdmin } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
@@ -23,7 +23,7 @@ const removeOrder = async (order) => {
     });
 
     /* Add notification here*/
-    const notification = generateCustomNotification(order.requestedBy, systemAdmin, message, order.cartId);
+    const notification = generateCustomNotification(order.requestedBy, systemAdmin, message);
     await notification.save();
 };
 
@@ -49,7 +49,12 @@ const calculateParameterCost = async (parameters, requiredUnits, availableParame
     }
     let totalCost = 0;
 
-    availableParameters = convertToStringArray(availableParameters);
+    if (populated){
+        availableParameters = getIdsFromDoc(availableParameters);
+    } else {
+        availableParameters = convertToStringArray(availableParameters);
+    }
+
     for (let i = 0; i < parameters.length; i++) {
         let parameter;
         if (populated) {
@@ -80,6 +85,8 @@ const recalculateOrderCost = async (order, user, populated = false) => {
     if (!service) {
         await removeOrder(order);
         return null;
+    } else if (populated) {
+        order.service.availableParameters = filterActiveData(order.service.availableParameters);
     }
 
     const parameters = order.parameters;

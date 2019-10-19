@@ -154,6 +154,14 @@ const convertToStringArray = (array) => {
     return ans;
 };
 
+const getIdsFromDoc = (array) => {
+    let ans = [];
+    for (let i = 0; i < array.length; i++) {
+        ans.push(array[i]._id.toString());
+    }
+    return ans;
+};
+
 
 module.exports = {
     filterResourceData,
@@ -162,4 +170,5 @@ module.exports = {
     parseFilterQuery,
     convertToStringArray,
     constructPermissionObject,
+    getIdsFromDoc
 };

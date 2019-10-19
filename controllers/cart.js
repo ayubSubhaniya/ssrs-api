@@ -164,7 +164,7 @@ module.exports = {
         if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -177,6 +177,9 @@ module.exports = {
                         },
                         'orders.service': {
                             select: readAnyServicePermission.attributes
+                        },
+                        'orders.service.availableParameters': {
+                            select: readAnyParameterPermission.attributes
                         },
                         'orders.parameters': {
                             select: readAnyParameterPermission.attributes
@@ -236,7 +239,7 @@ module.exports = {
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
-                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                    .deepPopulate(['orders.service','orders.service.availableParameters', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                         populate: {
                             'orders': {
                                 select: readAnyOrderPermission.attributes
@@ -249,6 +252,9 @@ module.exports = {
                             },
                             'orders.service': {
                                 select: readAnyServicePermission.attributes
+                            },
+                            'orders.service.availableParameters' : {
+                                select: readAnyParameterPermission.attributes
                             },
                             'orders.parameters': {
                                 select: readAnyParameterPermission.attributes
@@ -283,7 +289,7 @@ module.exports = {
                     _id: cartId,
                     requestedBy: daiictId
                 })
-                    .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                    .deepPopulate(['orders.service', 'orders.service.availableParameters', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                         populate: {
                             'orders': {
                                 select: readOwnOrderPermission.attributes
@@ -296,6 +302,9 @@ module.exports = {
                             },
                             'orders.service': {
                                 select: readAnyServicePermission.attributes
+                            },
+                            'orders.service.availableParameters' :{
+                                select: readAnyParameterPermission.attributes
                             },
                             'orders.parameters': {
                                 select: readAnyParameterPermission.attributes
