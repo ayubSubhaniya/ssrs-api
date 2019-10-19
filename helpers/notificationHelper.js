@@ -113,7 +113,7 @@ const generatePendingPaymentNotification = (userId, adminId, cartLength, payment
     return notification;
 };
 
-const generateCustomNotification = (userId, adminId, message, cartId) => {
+const generateCustomNotification = (userId, adminId, message, cartId=undefined) => {
     const notification = new Notification({
         createdBy: adminId,
         createdOn: new Date(),
