@@ -164,7 +164,7 @@ module.exports = {
         if (readOwnCartPermission.granted && user.userType === userTypes.student) {
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -180,6 +180,9 @@ module.exports = {
                         },
                         'orders.service.availableParameters': {
                             select: readAnyParameterPermission.attributes
+                        },
+                        'orders.service.collectionTypes': {
+                            select: readAnyCollectionType.attributes
                         },
                         'orders.parameters': {
                             select: readAnyParameterPermission.attributes
@@ -239,7 +242,7 @@ module.exports = {
 
             if (!cart) {
                 cart = await Cart.findById(cartId)
-                    .deepPopulate(['orders.service','orders.service.availableParameters', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                    .deepPopulate(['orders.service','orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                         populate: {
                             'orders': {
                                 select: readAnyOrderPermission.attributes
@@ -255,6 +258,9 @@ module.exports = {
                             },
                             'orders.service.availableParameters' : {
                                 select: readAnyParameterPermission.attributes
+                            },
+                            'orders.service.collectionTypes' : {
+                                select: readAnyCollectionType.attributes
                             },
                             'orders.parameters': {
                                 select: readAnyParameterPermission.attributes
@@ -289,7 +295,7 @@ module.exports = {
                     _id: cartId,
                     requestedBy: daiictId
                 })
-                    .deepPopulate(['orders.service', 'orders.service.availableParameters', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+                    .deepPopulate(['orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                         populate: {
                             'orders': {
                                 select: readOwnOrderPermission.attributes
@@ -305,6 +311,9 @@ module.exports = {
                             },
                             'orders.service.availableParameters' :{
                                 select: readAnyParameterPermission.attributes
+                            },
+                            'orders.service.collectionTypes' :{
+                                select: readAnyCollectionType.attributes
                             },
                             'orders.parameters': {
                                 select: readAnyParameterPermission.attributes
@@ -432,7 +441,7 @@ module.exports = {
             .skip(skip)
             .limit(limit)
             .sort(sortQuery)
-            .deepPopulate(['orders.service', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
+            .deepPopulate(['orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters', 'delivery', 'pickup', 'collectionType'], {
                 populate: {
                     'orders': {
                         select: orderAttributesPermission
@@ -445,6 +454,12 @@ module.exports = {
                     },
                     'orders.service': {
                         select: readAnyServicePermission.attributes
+                    },
+                    'orders.service.availableParameters':{
+                        select: readAnyParameterPermission.attributes
+                    },
+                    'orders.service.collectionTypes' :{
+                        select: readAnyCollectionTypePermission.attributes
                     },
                     'orders.parameters': {
                         select: readAnyParameterPermission.attributes
@@ -766,7 +781,7 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
+                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters']);
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced) {
@@ -795,7 +810,7 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
+                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters']);
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.paymentFailed) {
@@ -824,7 +839,7 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
+                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters']);
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced) {
@@ -858,7 +873,7 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             const cartInDb = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
+                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters']);
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.paymentFailed) {
@@ -1444,7 +1459,7 @@ module.exports = {
         if (updateOwnCartPermission.granted && user.userType === userTypes.student) {
 
             let cartInDb = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.parameters']);
+                .deepPopulate(['orders', 'collectionType', 'delivery', 'pickup', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters']);
 
             if (cartInDb) {
                 if (cartInDb.status === cartStatus.unplaced) {
