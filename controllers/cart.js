@@ -1416,10 +1416,6 @@ module.exports = {
 
         if (readOwnCartPermission.granted) {
             const cart = await PlacedCart.findById(cartId);
-            // const invoiceFile = './data/invoice_pdf/' + cart.orderId + '.pdf';
-            // res.attachment(invoiceFile);          // sends 200 OK alongwith invoiceFile
-            // res.sendStatus(httpStatusCodes.OK);
-
             let options = {
                 root: (process.env.INVOICE_ROOT_PATH || './data/invoice_pdf'),
                 dotfiles: 'deny',
