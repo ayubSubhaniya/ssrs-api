@@ -87,6 +87,7 @@ const recalculateOrderCost = async (order, user, populated = false) => {
         return null;
     } else if (populated) {
         order.service.availableParameters = filterActiveData(order.service.availableParameters);
+        order.service.collectionTypes = filterActiveData(order.service.collectionTypes)
     }
 
     const parameters = order.parameters;

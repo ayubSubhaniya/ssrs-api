@@ -524,7 +524,7 @@ module.exports = {
             delivery.createdBy = daiictId;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -592,7 +592,7 @@ module.exports = {
             const delivery = req.value.body;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -660,7 +660,7 @@ module.exports = {
             pickup.createdBy = daiictId;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
@@ -728,7 +728,7 @@ module.exports = {
             const pickup = req.value.body;
 
             let cart = await Cart.findById(cartId)
-                .deepPopulate(['orders', 'orders.service', 'orders.parameters'], {
+                .deepPopulate(['orders', 'orders.service', 'orders.service.availableParameters', 'orders.service.collectionTypes', 'orders.parameters'], {
                     populate: {
                         'orders': {
                             select: readOwnOrderPermission.attributes
