@@ -12,6 +12,7 @@ const Cart = require('../models/cart');
 const PlacedOrder = require('../models/placedOrder');
 
 const { validateOrder } = require('../helpers/orderHelper');
+const {  getIdsFromDoc } = require('../helpers/controllerHelpers');
 const {
     orderStatus,
     cartStatus,
@@ -60,7 +61,6 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
         collectionTypeDoc = await CollectionType.findOne({ _id: collectionType });
     }
 
-
     if (!collectionTypeDoc) {
         return -1;
     }
@@ -79,7 +79,12 @@ const calculateCollectionTypeCost = async (collectionType, orders, collectionTyp
         } else {
             service = await Service.findById(orders[i].service);
         }
-        const collectionTypes = convertToStringArray(service.collectionTypes);
+        let collectionTypes = [];
+        if (populatedOrder){
+            collectionTypes = getIdsFromDoc(service.collectionTypes);
+        } else {
+            collectionTypes = convertToStringArray(service.collectionTypes);
+        }
 
         if (!collectionTypes.includes(collectionTypeDoc._id.toString())) {
             return -1;
