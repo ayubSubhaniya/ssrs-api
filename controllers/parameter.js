@@ -8,6 +8,7 @@ const { resources, systemAdmin, allAdmin } = require('../configuration');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
+const { generateNews } = require('../helpers/newsHelper');
 
 const removeDeletedParameterFromService = async (parameterId) => {
     const services = await Service.find({ 'availableParameters': parameterId });
@@ -228,6 +229,7 @@ module.exports = {
 
     changeStatus: async (req, res, next) => {
         const { user } = req;
+        const { daiictId } = user;
         const { parameterId } = req.params;
 
         const changeStatusPermission = accessControl.can(user.userType)
@@ -240,6 +242,10 @@ module.exports = {
             const updatedParameter = await Parameter.findByIdAndUpdate(parameterId, parameterUpdateAtt, { new: true });
 
             if (updatedParameter) {
+                const message = 'Parameter ' + updatedParameter.name + ' is now '
+                    + (updatedParameter.isActive ? 'active' : 'inactive');
+                await generateNews(message, daiictId);
+
                 const filteredParameter = filterResourceData(updatedParameter, readPermission.attributes);
                 res.status(HttpStatus.OK)
                     .json({ parameter: filteredParameter });

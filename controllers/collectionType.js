@@ -8,6 +8,7 @@ const News = require('../models/news');
 const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
+const { generateNews } = require('../helpers/newsHelper');
 
 const removeDeletedCollectionFromService = async (collectionId) => {
     const services = await Service.find({ collectionTypes: collectionId });
@@ -240,14 +241,9 @@ module.exports = {
             const updatedCollectionType = await CollectionType.findByIdAndUpdate(collectionTypeId, collectionTypeUpdateAtt, { new: true });
 
             if (updatedCollectionType) {
-                const message = 'Collection type ' + updatedCollectionType.name + ' is now '
+                const message = 'Collection-type ' + updatedCollectionType.name + ' is now '
                     + (updatedCollectionType.isActive ? 'active' : 'inactive');
-                const news = new News({
-                    message,
-                    createdOn: new Date(),
-                    createdBy: daiictId,
-                });
-                await news.save();
+                await generateNews(message, daiictId);
 
                 const filteredCollectionType = filterResourceData(updatedCollectionType, readPermission.attributes);
                 res.status(HttpStatus.OK)
