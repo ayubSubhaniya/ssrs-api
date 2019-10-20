@@ -168,6 +168,7 @@ module.exports = {
                 // Allowing only those parameters which are active
                 for (let i = 0; i < services.length; i++) {
                     services[i].availableParameters = filterActiveData(services[i].availableParameters);
+                    services[i].collectionTypes = filterActiveData(services[i].collectionTypes)
                 }
             }
 
@@ -397,6 +398,7 @@ module.exports = {
                 }
                 // Allowing only those parameters which are active
                 service.availableParameters = filterActiveData(service.availableParameters);
+                service.collectionTypes = filterActiveData(service.collectionTypes)
             }
 
             if (service) {
@@ -483,6 +485,7 @@ module.exports = {
                 }
                 // Allowing only those parameters which are active
                 service.availableParameters = filterActiveData(service.availableParameters);
+                service.collectionTypes = filterActiveData(service.collectionTypes);
             }
 
             if (service) {
