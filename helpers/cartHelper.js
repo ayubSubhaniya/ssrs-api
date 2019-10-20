@@ -35,7 +35,7 @@ const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
 const removeCart = async (cart, populated) => {
-    let message = 'Your cart has became invalid. Please try placing new order!';
+    let message = `Cart ${cart.orderId} has been deleted due to unavailability of certain items. Kindly check "News" section for the same and try placing new order.`;
     await Cart.findByIdAndRemove(cart._id);
 
     if (cart.pickup) {

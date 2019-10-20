@@ -9,19 +9,10 @@ const Notification = require('../models/notification');
 const { filterResourceData, filterActiveData } = require('../helpers/controllerHelpers');
 const { accessControl } = require('./access');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
+const { generateNews } = require('../helpers/newsHelper');
 const { getAllPopulatedCollectionType } = require('./collectionType');
 const { getAllPopulatedParameters } = require('./parameter');
 const { getAllTypesDistinctValues } = require('./userInfo');
-
-const generateNews = async (message, daiictId, serviceId) => {
-    const news = new News({
-        message,
-        createdOn: new Date(),
-        createdBy: daiictId,
-        serviceId: serviceId.toString()
-    });
-    await news.save();
-};
 
 const generateNotification = async (message, daiictId, userIds) => {
 
