@@ -59,12 +59,6 @@ const decryptUrl = (url) => {
     return routeAndQueryPair[0] + '?' + decryptedParams.join('&');
 };
 
-//const plaintext = 'https://eazypay.icicibank.com/EazyPG?merchantid=100011&mandatoryfields=8001|1234|80|9000000001&optionalfields=20|20|20|20&returnurl=http://abc.com/cbc/action.aspx&ReferenceNo=8001&submerchantid=1234&transactionamount=80&paymode=9';
-//const expectedDecryptedText = 'https://eazypay.icicibank.com/EazyPG?merchantid=100011&mandatoryfields=u65A+ywICIypfrJVQp9ED2VlkBzkIimiHhLXPyo2P14=&optionalfields=faJ6BJUlOqjoV/AEbw5X4g==&returnurl=6WvzNalyXvqOX+aY9ee5oKm8FT+YUF5sz940o6QZvx0=&ReferenceNo=X7VX+1ZnKq+o6K2QWCTERQ==&submerchantid=QVZkBomDLSbitS4C9lGaUA==&transactionamount=aTRTaIdS0sLyzGCxL3Y5dQ==&paymode=nFRjDWSCg0m80aUYivDlqw==';
-
-//console.log(encryptUrl(plaintext)===expectedDecryptedText);
-//console.log(decryptUrl(expectedDecryptedText)===plaintext);
-
 module.exports = {
     encryptUrl,
     decryptUrl,

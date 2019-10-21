@@ -13,6 +13,9 @@ const { generateNews } = require('../helpers/newsHelper');
 const { getAllPopulatedCollectionType } = require('./collectionType');
 const { getAllPopulatedParameters } = require('./parameter');
 const { getAllTypesDistinctValues } = require('./userInfo');
+const { StringFormatter } = require('../helpers/commonHelpers');
+const { SERVICE_CREATED, SERVICE_UPDATED, SERVICE_STATUS_CHANGE, INVALID_ORDER_DUE_TO_SERVICE, ADMIN_SERVICE_DELETED } = require('../constants/strings');
+
 
 const generateNotification = async (message, daiictId, userIds) => {
 
@@ -28,7 +31,7 @@ const generateNotification = async (message, daiictId, userIds) => {
 };
 
 const generateServiceCreatedMessage = async (service, daiictId) => {
-    let message = 'New service ' + service.name + ' created';
+    let message = StringFormatter(SERVICE_CREATED, [service.name]);
 
     if (service.isSpecialService) {
         await generateNotification(message, daiictId, service.specialServiceUsers);
@@ -39,7 +42,7 @@ const generateServiceCreatedMessage = async (service, daiictId) => {
 
 
 const generateServiceUpdatedMessage = async (service, daiictId) => {
-    let message = 'Service ' + service.name + ' updated';
+    let message = StringFormatter(SERVICE_UPDATED, [service.name]);
 
     if (service.isSpecialService) {
         await generateNotification(message, daiictId, service.specialServiceUsers);
@@ -49,7 +52,8 @@ const generateServiceUpdatedMessage = async (service, daiictId) => {
 };
 
 const generateServiceChangeStatusMessage = async (service, daiictId) => {
-    let message = 'Service ' + service.name + ' is now ' + (service.isActive ? 'active' : 'inactive');
+    let args = [service.name, (service.isActive ? 'active' : 'inactive')];
+    let message = StringFormatter(SERVICE_STATUS_CHANGE, args);
 
     if (service.isSpecialService) {
         await generateNotification(message, daiictId, service.specialServiceUsers);
@@ -64,8 +68,6 @@ const deleteCurrServiceNews = async (currServiceId) => {
 
 const removeOrderWithDeletedService = async (serviceId) => {
 
-    let message = 'Some order(s) has became invalid due to removal of some services. Please try adding them again.';
-
     const orders = await Order.find({ service: serviceId });
     for (let i = 0; i < orders.length; i++) {
 
@@ -77,6 +79,7 @@ const removeOrderWithDeletedService = async (serviceId) => {
             }
         });
 
+        let message = INVALID_ORDER_DUE_TO_SERVICE;
         const notification = generateCustomNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
         await notification.save();
     }
@@ -798,7 +801,7 @@ module.exports = {
             const deletedService = await Service.findByIdAndRemove(serviceId);
 
             if (deletedService) {
-                let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
+                let message = StringFormatter(ADMIN_SERVICE_DELETED, [service.name, daiictId]);
                 const notification = generateCustomNotification(allAdmin, systemAdmin, message);
                 await notification.save();
 
@@ -820,7 +823,7 @@ module.exports = {
             });
 
             if (deletedService) {
-                let message = `Service: ${service.name} has been deleted by ${daiictId}.`;
+                let message = StringFormatter(ADMIN_SERVICE_DELETED, [service.name, daiictId]);
                 const notification = generateCustomNotification(allAdmin, systemAdmin, message);
                 await notification.save();
 

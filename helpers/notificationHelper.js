@@ -1,39 +1,41 @@
 const { orderStatus, cartStatus, systemAdmin } = require('../configuration/index');
+const { StringFormatter } = require('../helpers/commonHelpers')
 const Notification = require('../models/notification');
+const StringConstants = require('../constants/strings')
 
 const generateOrderStatusChangeNotification = (userId, adminId, orderName, orderStatusNum, cartId) => {
-    let orderStatusMsg = 'Your order ' + orderName + ' ';
+    let orderStatusMsg = '';
     switch (orderStatusNum) {
         case orderStatus.unplaced:
-            orderStatusMsg += 'is still unplaced';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_UNPLACED, [orderName]);
             break;
         case orderStatus.placed:
-            orderStatusMsg += 'has been placed';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_PLACED, [orderName]);
             break;
         case orderStatus.processing:
-            orderStatusMsg += 'is in process';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_PROCESSING, [orderName]);
             break;
         case orderStatus.ready:
-            orderStatusMsg += 'is now ready';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_READY, [orderName]);
             break;
         case orderStatus.completed:
-            orderStatusMsg += 'has been completed';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_COMPLETED, [orderName]);
             break;
 
         case orderStatus.invalidOrder:
-            orderStatusMsg += 'is invalid';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_INVALID_ORDER, [orderName]);
             break;
         case orderStatus.cancelled:
-            orderStatusMsg += 'was cancelled';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_CANCELLED, [orderName]);
             break;
         case orderStatus.paymentFailed:
-            orderStatusMsg += 'has paymentFailed';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_PAYMENT_FAILED, [orderName]);
             break;
         case orderStatus.onHold:
-            orderStatusMsg += 'is on hold';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_ON_HOLD, [orderName]);
             break;
         case orderStatus.refunded:
-            orderStatusMsg += 'has been refunded';
+            orderStatusMsg = StringFormatter(StringConstants.ORDER_STATUS_REFUNDED, [orderName]);
             break;
     }
 
@@ -49,44 +51,45 @@ const generateOrderStatusChangeNotification = (userId, adminId, orderName, order
 };
 
 const generateCartStatusChangeNotification = (userId, adminId, cartLength, cartStatusNum, cancelReason, cartId) => {
-    let cartStatusMsg = 'Your cart with ' + cartLength + ' order(s) ';
+    let cartStatusMsg = '';
     switch (cartStatusNum) {
         case cartStatus.unplaced:
-            cartStatusMsg += 'is still unplaced';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_UNPLACED, [cartLength]);
             break;
         case cartStatus.placed:
-            cartStatusMsg += 'has been placed';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_PLACED, [cartLength]);
             break;
         case cartStatus.processing:
-            cartStatusMsg += 'has completed payment and is in process';
             if (adminId !== systemAdmin) {
-                cartStatusMsg += '. Payment accepted by ' + adminId;
+                cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_PROCESSING_OFFLINE, [cartLength, adminId]);
+            } else {
+                cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_PROCESSING_ONLINE, [cartLength]);
             }
             break;
         case cartStatus.readyToDeliver:
-            cartStatusMsg += 'is now ready to deliver';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_READY_TO_DELIVER, [cartLength]);
             break;
         case cartStatus.readyToPickup:
-            cartStatusMsg += 'is now ready to pickup';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_READY_TO_PICKUP, [cartLength]);
             break;
         case cartStatus.completed:
-            cartStatusMsg += 'has been completed';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_COMPLETED, [cartLength]);
             break;
 
         case cartStatus.invalid:
-            cartStatusMsg += 'is invalid';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_INVALID, [cartLength]);
             break;
         case cartStatus.cancelled:
-            cartStatusMsg += 'was cancelled due to ' + cancelReason;
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_CANCELLED, [cartLength, cancelReason]);
             break;
         case cartStatus.paymentFailed:
-            cartStatusMsg += 'has paymentFailed';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_PAYMENT_FAILED, [cartLength]);
             break;
         case cartStatus.onHold:
-            cartStatusMsg += 'is on hold';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_ON_HOLD, [cartLength]);
             break;
         case cartStatus.refunded:
-            cartStatusMsg += 'has been refunded';
+            cartStatusMsg = StringFormatter(StringConstants.CART_STATUS_REFUNDED, [cartLength]);
             break;
     }
 
@@ -105,7 +108,7 @@ const generatePendingPaymentNotification = (userId, adminId, cartLength, payment
     const notification = new Notification({
         createdBy: adminId,
         createdOn: new Date(),
-        message: 'Your cart with ' + cartLength + ' order(s) has a pending ' + paymentType + ' payment. Pay fast or your order will get cancel.',
+        message: StringFormatter(StringConstants.PENDING_PAYMENT_REMINDER, [cartLength, paymentType]),
         userId: userId,
         cartId: cartId
     });

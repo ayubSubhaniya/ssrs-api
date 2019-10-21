@@ -24,6 +24,8 @@ const {
 } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { convertToStringArray, filterResourceData } = require('../helpers/controllerHelpers');
+const { StringFormatter } = require('../helpers/commonHelpers');
+const { INVALID_CART_DELETED } = require('../constants/strings');
 
 const {
     generateCartStatusChangeNotification,
@@ -35,7 +37,7 @@ const { sendMail } = require('../configuration/mail'),
     mailTemplates = require('../configuration/mailTemplates.json');
 
 const removeCart = async (cart, populated) => {
-    let message = `Cart ${cart.orderId} has been deleted due to unavailability of certain items. Kindly check "News" section for the same and try placing new order.`;
+    let message = StringFormatter(INVALID_CART_DELETED, [cart.orderId]);
     await Cart.findByIdAndRemove(cart._id);
 
     if (cart.pickup) {

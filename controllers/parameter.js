@@ -9,6 +9,8 @@ const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
 const { generateNews } = require('../helpers/newsHelper');
+const { StringFormatter } = require('../helpers/commonHelpers');
+const { PARAMETER_STATUS_CHANGE, INVALID_ORDER_DUE_TO_PARAMETER, ADMIN_PARAMETER_DELETED } = require('../constants/strings');
 
 const removeDeletedParameterFromService = async (parameterId) => {
     const services = await Service.find({ 'availableParameters': parameterId });
@@ -24,8 +26,6 @@ const removeDeletedParameterFromService = async (parameterId) => {
 
 const removeOrderWithDeletedParameter = async (parameterId) => {
 
-    let message = "Some orders has became invalid due to changes in available parameters. Please try adding them again.";
-
     const orders = await Order.find({ parameters: parameterId });
 
     for (let i=0;i<orders.length;i++){
@@ -38,6 +38,7 @@ const removeOrderWithDeletedParameter = async (parameterId) => {
             }
         });
 
+        let message = INVALID_ORDER_DUE_TO_PARAMETER;
         const notification = generateCustomNotification(orders[i].requestedBy, systemAdmin, message, orders[i].cartId);
         await notification.save();
     }
@@ -117,7 +118,7 @@ module.exports = {
 
             /* notification for all superAdmins */
             const parameter = await Parameter.findById(requestedParameterId);
-            let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`;
+            let message = StringFormatter(ADMIN_PARAMETER_DELETED, [parameter.name, daiictId]);
             const notification = await generateCustomNotification(allAdmin, systemAdmin, message);
             await notification.save();
 
@@ -136,7 +137,7 @@ module.exports = {
             });
 
             if (deletedParameter) {
-                let message = `Parameter: ${parameter.name} has been deleted by ${daiictId}.`;
+                let message = StringFormatter(ADMIN_PARAMETER_DELETED, [parameter.name, daiictId]);
                 const notification = generateCustomNotification(allAdmin, systemAdmin, message);
                 await notification.save();
 
@@ -242,8 +243,8 @@ module.exports = {
             const updatedParameter = await Parameter.findByIdAndUpdate(parameterId, parameterUpdateAtt, { new: true });
 
             if (updatedParameter) {
-                const message = 'Parameter ' + updatedParameter.name + ' is now '
-                    + (updatedParameter.isActive ? 'active' : 'inactive');
+                const args = [updatedParameter.name, (updatedParameter.isActive ? 'active' : 'inactive')];
+                const message = StringFormatter(PARAMETER_STATUS_CHANGE, args);
                 await generateNews(message, daiictId);
 
                 const filteredParameter = filterResourceData(updatedParameter, readPermission.attributes);

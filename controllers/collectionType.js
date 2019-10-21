@@ -9,6 +9,8 @@ const { accessControl } = require('./access');
 const { filterResourceData } = require('../helpers/controllerHelpers');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
 const { generateNews } = require('../helpers/newsHelper');
+const { StringFormatter } = require('../helpers/commonHelpers');
+const { COLLECTION_TYPE_STATUS_CHANGE, INVALID_ORDER_DUE_TO_COLLECTION_TYPE, ADMIN_COLLECTION_TYPE_DELETED } = require('../constants/strings');
 
 const removeDeletedCollectionFromService = async (collectionId) => {
     const services = await Service.find({ collectionTypes: collectionId });
@@ -24,8 +26,6 @@ const removeDeletedCollectionFromService = async (collectionId) => {
 
 const updateCartWithDeletedCollection = async (collectionId) => {
 
-    let message = 'Some orders has became invalid due to changes in available collection-types. Please try adding them again.';
-
     const carts = await Cart.find({ collectionType: collectionId });
 
     for (let i = 0; i < carts.length; i++) {
@@ -38,6 +38,7 @@ const updateCartWithDeletedCollection = async (collectionId) => {
         await carts[i].save();
 
         /** Generate cart update notification */
+        let message = INVALID_ORDER_DUE_TO_COLLECTION_TYPE;
         await generateCustomNotification(carts[i].requestedBy, systemAdmin, message, carts.id);
     }
 };
@@ -116,7 +117,7 @@ module.exports = {
 
             /* notification for all superAdmins */
             const collectionType = await CollectionType.findById(requestedCollectionTypeId);
-            let message = `CollectionType: ${collectionType.name} has been deleted by ${daiictId}.`;
+            let message = StringFormatter(ADMIN_COLLECTION_TYPE_DELETED, [collectionType.name, daiictId]);
             const notification = generateCustomNotification(allAdmin, systemAdmin, message);
             await notification.save();
 
@@ -135,7 +136,7 @@ module.exports = {
             });
 
             if (deletedCollectionType) {
-                let message = `CollectionType: ${collectionType.name} has been deleted by ${daiictId}.`;
+                let message = StringFormatter(ADMIN_COLLECTION_TYPE_DELETED, [collectionType.name, daiictId]);
                 const notification = generateCustomNotification(allAdmin, systemAdmin, message);
                 await notification.save();
 
@@ -241,8 +242,8 @@ module.exports = {
             const updatedCollectionType = await CollectionType.findByIdAndUpdate(collectionTypeId, collectionTypeUpdateAtt, { new: true });
 
             if (updatedCollectionType) {
-                const message = 'Collection-type ' + updatedCollectionType.name + ' is now '
-                    + (updatedCollectionType.isActive ? 'active' : 'inactive');
+                const args = [updatedCollectionType.name, (updatedCollectionType.isActive ? 'active' : 'inactive')];
+                const message = StringFormatter(COLLECTION_TYPE_STATUS_CHANGE, args);
                 await generateNews(message, daiictId);
 
                 const filteredCollectionType = filterResourceData(updatedCollectionType, readPermission.attributes);

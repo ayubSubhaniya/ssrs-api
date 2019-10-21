@@ -8,12 +8,13 @@ const { filterResourceData, convertToStringArray, filterActiveData, getIdsFromDo
 const { orderStatus, systemAdmin } = require('../configuration');
 const errorMessages = require('../configuration/errors');
 const { generateCustomNotification } = require('../helpers/notificationHelper');
+const { INVALID_ORDER_DELETED } = require('../constants/strings');
 
 const removeOrder = async (order) => {
     if (!order){
         return;
     }
-    let message = 'Some orders in your cart has became invalid. Please try adding them again!';
+    let message = INVALID_ORDER_DELETED;
     await Order.findByIdAndRemove(order._id);
 
     await Cart.findByIdAndUpdate(order.cartId, {
